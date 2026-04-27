@@ -1,5 +1,9 @@
 # Dishify
 
+## VERY IMPORTANT!!! 
+1, After clonning the repo, execute start.sh to create virtual environment
+2, If you want to work for further steps, use data/dataset_normalized_10000.csv, this data has sampled 10000 entries for testing purposes. The final dataset are going to be in the same format as this dataset.
+
 Dishify is an AI-powered cooking assistant that helps users decide what to cook based on ingredients they already have.
 
 It addresses a common problem: people have food at home but do not know what they can cook without additional shopping. Beyond recommendations, the system explains why recipes are suggested, highlights available and missing ingredients, and proposes substitutions when helpful.
