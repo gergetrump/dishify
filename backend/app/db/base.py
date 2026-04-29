@@ -11,13 +11,12 @@ generic ``JSON`` columns that map cleanly to both backends.
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-
 
 # Repo root: backend/app/db/base.py -> parents[3] is the repo root.
 REPO_ROOT = Path(__file__).resolve().parents[3]

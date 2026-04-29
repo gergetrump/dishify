@@ -16,8 +16,8 @@ Implements the README formula:
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence
 
 from ..db.models import Recipe
 from .retrieval import RetrievedCandidate
@@ -29,18 +29,78 @@ class RankedCandidate:
 	score: float
 	ingredient_match: float
 	vector_similarity: float
-	missing_ingredients: List[str]
-	available_ingredients: List[str]
+	missing_ingredients: list[str]
+	available_ingredients: list[str]
+
+
+_STOPWORDS: frozenset[str] = frozenset(
+	{
+		"a",
+		"an",
+		"the",
+		"and",
+		"or",
+		"of",
+		"with",
+		"to",
+		"for",
+		"in",
+		"on",
+		"at",
+		"by",
+		"from",
+		"&",
+	}
+)
 
 
 def _normalize_token(value: str) -> str:
 	return value.strip().lower()
 
 
-def _split_recipe_ingredient(name: str) -> str:
-	"""The dataset's NER strings are short but can contain modifiers; we keep the whole
-	lower-cased phrase as the canonical token."""
-	return _normalize_token(name)
+def _singularize(word: str) -> str:
+	if len(word) <= 3:
+		return word
+	if word.endswith("ies"):
+		return word[:-3] + "y"
+	if word.endswith("oes") or word.endswith("ses"):
+		return word[:-2]
+	if word.endswith("s") and not word.endswith("ss"):
+		return word[:-1]
+	return word
+
+
+def _tokenize_ingredient(name: str) -> set[str]:
+	"""Bag of meaningful, singularized words.
+
+	Splitting on whitespace + stopword removal + singularization is the cheapest
+	way to make ``"chicken"`` match ``"chicken breasts"`` without making
+	``"egg"`` match ``"eggplant"`` (they are different whole tokens).
+	"""
+
+	tokens: set[str] = set()
+	for raw in _normalize_token(name).split():
+		stripped = "".join(c for c in raw if c.isalpha())
+		if not stripped or stripped in _STOPWORDS or len(stripped) < 2:
+			continue
+		tokens.add(_singularize(stripped))
+	return tokens
+
+
+def _ingredient_match(recipe_ingredient: str, user_token_set: set[str]) -> bool:
+	"""A recipe ingredient counts as available if at least one of its
+	meaningful tokens is in the user's combined token set.
+
+	Single-token ingredients (e.g. ``"flour"``) match only on exact identity.
+	Multi-token ingredients (e.g. ``"chicken breasts"``) match if any token
+	is in the user's set, which fixes the head-noun problem (``"chicken"``
+	matches ``"chicken breasts"``) without enabling substring leaks.
+	"""
+
+	tokens = _tokenize_ingredient(recipe_ingredient)
+	if not tokens:
+		return False
+	return bool(tokens & user_token_set)
 
 
 def score_candidates(
@@ -50,24 +110,33 @@ def score_candidates(
 	*,
 	weights: tuple[float, float, float] = (0.5, 0.3, 0.2),
 	missing_normalizer: float = 10.0,
-) -> List[RankedCandidate]:
+) -> list[RankedCandidate]:
 	"""Score a batch of candidates and return them sorted high-to-low."""
 
 	w_match, w_vec, w_miss = weights
-	user_set = {_normalize_token(i) for i in user_ingredients if i}
+	user_token_set: set[str] = set()
+	for item in user_ingredients:
+		if item:
+			user_token_set |= _tokenize_ingredient(item)
 	score_by_id = {c.recipe_id: c.vector_score for c in candidates}
 
-	ranked: List[RankedCandidate] = []
+	ranked: list[RankedCandidate] = []
 	for recipe in recipes:
-		recipe_ingredients = [_split_recipe_ingredient(x) for x in (recipe.ingredients_clean or []) if x]
+		recipe_ingredients = [_normalize_token(x) for x in (recipe.ingredients_clean or []) if x]
 		if not recipe_ingredients:
 			continue
 
-		recipe_set = set(recipe_ingredients)
-		available = sorted(recipe_set & user_set)
-		missing = sorted(recipe_set - user_set)
+		available: list[str] = []
+		missing: list[str] = []
+		for ingredient in recipe_ingredients:
+			if _ingredient_match(ingredient, user_token_set):
+				available.append(ingredient)
+			else:
+				missing.append(ingredient)
+		available = sorted(set(available))
+		missing = sorted(set(missing))
 
-		ingredient_match = len(available) / len(recipe_set)
+		ingredient_match = len(available) / max(1, len(set(recipe_ingredients)))
 		raw_vec = score_by_id.get(recipe.id, 0.0)
 		vector_similarity = max(0.0, min(1.0, (raw_vec + 1.0) / 2.0))
 		miss_penalty = min(1.0, len(missing) / max(missing_normalizer, 1.0))
@@ -88,7 +157,7 @@ def score_candidates(
 	return ranked
 
 
-def take_top(ranked: Sequence[RankedCandidate], n: int) -> List[RankedCandidate]:
+def take_top(ranked: Sequence[RankedCandidate], n: int) -> list[RankedCandidate]:
 	return list(ranked[:n])
 
 
@@ -96,8 +165,8 @@ def fallback_rank_without_vectors(
 	recipes: Iterable[Recipe],
 	user_ingredients: Sequence[str],
 	*,
-	limit: Optional[int] = None,
-) -> List[RankedCandidate]:
+	limit: int | None = None,
+) -> list[RankedCandidate]:
 	"""Used when retrieval (Gemini embeddings / vector store) is unavailable.
 
 	Identical to ``score_candidates`` but with vector_similarity forced to 0,

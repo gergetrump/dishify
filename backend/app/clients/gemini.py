@@ -9,18 +9,24 @@ if richer features (streaming, tool-use, etc.) are needed later.
 from __future__ import annotations
 
 import json
+import logging
 import os
+import time
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-
 
 DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 DEFAULT_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "text-embedding-004")
 DEFAULT_TIMEOUT_SECONDS = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "12"))
+DEFAULT_MAX_RETRIES = int(os.getenv("GEMINI_MAX_RETRIES", "3"))
+DEFAULT_RETRY_BACKOFF_SECONDS = float(os.getenv("GEMINI_RETRY_BACKOFF", "1.5"))
 EMBEDDING_DIMENSION = 768  # text-embedding-004 returns 768-d vectors
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+_RETRYABLE_HTTP_STATUSES: frozenset[int] = frozenset({408, 429, 500, 502, 503, 504})
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiError(RuntimeError):
@@ -29,10 +35,12 @@ class GeminiError(RuntimeError):
 
 @dataclass
 class GeminiClient:
-	api_key: Optional[str] = None
+	api_key: str | None = None
 	model: str = DEFAULT_MODEL
 	embedding_model: str = DEFAULT_EMBEDDING_MODEL
 	timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
+	max_retries: int = DEFAULT_MAX_RETRIES
+	retry_backoff_seconds: float = DEFAULT_RETRY_BACKOFF_SECONDS
 
 	def __post_init__(self) -> None:
 		if self.api_key is None:
@@ -42,12 +50,65 @@ class GeminiClient:
 	def is_configured(self) -> bool:
 		return bool(self.api_key)
 
+	def _post_json(self, endpoint: str, payload: dict) -> str:
+		"""POST a JSON body to ``endpoint`` and return the raw text response.
+
+		Retries on transport errors and on HTTP statuses we know are usually
+		transient (408, 429, 5xx). The retry budget is bounded by
+		``self.max_retries`` and uses exponential backoff with jitter via
+		``self.retry_backoff_seconds``.
+		"""
+
+		body_bytes = json.dumps(payload).encode("utf-8")
+		last_error: GeminiError | None = None
+		for attempt in range(self.max_retries + 1):
+			request = Request(
+				endpoint,
+				data=body_bytes,
+				headers={"Content-Type": "application/json"},
+				method="POST",
+			)
+			try:
+				with urlopen(request, timeout=self.timeout_seconds) as response:
+					return response.read().decode("utf-8")
+			except HTTPError as exc:
+				last_error = GeminiError(f"Gemini HTTP {exc.code}: {exc.reason}")
+				if exc.code in _RETRYABLE_HTTP_STATUSES and attempt < self.max_retries:
+					sleep_for = self.retry_backoff_seconds * (2**attempt)
+					logger.warning(
+						"Gemini HTTP %s on attempt %d/%d; retrying in %.1fs",
+						exc.code,
+						attempt + 1,
+						self.max_retries + 1,
+						sleep_for,
+					)
+					time.sleep(sleep_for)
+					continue
+				raise last_error from exc
+			except (URLError, TimeoutError) as exc:
+				last_error = GeminiError(f"Gemini transport error: {exc}")
+				if attempt < self.max_retries:
+					sleep_for = self.retry_backoff_seconds * (2**attempt)
+					logger.warning(
+						"Gemini transport error on attempt %d/%d (%s); retrying in %.1fs",
+						attempt + 1,
+						self.max_retries + 1,
+						exc,
+						sleep_for,
+					)
+					time.sleep(sleep_for)
+					continue
+				raise last_error from exc
+
+		# Defensive: shouldn't be reachable.
+		raise last_error or GeminiError("Gemini call failed without an error")
+
 	def generate_text(
 		self,
 		prompt: str,
 		*,
 		temperature: float = 0.0,
-		response_mime_type: Optional[str] = None,
+		response_mime_type: str | None = None,
 	) -> str:
 		"""Call ``generateContent`` and return the first candidate's text.
 
@@ -68,21 +129,7 @@ class GeminiClient:
 		}
 
 		endpoint = f"{_API_BASE}/{self.model}:generateContent?key={self.api_key}"
-		request = Request(
-			endpoint,
-			data=json.dumps(payload).encode("utf-8"),
-			headers={"Content-Type": "application/json"},
-			method="POST",
-		)
-
-		try:
-			with urlopen(request, timeout=self.timeout_seconds) as response:
-				body = response.read().decode("utf-8")
-		except HTTPError as exc:
-			raise GeminiError(f"Gemini HTTP {exc.code}: {exc.reason}") from exc
-		except (URLError, TimeoutError) as exc:
-			raise GeminiError(f"Gemini transport error: {exc}") from exc
-
+		body = self._post_json(endpoint, payload)
 		try:
 			parsed = json.loads(body)
 			return parsed["candidates"][0]["content"]["parts"][0]["text"]
@@ -109,21 +156,7 @@ class GeminiClient:
 			raise GeminiError("GEMINI_API_KEY is not set")
 
 		endpoint = f"{_API_BASE}/{self.embedding_model}:embedContent?key={self.api_key}"
-		payload = {"content": {"parts": [{"text": text}]}}
-		request = Request(
-			endpoint,
-			data=json.dumps(payload).encode("utf-8"),
-			headers={"Content-Type": "application/json"},
-			method="POST",
-		)
-		try:
-			with urlopen(request, timeout=self.timeout_seconds) as response:
-				body = response.read().decode("utf-8")
-		except HTTPError as exc:
-			raise GeminiError(f"Gemini HTTP {exc.code}: {exc.reason}") from exc
-		except (URLError, TimeoutError) as exc:
-			raise GeminiError(f"Gemini transport error: {exc}") from exc
-
+		body = self._post_json(endpoint, {"content": {"parts": [{"text": text}]}})
 		try:
 			return list(json.loads(body)["embedding"]["values"])
 		except (KeyError, TypeError, json.JSONDecodeError) as exc:
@@ -151,20 +184,7 @@ class GeminiClient:
 					for t in chunk
 				]
 			}
-			request = Request(
-				endpoint,
-				data=json.dumps(payload).encode("utf-8"),
-				headers={"Content-Type": "application/json"},
-				method="POST",
-			)
-			try:
-				with urlopen(request, timeout=self.timeout_seconds) as response:
-					body = response.read().decode("utf-8")
-			except HTTPError as exc:
-				raise GeminiError(f"Gemini HTTP {exc.code}: {exc.reason}") from exc
-			except (URLError, TimeoutError) as exc:
-				raise GeminiError(f"Gemini transport error: {exc}") from exc
-
+			body = self._post_json(endpoint, payload)
 			try:
 				parsed = json.loads(body)
 				for item in parsed["embeddings"]:

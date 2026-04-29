@@ -11,28 +11,35 @@ and stages degrade gracefully when they aren't available -- see
 
 from __future__ import annotations
 
-from typing import List, Optional
+import logging
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 load_dotenv()  # picks up .env at process start so exports aren't required
 
-from .clients.gemini import GeminiClient, GeminiError, get_default_client  # noqa: E402
-from .db import count as db_count, create_all  # noqa: E402
-from .services.normalization import IngredientNormalizer  # noqa: E402
-from .services.pipeline import run_pipeline  # noqa: E402
+from .clients.gemini import GeminiClient, GeminiError, get_default_client
+from .db import count as db_count
+from .db import create_all
+from .observability import RequestIdMiddleware, configure_logging
+from .services.normalization import IngredientNormalizer
+from .services.pipeline import run_pipeline
+from .vectorstore import VectorStoreError, get_default_vector_store
+
+configure_logging()
+logger = logging.getLogger(__name__)
 
 
 class Profile(BaseModel):
-	diet: Optional[str] = Field(default=None, description="e.g. 'vegetarian', 'vegan'")
-	allergies: List[str] = Field(default_factory=list)
+	diet: str | None = Field(default=None, description="e.g. 'vegetarian', 'vegan'")
+	allergies: list[str] = Field(default_factory=list)
 
 
 class RecommendRequest(BaseModel):
-	ingredients: List[str] = Field(..., min_length=1)
+	ingredients: list[str] = Field(..., min_length=1)
 	profile: Profile = Field(default_factory=Profile)
 	top_k: int = Field(default=5, ge=1, le=20)
 
@@ -40,33 +47,70 @@ class RecommendRequest(BaseModel):
 class StageReportModel(BaseModel):
 	name: str
 	status: str
-	detail: Optional[str] = None
+	detail: str | None = None
+	latency_ms: float | None = None
 
 
 class RecommendationModel(BaseModel):
 	recipe_id: int
 	rank: int
-	reason: str
-	missing_ingredients: List[str] = Field(default_factory=list)
-	substitutions: List[str] = Field(default_factory=list)
+	title: str = ""
+	link: str | None = None
+	source: str | None = None
+	ingredients: list[str] = Field(default_factory=list)
+	directions: list[str] = Field(default_factory=list)
+	available_ingredients: list[str] = Field(default_factory=list)
+	missing_ingredients: list[str] = Field(default_factory=list)
+	substitutions: list[str] = Field(default_factory=list)
+	reason: str = ""
+	score: float = 0.0
+	ingredient_match: float = 0.0
+	vector_similarity: float = 0.0
 
 
 class RecommendResponse(BaseModel):
-	normalized_ingredients: List[str]
+	normalized_ingredients: list[str]
 	profile: Profile
 	candidate_pool_size: int
 	retrieved_count: int
 	scored_count: int
-	recommendations: List[RecommendationModel] = Field(default_factory=list)
-	stages: List[StageReportModel]
+	recommendations: list[RecommendationModel] = Field(default_factory=list)
+	stages: list[StageReportModel]
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+	"""Startup/shutdown hooks. Idempotent and never raises -- failures are
+	logged so /health can still serve."""
+
+	try:
+		create_all()
+	except Exception:  # pragma: no cover -- defensive
+		logger.exception("DB schema creation failed; /recommend will surface it")
+
+	app.state.vector_store = None
+	try:
+		app.state.vector_store = get_default_vector_store()
+		logger.info(
+			"vector_store ready: %s",
+			type(app.state.vector_store).__name__,
+		)
+	except VectorStoreError as exc:
+		logger.warning("vector_store unavailable: %s", exc)
+
+	yield
+
+	# nothing to dispose right now
 
 
 app = FastAPI(
 	title="Dishify API",
-	version="0.2.0",
+	version="0.3.0",
 	description="AI-powered recipe recommendations from ingredients you already have.",
+	lifespan=lifespan,
 )
 
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
 	CORSMiddleware,
 	allow_origins=["*"],
@@ -76,26 +120,17 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-def _on_startup() -> None:
-	# Idempotent: ensures the recipes table exists when running on a fresh SQLite file.
-	try:
-		create_all()
-	except Exception:
-		# Don't crash startup if the DB is unreachable; /recommend will surface it.
-		pass
-
-
 @app.get("/health", tags=["meta"])
 def health() -> dict:
-	try:
-		recipes = db_count_safe()
-	except Exception as exc:
-		recipes = None
-	return {"status": "ok", "service": "dishify-api", "recipe_count": recipes}
+	return {
+		"status": "ok",
+		"service": "dishify-api",
+		"recipe_count": _db_count_safe(),
+		"vector_store": _vector_store_name(app),
+	}
 
 
-def db_count_safe() -> Optional[int]:
+def _db_count_safe() -> int | None:
 	from .db import SessionLocal
 
 	try:
@@ -103,6 +138,11 @@ def db_count_safe() -> Optional[int]:
 			return db_count(s)
 	except Exception:
 		return None
+
+
+def _vector_store_name(app: FastAPI) -> str | None:
+	store = getattr(app.state, "vector_store", None)
+	return type(store).__name__ if store is not None else None
 
 
 @app.get("/gemini/health", tags=["meta"])
@@ -133,13 +173,14 @@ def normalize(payload: RecommendRequest) -> dict:
 
 
 @app.post("/recommend", response_model=RecommendResponse, tags=["pipeline"])
-def recommend(payload: RecommendRequest) -> RecommendResponse:
+def recommend(request: Request, payload: RecommendRequest) -> RecommendResponse:
 	"""Run the full pipeline."""
 
 	report = run_pipeline(
 		payload.ingredients,
 		payload.profile.model_dump(),
 		top_k_explanation=payload.top_k,
+		vector_store=getattr(request.app.state, "vector_store", None),
 	)
 
 	return RecommendResponse(
@@ -152,13 +193,30 @@ def recommend(payload: RecommendRequest) -> RecommendResponse:
 			RecommendationModel(
 				recipe_id=r.recipe_id,
 				rank=r.rank,
-				reason=r.reason,
+				title=r.title,
+				link=r.link,
+				source=r.source,
+				ingredients=r.ingredients,
+				directions=r.directions,
+				available_ingredients=r.available_ingredients,
 				missing_ingredients=r.missing_ingredients,
 				substitutions=r.substitutions,
+				reason=r.reason,
+				score=r.score,
+				ingredient_match=r.ingredient_match,
+				vector_similarity=r.vector_similarity,
 			)
 			for r in report.recommendations
 		],
-		stages=[StageReportModel(name=s.name, status=s.status, detail=s.detail) for s in report.stages],
+		stages=[
+			StageReportModel(
+				name=s.name,
+				status=s.status,
+				detail=s.detail,
+				latency_ms=s.latency_ms,
+			)
+			for s in report.stages
+		],
 	)
 
 

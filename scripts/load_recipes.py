@@ -21,27 +21,27 @@ import csv
 import json
 import os
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Iterable, List, Sequence
 
 # Allow running from repo root: `python scripts/load_recipes.py`
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
-from dotenv import load_dotenv  # noqa: E402
+from dotenv import load_dotenv
 
 load_dotenv(ROOT / ".env")
 
-import numpy as np  # noqa: E402
-from tqdm import tqdm  # noqa: E402
+import numpy as np
+from app.clients.embedding_cache import EmbeddingCache
+from app.clients.gemini import EMBEDDING_DIMENSION, GeminiClient, GeminiError
+from app.db import Recipe, SessionLocal, create_all
+from app.services.taxonomy import infer_allergens, infer_diet
+from app.vectorstore import COLLECTION_NAME, EMBEDDINGS_PATH
+from tqdm import tqdm
 
-from app.clients.gemini import EMBEDDING_DIMENSION, GeminiClient, GeminiError  # noqa: E402
-from app.db import Recipe, SessionLocal, create_all  # noqa: E402
-from app.services.taxonomy import infer_allergens, infer_diet  # noqa: E402
-from app.vectorstore import COLLECTION_NAME, EMBEDDINGS_PATH  # noqa: E402
 
-
-def _coerce_list(raw: str) -> List[str]:
+def _coerce_list(raw: str) -> list[str]:
 	"""The CSV stores list-shaped fields as Python literals (single quotes etc.).
 	Try JSON first, fall back to ``ast.literal_eval``."""
 
@@ -69,7 +69,7 @@ def _build_query_text_for_recipe(recipe: Recipe) -> str:
 	return f"Recipe '{recipe.title}' with ingredients: " + ", ".join(recipe.ingredients_clean)
 
 
-def load_csv(path: Path, limit: int | None) -> List[Recipe]:
+def load_csv(path: Path, limit: int | None) -> list[Recipe]:
 	with path.open(newline="", encoding="utf-8") as f:
 		reader = csv.DictReader(f)
 		rows = []
@@ -105,15 +105,42 @@ def write_db(recipes: Sequence[Recipe]) -> None:
 
 
 def embed_recipes(client: GeminiClient, recipes: Sequence[Recipe]) -> np.ndarray:
+	"""Embed recipes via Gemini, using a persistent on-disk cache.
+
+	Cached vectors are reused across runs (keyed by sha256(text) + model name),
+	so re-running the loader is cheap. On rate-limit (HTTP 429) the partial
+	progress is flushed to disk and the script exits with a clear message,
+	letting the user resume by simply re-running.
+	"""
+
 	texts = [_build_query_text_for_recipe(r) for r in recipes]
-	vectors: list[list[float]] = []
-	for start in tqdm(range(0, len(texts), 100), desc="Embedding"):
-		chunk = texts[start : start + 100]
+	cache = EmbeddingCache(model=client.embedding_model)
+	cached_count = sum(1 for t in texts if cache.has(t))
+	missing_indices = [i for i, t in enumerate(texts) if not cache.has(t)]
+	print(f"  cache hits: {cached_count}/{len(texts)}; embedding {len(missing_indices)} new texts")
+
+	if missing_indices:
 		try:
-			vectors.extend(client.embed_batch(chunk))
+			for start in tqdm(range(0, len(missing_indices), 100), desc="Embedding"):
+				batch_idxs = missing_indices[start : start + 100]
+				batch_texts = [texts[i] for i in batch_idxs]
+				batch_vectors = client.embed_batch(batch_texts)
+				cache.put_many(zip(batch_texts, batch_vectors, strict=False))
+				cache.save()
 		except GeminiError as exc:
-			raise SystemExit(f"Gemini embedding failed: {exc}")
-	return np.asarray(vectors, dtype=np.float32)
+			cache.save()
+			raise SystemExit(
+				f"Gemini embedding failed: {exc}\n"
+				"Partial progress has been cached -- re-run the loader to resume."
+			) from exc
+
+	output: list[np.ndarray] = []
+	for t in texts:
+		vec = cache.get(t)
+		if vec is None:
+			raise SystemExit("Internal error: embedding missing from cache after success.")
+		output.append(vec)
+	return np.stack(output, axis=0).astype(np.float32)
 
 
 def normalize_rows(matrix: np.ndarray) -> np.ndarray:
@@ -136,15 +163,12 @@ def push_to_qdrant(url: str, ids: Sequence[int], vectors: np.ndarray) -> None:
 	client = QdrantClient(url=url)
 	client.recreate_collection(
 		collection_name=COLLECTION_NAME,
-		vectors_config=qmodels.VectorParams(
-			size=EMBEDDING_DIMENSION, distance=qmodels.Distance.COSINE
-		),
+		vectors_config=qmodels.VectorParams(size=EMBEDDING_DIMENSION, distance=qmodels.Distance.COSINE),
 	)
 	client.upload_points(
 		collection_name=COLLECTION_NAME,
 		points=[
-			qmodels.PointStruct(id=int(i), vector=v.tolist())
-			for i, v in zip(ids, vectors)
+			qmodels.PointStruct(id=int(i), vector=v.tolist()) for i, v in zip(ids, vectors, strict=False)
 		],
 		batch_size=256,
 	)

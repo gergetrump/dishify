@@ -8,13 +8,12 @@ at this scale.
 
 from __future__ import annotations
 
-from typing import Iterable, List, Optional, Sequence
+from collections.abc import Iterable, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .models import Recipe
-
 
 # Recipes whose ``diet`` is one of these are safe for the requested diet.
 _DIET_COMPATIBILITY: dict[str, set[str]] = {
@@ -25,7 +24,7 @@ _DIET_COMPATIBILITY: dict[str, set[str]] = {
 }
 
 
-def normalize_diet(diet: Optional[str]) -> Optional[str]:
+def normalize_diet(diet: str | None) -> str | None:
 	if not diet:
 		return None
 	value = diet.strip().lower()
@@ -37,10 +36,10 @@ def normalize_diet(diet: Optional[str]) -> Optional[str]:
 def hard_filter(
 	session: Session,
 	*,
-	diet: Optional[str] = None,
+	diet: str | None = None,
 	allergies: Sequence[str] = (),
-	limit: Optional[int] = None,
-) -> List[Recipe]:
+	limit: int | None = None,
+) -> list[Recipe]:
 	"""Return recipes that satisfy the user's hard constraints.
 
 	* `diet` is matched against compatibility (e.g. vegetarian users can
@@ -50,7 +49,7 @@ def hard_filter(
 	"""
 
 	stmt = select(Recipe)
-	allowed_diets = _DIET_COMPATIBILITY.get(normalize_diet(diet) or "", None)
+	allowed_diets = _DIET_COMPATIBILITY.get(normalize_diet(diet) or "")
 	if allowed_diets is not None:
 		stmt = stmt.where(Recipe.diet.in_(allowed_diets))
 	if limit is not None:
@@ -72,7 +71,7 @@ def hard_filter(
 	return [r for r in rows if is_safe(r)]
 
 
-def get_by_ids(session: Session, recipe_ids: Iterable[int]) -> List[Recipe]:
+def get_by_ids(session: Session, recipe_ids: Iterable[int]) -> list[Recipe]:
 	ids = [int(i) for i in recipe_ids]
 	if not ids:
 		return []

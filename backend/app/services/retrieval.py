@@ -7,11 +7,19 @@ survived the hard filter.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Optional, Sequence
 
 from ..clients.gemini import GeminiClient, GeminiError
-from ..vectorstore import SearchHit, VectorStoreError, get_default_vector_store
+from ..vectorstore import (
+	InMemoryVectorStore,
+	QdrantVectorStore,
+	SearchHit,
+	VectorStoreError,
+	get_default_vector_store,
+)
+
+VectorStore = "InMemoryVectorStore | QdrantVectorStore"
 
 
 @dataclass
@@ -31,11 +39,17 @@ def build_query_text(ingredients: Sequence[str]) -> str:
 def retrieve_candidates(
 	ingredients: Sequence[str],
 	*,
-	allowed_ids: Optional[Sequence[int]] = None,
+	allowed_ids: Sequence[int] | None = None,
 	top_k: int = 50,
-	gemini_client: Optional[GeminiClient] = None,
-) -> List[RetrievedCandidate]:
-	"""Return up to `top_k` candidate recipe IDs ordered by similarity."""
+	gemini_client: GeminiClient | None = None,
+	vector_store: InMemoryVectorStore | QdrantVectorStore | None = None,
+) -> list[RetrievedCandidate]:
+	"""Return up to ``top_k`` candidate recipe IDs ordered by similarity.
+
+	Both the Gemini client and the vector store can be injected. The pipeline
+	resolves them once at startup and threads them through, so /recommend
+	doesn't pay startup costs per request.
+	"""
 
 	if not ingredients:
 		return []
@@ -51,12 +65,13 @@ def retrieve_candidates(
 	except GeminiError as exc:
 		raise RetrievalUnavailable(f"Embedding failed: {exc}") from exc
 
-	try:
-		store = get_default_vector_store()
-	except VectorStoreError as exc:
-		raise RetrievalUnavailable(str(exc)) from exc
+	if vector_store is None:
+		try:
+			vector_store = get_default_vector_store()
+		except VectorStoreError as exc:
+			raise RetrievalUnavailable(str(exc)) from exc
 
-	hits: List[SearchHit] = store.search(
+	hits: list[SearchHit] = vector_store.search(
 		query_vector,
 		top_k=top_k,
 		allowed_ids=allowed_ids,

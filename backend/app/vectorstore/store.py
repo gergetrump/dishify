@@ -14,12 +14,11 @@ doesn't need to know which one is in use.
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
 
 import numpy as np
-
 
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "dishify_recipes")
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -39,8 +38,8 @@ class VectorStoreError(RuntimeError):
 def _filter_ids(
 	candidate_ids: Iterable[int],
 	*,
-	allowed_ids: Optional[Sequence[int]],
-) -> List[int]:
+	allowed_ids: Sequence[int] | None,
+) -> list[int]:
 	if allowed_ids is None:
 		return list(candidate_ids)
 	allowed = set(int(x) for x in allowed_ids)
@@ -57,9 +56,7 @@ class InMemoryVectorStore:
 
 	def __init__(self, path: Path = EMBEDDINGS_PATH) -> None:
 		if not path.exists():
-			raise VectorStoreError(
-				f"No embeddings snapshot at {path}. Run scripts/load_recipes.py first."
-			)
+			raise VectorStoreError(f"No embeddings snapshot at {path}. Run scripts/load_recipes.py first.")
 		data = np.load(path)
 		self.ids: np.ndarray = data["ids"].astype(np.int64)
 		self.vectors: np.ndarray = data["vectors"].astype(np.float32)
@@ -71,8 +68,8 @@ class InMemoryVectorStore:
 		query_vector: Sequence[float],
 		*,
 		top_k: int = 50,
-		allowed_ids: Optional[Sequence[int]] = None,
-	) -> List[SearchHit]:
+		allowed_ids: Sequence[int] | None = None,
+	) -> list[SearchHit]:
 		query = np.asarray(query_vector, dtype=np.float32)
 		norm = float(np.linalg.norm(query))
 		if norm == 0.0:
@@ -110,15 +107,13 @@ class QdrantVectorStore:
 		query_vector: Sequence[float],
 		*,
 		top_k: int = 50,
-		allowed_ids: Optional[Sequence[int]] = None,
-	) -> List[SearchHit]:
+		allowed_ids: Sequence[int] | None = None,
+	) -> list[SearchHit]:
 		from qdrant_client.http import models as qmodels
 
 		query_filter = None
 		if allowed_ids is not None:
-			query_filter = qmodels.Filter(
-				must=[qmodels.HasIdCondition(has_id=list(allowed_ids))]
-			)
+			query_filter = qmodels.Filter(must=[qmodels.HasIdCondition(has_id=list(allowed_ids))])
 
 		try:
 			hits = self._client.search(
@@ -132,7 +127,7 @@ class QdrantVectorStore:
 		return [SearchHit(int(h.id), float(h.score)) for h in hits]
 
 
-def get_default_vector_store() -> "InMemoryVectorStore | QdrantVectorStore":
+def get_default_vector_store() -> InMemoryVectorStore | QdrantVectorStore:
 	"""Pick the best available backend at process startup."""
 
 	url = os.getenv("QDRANT_URL", "").strip()

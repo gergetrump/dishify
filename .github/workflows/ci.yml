@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  backend-smoketest:
+  backend:
     runs-on: ubuntu-latest
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -18,9 +18,29 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
+          cache: "pip"
 
-      - name: Run normalization smoke test (deterministic fallback)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Skip the heavy psycopg + mypy stack for CI; tests + lint only need this slice.
+          python -m pip install \
+            fastapi 'uvicorn[standard]' 'pydantic>=2' \
+            'sqlalchemy>=2' 'qdrant-client>=1.7' \
+            numpy tqdm python-dotenv httpx \
+            'pytest>=8' 'pytest-asyncio>=0.23' 'ruff>=0.6'
+
+      - name: Lint (ruff)
+        run: ruff check backend tests scripts
+
+      - name: Format check (ruff)
+        run: ruff format --check backend tests scripts
+
+      - name: Unit + integration tests (no network)
+        run: pytest
+
+      - name: Normalization smoke test (CI-pinned invariant)
         working-directory: backend
         run: |
           python - << 'PY'
@@ -33,4 +53,23 @@ jobs:
               raise SystemExit(f"Smoke test failed. expected={expected} got={result}")
 
           print("Smoke test passed:", result)
+          PY
+
+      - name: Verify Gemini connectivity (only when key is provided)
+        if: ${{ env.GEMINI_API_KEY != '' }}
+        working-directory: backend
+        run: |
+          python - << 'PY'
+          from app.clients.gemini import GeminiClient, GeminiError
+
+          client = GeminiClient()
+          if not client.is_configured:
+              raise SystemExit("GEMINI_API_KEY visible in env but client reports unconfigured")
+
+          try:
+              text = client.generate_text("reply with the single word: pong")
+          except GeminiError as exc:
+              raise SystemExit(f"Gemini reachability check failed: {exc}") from exc
+
+          print("Gemini OK ->", text.strip())
           PY

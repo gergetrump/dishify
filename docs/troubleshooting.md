@@ -115,9 +115,9 @@ python scripts/load_recipes.py --limit 500
 
 ### `Gemini embedding failed: Gemini HTTP 429`
 
-You've burned the free-tier quota mid-load. The loader doesn't resume; re-run the full thing later or with a smaller `--limit`.
+You've burned the free-tier quota mid-load. The partial cache has been flushed to disk — just re-run the same command and it'll resume from where it stopped, only embedding the texts that aren't in `data/embeddings_cache.npz` yet.
 
-If you'll be loading 10k recipes regularly, enable billing or persist embeddings between runs (TODO: incremental loader).
+If you'll be loading the full 10k regularly, enable billing on the GCP project so the rate limit doesn't bite.
 
 ### `CSV not found`
 
