@@ -1,10 +1,9 @@
 import json
-import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterable, List, Optional
-from urllib.error import URLError
-from urllib.request import Request, urlopen
+
+from ..clients.gemini import DEFAULT_MODEL, GeminiClient, GeminiError
 
 
 _SPACES_PATTERN = re.compile(r"\s+")
@@ -14,12 +13,17 @@ _NON_ALPHA_PATTERN = re.compile(r"[^a-z\s-]")
 @dataclass
 class IngredientNormalizer:
 	api_key: Optional[str] = None
-	model: str = "gemini-2.0-flash"
+	model: str = DEFAULT_MODEL
 	timeout_seconds: int = 12
+	client: Optional[GeminiClient] = field(default=None, repr=False)
 
 	def __post_init__(self) -> None:
-		if self.api_key is None:
-			self.api_key = os.getenv("GEMINI_API_KEY")
+		if self.client is None:
+			self.client = GeminiClient(
+				api_key=self.api_key,
+				model=self.model,
+				timeout_seconds=self.timeout_seconds,
+			)
 
 	def normalize(self, ingredients: Iterable[str]) -> List[str]:
 		prepared = [self._clean_input(item) for item in ingredients if self._clean_input(item)]
@@ -33,7 +37,8 @@ class IngredientNormalizer:
 		return [self._normalize_with_rules(item) for item in prepared]
 
 	def _normalize_with_gemini(self, ingredients: List[str]) -> Optional[List[str]]:
-		if not self.api_key:
+		assert self.client is not None
+		if not self.client.is_configured:
 			return None
 
 		prompt = (
@@ -46,45 +51,23 @@ class IngredientNormalizer:
 			f"Input: {json.dumps(ingredients)}"
 		)
 
-		payload = {
-			"contents": [{"parts": [{"text": prompt}]}],
-			"generationConfig": {
-				"temperature": 0,
-				"responseMimeType": "application/json",
-			},
-		}
-
-		endpoint = (
-			"https://generativelanguage.googleapis.com/v1beta/models/"
-			f"{self.model}:generateContent?key={self.api_key}"
-		)
-
-		request = Request(
-			endpoint,
-			data=json.dumps(payload).encode("utf-8"),
-			headers={"Content-Type": "application/json"},
-			method="POST",
-		)
-
 		try:
-			with urlopen(request, timeout=self.timeout_seconds) as response:
-				body = response.read().decode("utf-8")
-		except (URLError, TimeoutError, ValueError):
+			payload = self.client.generate_json(prompt)
+		except GeminiError:
 			return None
 
 		try:
-			response_json = json.loads(body)
-			text = response_json["candidates"][0]["content"]["parts"][0]["text"]
-			normalized_payload = json.loads(text)
-			normalized = normalized_payload["normalized"]
-			if not isinstance(normalized, list):
-				return None
-			cleaned = [self._clean_input(str(item)) for item in normalized]
-			if any(not item for item in cleaned):
-				return None
-			return cleaned
-		except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+			normalized = payload["normalized"]
+		except (KeyError, TypeError):
 			return None
+
+		if not isinstance(normalized, list):
+			return None
+
+		cleaned = [self._clean_input(str(item)) for item in normalized]
+		if any(not item for item in cleaned):
+			return None
+		return cleaned
 
 	def _normalize_with_rules(self, ingredient: str) -> str:
 		dictionary = {
@@ -136,7 +119,7 @@ class IngredientNormalizer:
 def normalize_ingredients(
 	ingredients: Iterable[str],
 	api_key: Optional[str] = None,
-	model: str = "gemini-2.0-flash",
+	model: str = DEFAULT_MODEL,
 ) -> List[str]:
 	normalizer = IngredientNormalizer(api_key=api_key, model=model)
 	return normalizer.normalize(ingredients)

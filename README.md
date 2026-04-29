@@ -90,6 +90,36 @@ The LLM sees only the top 5-10 candidates and returns structured JSON recommenda
 }
 ```
 
+## Running the API
+
+The backend is a FastAPI app at `backend/app/main.py`.
+
+```bash
+bash start.sh
+source .venv/bin/activate
+export GEMINI_API_KEY='your_real_key_here'   # required for Gemini-backed endpoints
+cd backend
+uvicorn app.main:app --reload --port 8000
+```
+
+Endpoints:
+
+- `GET /health` - service liveness.
+- `GET /gemini/health` - verifies `GEMINI_API_KEY` is set and Gemini is reachable.
+- `POST /normalize` - runs only stage 2 (ingredient normalization).
+- `POST /recommend` - runs the full pipeline. Stages 3-6 currently return `pending` placeholders.
+- `POST /gemini/generate` - debug passthrough to Gemini (`{"prompt": "...", "json_mode": false}`).
+
+Example:
+
+```bash
+curl -s http://localhost:8000/recommend \
+	-H 'Content-Type: application/json' \
+	-d '{"ingredients":["tomatoes","pasta","mozzarella"],"profile":{"diet":"vegetarian","allergies":["peanuts"]}}'
+```
+
+Interactive docs: http://localhost:8000/docs
+
 ## Gemini API key setup
 
 The normalization service reads `GEMINI_API_KEY` from environment variables.

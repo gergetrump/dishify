@@ -1,3 +1,6 @@
 pandas
 seaborn
 ingredient-parser-nlp
+fastapi
+uvicorn[standard]
+pydantic>=2
