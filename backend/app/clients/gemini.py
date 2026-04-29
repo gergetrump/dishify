@@ -17,7 +17,9 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+DEFAULT_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "text-embedding-004")
 DEFAULT_TIMEOUT_SECONDS = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "12"))
+EMBEDDING_DIMENSION = 768  # text-embedding-004 returns 768-d vectors
 _API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
@@ -29,6 +31,7 @@ class GeminiError(RuntimeError):
 class GeminiClient:
 	api_key: Optional[str] = None
 	model: str = DEFAULT_MODEL
+	embedding_model: str = DEFAULT_EMBEDDING_MODEL
 	timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS
 
 	def __post_init__(self) -> None:
@@ -98,6 +101,78 @@ class GeminiClient:
 			return json.loads(text)
 		except json.JSONDecodeError as exc:
 			raise GeminiError(f"Gemini returned non-JSON text: {text[:200]}") from exc
+
+	def embed_text(self, text: str) -> list[float]:
+		"""Embed a single string with ``text-embedding-004`` (768-d)."""
+
+		if not self.api_key:
+			raise GeminiError("GEMINI_API_KEY is not set")
+
+		endpoint = f"{_API_BASE}/{self.embedding_model}:embedContent?key={self.api_key}"
+		payload = {"content": {"parts": [{"text": text}]}}
+		request = Request(
+			endpoint,
+			data=json.dumps(payload).encode("utf-8"),
+			headers={"Content-Type": "application/json"},
+			method="POST",
+		)
+		try:
+			with urlopen(request, timeout=self.timeout_seconds) as response:
+				body = response.read().decode("utf-8")
+		except HTTPError as exc:
+			raise GeminiError(f"Gemini HTTP {exc.code}: {exc.reason}") from exc
+		except (URLError, TimeoutError) as exc:
+			raise GeminiError(f"Gemini transport error: {exc}") from exc
+
+		try:
+			return list(json.loads(body)["embedding"]["values"])
+		except (KeyError, TypeError, json.JSONDecodeError) as exc:
+			raise GeminiError(f"Unexpected embedding response: {body[:200]}") from exc
+
+	def embed_batch(self, texts: list[str]) -> list[list[float]]:
+		"""Embed many strings via ``batchEmbedContents`` (max 100 per call)."""
+
+		if not self.api_key:
+			raise GeminiError("GEMINI_API_KEY is not set")
+		if not texts:
+			return []
+
+		results: list[list[float]] = []
+		batch_size = 100
+		for start in range(0, len(texts), batch_size):
+			chunk = texts[start : start + batch_size]
+			endpoint = f"{_API_BASE}/{self.embedding_model}:batchEmbedContents?key={self.api_key}"
+			payload = {
+				"requests": [
+					{
+						"model": f"models/{self.embedding_model}",
+						"content": {"parts": [{"text": t}]},
+					}
+					for t in chunk
+				]
+			}
+			request = Request(
+				endpoint,
+				data=json.dumps(payload).encode("utf-8"),
+				headers={"Content-Type": "application/json"},
+				method="POST",
+			)
+			try:
+				with urlopen(request, timeout=self.timeout_seconds) as response:
+					body = response.read().decode("utf-8")
+			except HTTPError as exc:
+				raise GeminiError(f"Gemini HTTP {exc.code}: {exc.reason}") from exc
+			except (URLError, TimeoutError) as exc:
+				raise GeminiError(f"Gemini transport error: {exc}") from exc
+
+			try:
+				parsed = json.loads(body)
+				for item in parsed["embeddings"]:
+					results.append(list(item["values"]))
+			except (KeyError, TypeError, json.JSONDecodeError) as exc:
+				raise GeminiError(f"Unexpected batch embedding response: {body[:200]}") from exc
+
+		return results
 
 	def ping(self) -> bool:
 		"""Lightweight liveness probe used by the ``/gemini/health`` endpoint."""

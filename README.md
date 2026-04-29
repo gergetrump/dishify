@@ -8,6 +8,17 @@ Dishify is an AI-powered cooking assistant that helps users decide what to cook 
 
 It addresses a common problem: people have food at home but do not know what they can cook without additional shopping. Beyond recommendations, the system explains why recipes are suggested, highlights available and missing ingredients, and proposes substitutions when helpful.
 
+## Documentation
+
+Long-form docs live in [`docs/`](./docs/README.md):
+
+- [`docs/architecture.md`](./docs/architecture.md) — components, env vars, degradation rules.
+- [`docs/running-locally.md`](./docs/running-locally.md) — full local setup (with or without Docker).
+- [`docs/data-loading.md`](./docs/data-loading.md) — dataset, loader script, diet/allergen inference.
+- [`docs/pipeline-overview.md`](./docs/pipeline-overview.md) — what each of the 6 stages does.
+- One file per stage: [`stage-1`](./docs/stage-1-input.md), [`stage-2`](./docs/stage-2-normalization.md), [`stage-3`](./docs/stage-3-hard-filter.md), [`stage-4`](./docs/stage-4-vector-retrieval.md), [`stage-5`](./docs/stage-5-ranking.md), [`stage-6`](./docs/stage-6-llm-reasoning.md).
+- [`docs/gemini-client.md`](./docs/gemini-client.md), [`docs/troubleshooting.md`](./docs/troubleshooting.md).
+
 ## Runtime steps
 
 ### 1) User enters ingredients and profile constraints

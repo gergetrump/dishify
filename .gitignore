@@ -7,3 +7,4 @@ __pycache__/
 .env
 data/dataset_full.csv
 venv
+backend/app/clients/gemini.py

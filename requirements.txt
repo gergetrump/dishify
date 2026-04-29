@@ -4,3 +4,9 @@ ingredient-parser-nlp
 fastapi
 uvicorn[standard]
 pydantic>=2
+sqlalchemy>=2
+qdrant-client>=1.7
+numpy
+tqdm
+python-dotenv
+httpx
