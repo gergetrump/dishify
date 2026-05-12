@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
-    VectorParams,
-    PointStruct,
-    Filter,
     FieldCondition,
+    Filter,
     MatchAny,
+    PointStruct,
+    VectorParams,
 )
 from sentence_transformers import SentenceTransformer
 
-from src.models.recipe import RecipeDataPoint
+from backend.app.models.recipe import RecipeDataPoint
 
 
 class RecipeVectorStore:
@@ -52,8 +51,16 @@ class RecipeVectorStore:
                 ),
             )
 
+        # Create payload index on 'ner' field for filtering.
+        self.client.create_payload_index(
+            collection_name=self.collection_name,
+            field_name="ner",
+            field_schema="keyword",
+        )
 
-    def index_recipes(self, recipes: list[RecipeDataPoint], batch_size: int = 100) -> None:
+    def index_recipes(
+        self, recipes: list[RecipeDataPoint], batch_size: int = 100
+    ) -> None:
         points: list[PointStruct] = []
 
         for idx, recipe in enumerate(recipes):
@@ -90,7 +97,9 @@ class RecipeVectorStore:
 
             points.append(point)
 
-            if len(points) >= batch_size:  # Qdrant only accepts ~32 MB per HTTP request.
+            if (
+                len(points) >= batch_size
+            ):  # Qdrant only accepts ~32 MB per HTTP request.
                 self.client.upsert(
                     collection_name=self.collection_name,
                     points=points,
@@ -102,7 +111,6 @@ class RecipeVectorStore:
                 collection_name=self.collection_name,
                 points=points,
             )
-
 
     def retrieve_recipes(
         self,
@@ -128,6 +136,7 @@ class RecipeVectorStore:
             collection_name=self.collection_name,
             query=query_vector,
             limit=top_k,
+            query_filter=query_filter,
             with_payload=True,
         )
 

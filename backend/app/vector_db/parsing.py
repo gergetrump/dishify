@@ -5,21 +5,14 @@ import csv
 import sys
 from pathlib import Path
 
-from qdrant_client import QdrantClient
-from sentence_transformers import SentenceTransformer
-
-# Allow running this file directly with:
-# python vector_search/services/indexing_csv_smoketest.py
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+# Allow running this file directly.
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.recipe import ParsedIngredient, RecipeDataPoint
-from src.vector_db.recipe_vector_store import RecipeVectorStore
-
+from backend.app.models.recipe import ParsedIngredient, RecipeDataPoint
 
 CSV_PATH = PROJECT_ROOT / "data" / "recipes_smoketest.csv"
-
 
 
 def parse_list(value: str) -> list[str]:
@@ -48,7 +41,7 @@ def parse_quantity(value: str | None) -> float | None:
         return float(value)
     except ValueError:
         return None
-    
+
 
 def parse_normalized_ingredients(value: str) -> list[ParsedIngredient]:
     """
@@ -104,4 +97,3 @@ def load_recipes_from_csv(csv_path: Path) -> list[RecipeDataPoint]:
             recipes.append(recipe)
 
     return recipes
-
