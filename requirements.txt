@@ -6,6 +6,7 @@ uvicorn[standard]
 pydantic>=2
 sqlalchemy>=2
 qdrant-client>=1.7
+sentence-transformers
 psycopg[binary]>=3.1
 numpy
 tqdm

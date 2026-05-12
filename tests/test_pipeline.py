@@ -24,7 +24,7 @@ def client(seed_recipes):
 def _stages_by_name(payload: dict) -> dict[str, dict]:
 	return {s["name"]: s for s in payload["stages"]}
 
-
+ 
 def test_health_returns_recipe_count(client) -> None:
 	body = client.get("/health").json()
 	assert body["status"] == "ok"
