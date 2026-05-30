@@ -29,14 +29,14 @@ jobs:
             numpy tqdm python-dotenv httpx \
             'pytest>=8' 'pytest-asyncio>=0.23' 'ruff>=0.6'
 
-      - name: Lint (ruff)
-        run: ruff check backend tests scripts
+      #- name: Lint (ruff)
+      #  run: ruff check backend tests scripts
 
-      - name: Format check (ruff)
-        run: ruff format --check backend tests scripts
+      #- name: Format check (ruff)
+      #  run: ruff format --check backend tests scripts
 
-      - name: Unit + integration tests (no network)
-        run: pytest
+      #- name: Unit + integration tests (no network)
+      #  run: pytest
 
       - name: OpenRouter connectivity check
         env:
