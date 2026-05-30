@@ -45,3 +45,9 @@ class RecipeDataPoint:
     ner: list[str] = field(
         default_factory=list
     )  # Example: ["sugar", "milk", "margarine", "vanilla"]
+
+    # Dietary or allergen-based exclusions derived from the dataset
+    exclusion_restrictions: list[str] = field(default_factory=list)
+
+    # Count of exclusion restrictions if provided in the dataset
+    exclusion_restrictions_count: int | None = None

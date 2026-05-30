@@ -31,7 +31,7 @@ def run_smoke_test() -> None:
         collection_name=COLLECTION_NAME,
     )
 
-    # Ensure the 'raw_ingredients' field has an index for filtering.
+    # Ensure payload indexes exist for filtering.
     try:
         client.create_payload_index(
             collection_name=COLLECTION_NAME,
@@ -40,6 +40,15 @@ def run_smoke_test() -> None:
         )
     except Exception as e:
         print(f"Note: Could not create index on 'raw_ingredients' field: {e}")
+
+    try:
+        client.create_payload_index(
+            collection_name=COLLECTION_NAME,
+            field_name="exclusion_restrictions",
+            field_schema="keyword",
+        )
+    except Exception as e:
+        print("Note: Could not create index on 'exclusion_restrictions' field: " f"{e}")
 
     query = "something italian with tomato"
 
@@ -67,11 +76,19 @@ def run_smoke_test() -> None:
         print(f"Ingredients: {', '.join(recipe['ingredients'])}")
         print(f"Raw ingredients: {', '.join(recipe.get('raw_ingredients') or [])}")
         print(f"NER: {_format_ner(recipe.get('ner'))}")
+        print(
+            "Exclusion restrictions: "
+            f"{_format_ner(recipe.get('exclusion_restrictions'))}"
+        )
+        print(
+            "Exclusion restrictions count: "
+            f"{recipe.get('exclusion_restrictions_count')}"
+        )
         print(f"Directions: {' '.join(recipe['directions'])}")
         print(f"Link: {recipe['link']}")
         print("-" * 60)
 
-    excluded_allergens = ["nuts", "dairy", "milk", "cheese"]
+    excluded_allergens = ["milk_allergy"]
     print("\n" + "=" * 60)
     print(f"WITH FILTERS: Excluding {excluded_allergens}")
     print("=" * 60)
@@ -90,6 +107,14 @@ def run_smoke_test() -> None:
         print(f"Ingredients: {', '.join(recipe['ingredients'])}")
         print(f"Raw ingredients: {', '.join(recipe.get('raw_ingredients') or [])}")
         print(f"NER: {_format_ner(recipe.get('ner'))}")
+        print(
+            "Exclusion restrictions: "
+            f"{_format_ner(recipe.get('exclusion_restrictions'))}"
+        )
+        print(
+            "Exclusion restrictions count: "
+            f"{recipe.get('exclusion_restrictions_count')}"
+        )
         print(f"Directions: {' '.join(recipe['directions'])}")
         print(f"Link: {recipe['link']}")
         print("-" * 60)

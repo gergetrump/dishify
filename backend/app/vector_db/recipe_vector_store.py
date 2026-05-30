@@ -58,6 +58,13 @@ class RecipeVectorStore:
             field_schema="keyword",
         )
 
+        # Create payload index on 'exclusion_restrictions' for hard filtering.
+        self.client.create_payload_index(
+            collection_name=self.collection_name,
+            field_name="exclusion_restrictions",
+            field_schema="keyword",
+        )
+
     def index_recipes(
         self, recipes: list[RecipeDataPoint], batch_size: int = 100
     ) -> None:
@@ -94,6 +101,8 @@ class RecipeVectorStore:
                     "link": recipe.link,
                     "source": recipe.source,
                     "ner": recipe.ner,
+                    "exclusion_restrictions": recipe.exclusion_restrictions,
+                    "exclusion_restrictions_count": recipe.exclusion_restrictions_count,
                 },
             )
 
@@ -131,7 +140,7 @@ class RecipeVectorStore:
             query_filter = Filter(
                 must_not=[
                     FieldCondition(
-                        key="raw_ingredients",
+                        key="exclusion_restrictions",
                         match=MatchAny(any=excluded_norm),
                     )
                 ]
@@ -159,6 +168,12 @@ class RecipeVectorStore:
                     "link": result.payload.get("link"),
                     "source": result.payload.get("source"),
                     "ner": result.payload.get("ner"),
+                    "exclusion_restrictions": result.payload.get(
+                        "exclusion_restrictions"
+                    ),
+                    "exclusion_restrictions_count": result.payload.get(
+                        "exclusion_restrictions_count"
+                    ),
                 }
             )
 

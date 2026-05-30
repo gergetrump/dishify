@@ -43,6 +43,21 @@ def parse_quantity(value: str | None) -> float | None:
         return None
 
 
+def parse_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+
+    value = value.strip()
+
+    if value == "":
+        return None
+
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
 def parse_normalized_ingredients(value: str) -> list[ParsedIngredient]:
     """
     Parses CSV string values like:
@@ -90,13 +105,17 @@ def load_recipes_from_csv(csv_path: Path) -> list[RecipeDataPoint]:
             if not raw_ingredients:
                 raw_ingredients = list(ingredients)
             directions = parse_list(row["directions"])
-            ner = parse_list(row["NER"])
+            ner = parse_list(row.get("NER") or "")
             parsed_ingredients = parse_normalized_ingredients(
                 row.get("normalized_ingredients") or ""
             )
             normalized_ingredients = [
                 ingredient.name for ingredient in parsed_ingredients if ingredient.name
             ]
+            exclusion_restrictions = parse_list(row.get("exclusion_restrictions") or "")
+            exclusion_restrictions_count = parse_int(
+                row.get("exclusion_restrictions_count")
+            )
 
             recipe = RecipeDataPoint(
                 title=row["title"],
@@ -108,6 +127,8 @@ def load_recipes_from_csv(csv_path: Path) -> list[RecipeDataPoint]:
                 link=row["link"],
                 source=row["source"],
                 ner=ner,
+                exclusion_restrictions=exclusion_restrictions,
+                exclusion_restrictions_count=exclusion_restrictions_count,
             )
 
             recipes.append(recipe)
