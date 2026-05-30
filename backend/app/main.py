@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 
 load_dotenv()  # picks up .env at process start so exports aren't required
 
+from .api.routes import recipe as recipe_routes
 from .clients.gemini import GeminiClient, GeminiError, get_default_client
 from .db import count as db_count
 from .db import create_all
@@ -28,7 +29,6 @@ from .observability import RequestIdMiddleware, configure_logging
 from .services.normalization import IngredientNormalizer
 from .services.pipeline import run_pipeline
 from .vectorstore import VectorStoreError, get_default_vector_store
-from .api.routes import recipe as recipe_routes
 
 configure_logging()
 logger = logging.getLogger(__name__)
