@@ -4,7 +4,9 @@ __pycache__/
 *.pyc
 .DS_Store
 **/.DS_Store
-.env
-data/dataset_full.csv
+.env.secret
+data/dataset_full*.csv
+data/backup/*
 venv
 backend/app/clients/gemini.py
+.claude/*
