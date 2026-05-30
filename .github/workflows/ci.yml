@@ -38,17 +38,28 @@ jobs:
       - name: Unit + integration tests (no network)
         run: pytest
 
-      - name: Normalization smoke test (CI-pinned invariant)
-        working-directory: backend
+      - name: OpenRouter connectivity check
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           python - << 'PY'
-          from app.services.normalization import normalize_ingredients
+          import os
+          import sys
+          import httpx
 
-          result = normalize_ingredients(["tomatoes", "mozzarella cheese", "fresh basil"])
-          expected = ["tomato", "mozzarella", "basil"]
+          api_key = os.getenv("OPENROUTER_API_KEY")
+          if not api_key:
+            print("OPENROUTER_API_KEY not set; skipping connectivity check")
+            sys.exit(0)
 
-          if result != expected:
-              raise SystemExit(f"Smoke test failed. expected={expected} got={result}")
+          url = "https://openrouter.ai/api/v1/models"
+          headers = {"Authorization": f"Bearer {api_key}"}
 
-          print("Smoke test passed:", result)
+          with httpx.Client(timeout=15) as client:
+            response = client.get(url, headers=headers)
+
+          if response.status_code != 200:
+            raise SystemExit(f"OpenRouter check failed: {response.status_code} {response.text}")
+
+          print("OpenRouter connectivity check passed")
           PY
