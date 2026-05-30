@@ -1,116 +1,72 @@
 """Dishify backend API.
 
-Exposes the README pipeline:
-        1. user input -> 2. normalize -> 3. hard filter (Postgres)
-        -> 4. vector retrieval (Qdrant) -> 5. rule-based scoring -> 6. LLM reasoning
-
-Optional dependencies (Gemini, Postgres, Qdrant) are picked up from env vars
-and stages degrade gracefully when they aren't available -- see
-``services.pipeline`` for the orchestration.
+Provides a semantic search route plus Keycloak-backed user preferences.
 """
 
 from __future__ import annotations
 
-import logging
+import os
 from contextlib import asynccontextmanager
+from typing import List
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 load_dotenv()  # picks up .env at process start so exports aren't required
 
-from .clients.gemini import GeminiClient, GeminiError, get_default_client
-from .db import count as db_count
-from .db import create_all
+from .auth import get_current_user_id
+from .db import create_all, get_session
+from .db.repository import (
+    allowed_recipe_ids_by_profile,
+    get_user_preferences,
+    set_user_preferences,
+)
 from .observability import RequestIdMiddleware, configure_logging
-from .services.normalization import IngredientNormalizer
-from .services.pipeline import run_pipeline
-from .vectorstore import VectorStoreError, get_default_vector_store
-from .api.routes import recipe as recipe_routes
+from .vector_db.recipe_vector_store import RecipeVectorStore
 
 configure_logging()
-logger = logging.getLogger(__name__)
 
 
-class Profile(BaseModel):
-    diet: str | None = Field(default=None, description="e.g. 'vegetarian', 'vegan'")
-    allergies: list[str] = Field(default_factory=list)
+class SearchRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+    top_k: int = Field(default=5, ge=1, le=50)
+    excluded_ingredients: List[str] | None = None
 
 
-class RecommendRequest(BaseModel):
-    ingredients: list[str] = Field(..., min_length=1)
-    profile: Profile = Field(default_factory=Profile)
-    top_k: int = Field(default=5, ge=1, le=20)
-
-
-class StageReportModel(BaseModel):
-    name: str
-    status: str
-    detail: str | None = None
-    latency_ms: float | None = None
-
-
-class RecommendationModel(BaseModel):
-    recipe_id: int
-    rank: int
-    title: str = ""
+class SearchHitModel(BaseModel):
+    id: int
+    score: float
+    title: str | None = None
+    ingredients: List[str] | None = None
+    directions: List[str] | None = None
     link: str | None = None
     source: str | None = None
-    ingredients: list[str] = Field(default_factory=list)
-    directions: list[str] = Field(default_factory=list)
-    available_ingredients: list[str] = Field(default_factory=list)
-    missing_ingredients: list[str] = Field(default_factory=list)
-    substitutions: list[str] = Field(default_factory=list)
-    reason: str = ""
-    score: float = 0.0
-    ingredient_match: float = 0.0
-    vector_similarity: float = 0.0
+    ner: List[str] | None = None
 
 
-class RecommendResponse(BaseModel):
-    normalized_ingredients: list[str]
-    profile: Profile
-    candidate_pool_size: int
-    retrieved_count: int
-    scored_count: int
-    recommendations: list[RecommendationModel] = Field(default_factory=list)
-    stages: list[StageReportModel]
+class UserPreferences(BaseModel):
+    excluded_ingredients: List[str] = Field(default_factory=list)
+    diet: str | None = None
+    allergies: List[str] = Field(default_factory=list)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup/shutdown hooks. Idempotent and never raises -- failures are
-    logged so /health can still serve."""
+    """Startup/shutdown hooks. Idempotent and never raises."""
 
-    try:
-        create_all()
-    except Exception:  # pragma: no cover -- defensive
-        logger.exception("DB schema creation failed; /recommend will surface it")
-
-    app.state.vector_store = None
-    try:
-        app.state.vector_store = get_default_vector_store()
-        logger.info(
-            "vector_store ready: %s",
-            type(app.state.vector_store).__name__,
-        )
-    except VectorStoreError as exc:
-        logger.warning("vector_store unavailable: %s", exc)
-
+    create_all()
     yield
-
-    # nothing to dispose right now
 
 
 app = FastAPI(
     title="Dishify API",
     version="0.3.0",
-    description="AI-powered recipe recommendations from ingredients you already have.",
+    description="AI-powered recipe search from a single NLP query.",
     lifespan=lifespan,
 )
-
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -120,139 +76,106 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include recipe API routes (vector DB helpers / search)
-app.include_router(recipe_routes.router)
 
-
-@app.get("/health", tags=["meta"])
-def health() -> dict:
-    return {
-        "status": "ok",
-        "service": "dishify-api",
-        "recipe_count": _db_count_safe(),
-        "vector_store": _vector_store_name(app),
-    }
-
-
-def _db_count_safe() -> int | None:
-    from .db import SessionLocal
+@app.post("/recipes/search", response_model=List[SearchHitModel], tags=["recipes"])
+def search_recipes(
+    payload: SearchRequest,
+    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Search recipes by semantic similarity using the configured vector backend."""
 
     try:
-        with SessionLocal() as s:
-            return db_count(s)
-    except Exception:
-        return None
-
-
-def _vector_store_name(app: FastAPI) -> str | None:
-    store = getattr(app.state, "vector_store", None)
-    return type(store).__name__ if store is not None else None
-
-
-@app.get("/gemini/health", tags=["meta"])
-def gemini_health() -> dict:
-    """Verify the Gemini connection is configured and reachable."""
-
-    client = get_default_client()
-    if not client.is_configured:
+        from sentence_transformers import SentenceTransformer
+    except Exception as exc:  # pragma: no cover
         raise HTTPException(
-            status_code=503,
-            detail="GEMINI_API_KEY is not set on the server",
+            status_code=503, detail=f"Embedding model unavailable: {exc}"
         )
 
-    try:
-        client.generate_text("ping", temperature=0.0)
-    except GeminiError as exc:
-        raise HTTPException(
-            status_code=502, detail=f"Gemini call failed: {exc}"
-        ) from exc
-
-    return {"status": "ok", "model": client.model}
-
-
-@app.post("/normalize", tags=["pipeline"])
-def normalize(payload: RecommendRequest) -> dict:
-    """Stage 2 only: normalize a list of raw ingredient strings."""
-
-    normalizer = IngredientNormalizer()
-    return {"normalized_ingredients": normalizer.normalize(payload.ingredients)}
-
-
-@app.post("/recommend", response_model=RecommendResponse, tags=["pipeline"])
-def recommend(request: Request, payload: RecommendRequest) -> RecommendResponse:
-    """Run the full pipeline."""
-
-    report = run_pipeline(
-        payload.ingredients,
-        payload.profile.model_dump(),
-        top_k_explanation=payload.top_k,
-        vector_store=getattr(request.app.state, "vector_store", None),
+    embedding_model = SentenceTransformer(
+        os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
     )
+    query_vector = embedding_model.encode(payload.query).tolist()
 
-    return RecommendResponse(
-        normalized_ingredients=report.normalized_ingredients,
-        profile=payload.profile,
-        candidate_pool_size=report.candidate_pool_size,
-        retrieved_count=report.retrieved_count,
-        scored_count=report.scored_count,
-        recommendations=[
-            RecommendationModel(
-                recipe_id=r.recipe_id,
-                rank=r.rank,
-                title=r.title,
-                link=r.link,
-                source=r.source,
-                ingredients=r.ingredients,
-                directions=r.directions,
-                available_ingredients=r.available_ingredients,
-                missing_ingredients=r.missing_ingredients,
-                substitutions=r.substitutions,
-                reason=r.reason,
-                score=r.score,
-                ingredient_match=r.ingredient_match,
-                vector_similarity=r.vector_similarity,
+    user_prefs = get_user_preferences(session, user_id)
+    request_exclusions = payload.excluded_ingredients or []
+    merged_exclusions = [
+        item
+        for item in [*user_prefs["excluded_ingredients"], *request_exclusions]
+        if isinstance(item, str) and item.strip()
+    ]
+
+    allowed_ids = allowed_recipe_ids_by_profile(
+        session,
+        diet=user_prefs["diet"],
+        allergies=user_prefs["allergies"],
+        excluded_ingredients=merged_exclusions,
+    )
+    if allowed_ids == []:
+        return []
+
+    qdrant_url = os.getenv("QDRANT_URL", "").strip()
+    if qdrant_url:
+        try:
+            from qdrant_client import QdrantClient
+        except Exception as exc:  # pragma: no cover
+            raise HTTPException(
+                status_code=503, detail=f"Qdrant client unavailable: {exc}"
             )
-            for r in report.recommendations
-        ],
-        stages=[
-            StageReportModel(
-                name=s.name,
-                status=s.status,
-                detail=s.detail,
-                latency_ms=s.latency_ms,
-            )
-            for s in report.stages
-        ],
+
+        client = QdrantClient(url=qdrant_url, api_key=os.getenv("QDRANT_API_KEY"))
+        store = RecipeVectorStore(
+            qdrant_client=client,
+            embedding_model=embedding_model,
+            collection_name="recipes_10000",
+        )
+        results = store.retrieve_recipes(
+            payload.query,
+            top_k=payload.top_k,
+            excluded_ingredients=merged_exclusions or None,
+        )
+        if allowed_ids is not None:
+            allowed_set = {int(item) for item in allowed_ids}
+            results = [r for r in results if int(r.get("id")) in allowed_set]
+        return [SearchHitModel(**r) for r in results]
+
+    raise HTTPException(
+        status_code=503,
+        detail="QDRANT_URL is not set; no vector search backend is configured",
     )
 
 
-class GeminiPromptRequest(BaseModel):
-    prompt: str = Field(..., min_length=1)
-    json_mode: bool = False
-    temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+@app.get("/me/preferences", response_model=UserPreferences, tags=["users"])
+def get_preferences(
+    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    user_prefs = get_user_preferences(session, user_id)
+    return UserPreferences(
+        excluded_ingredients=user_prefs["excluded_ingredients"],
+        diet=user_prefs["diet"],
+        allergies=user_prefs["allergies"],
+    )
 
 
-@app.post("/gemini/generate", tags=["gemini"])
-def gemini_generate(payload: GeminiPromptRequest) -> dict:
-    """Thin passthrough useful for debugging the Gemini connection end-to-end."""
+@app.put("/me/preferences", response_model=UserPreferences, tags=["users"])
+def set_preferences(
+    payload: UserPreferences,
+    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    values = set_user_preferences(
+        session,
+        user_id=user_id,
+        excluded_ingredients=payload.excluded_ingredients,
+        diet=payload.diet,
+        allergies=payload.allergies,
+    )
+    return UserPreferences(
+        excluded_ingredients=values["excluded_ingredients"],
+        diet=values["diet"],
+        allergies=values["allergies"],
+    )
 
-    client: GeminiClient = get_default_client()
-    if not client.is_configured:
-        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not set")
 
-    try:
-        if payload.json_mode:
-            return {
-                "model": client.model,
-                "data": client.generate_json(
-                    payload.prompt, temperature=payload.temperature
-                ),
-            }
-        return {
-            "model": client.model,
-            "text": client.generate_text(
-                payload.prompt, temperature=payload.temperature
-            ),
-        }
-    except GeminiError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+# uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000

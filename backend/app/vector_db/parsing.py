@@ -77,17 +77,33 @@ def load_recipes_from_csv(csv_path: Path) -> list[RecipeDataPoint]:
         reader = csv.DictReader(file)
 
         for row in reader:
-            ingredients = parse_list(row["ingredients"])
+            ingredients = [
+                str(item).strip()
+                for item in parse_list(row["ingredients"])
+                if item is not None and str(item).strip()
+            ]
+            raw_ingredients = [
+                str(item).strip()
+                for item in parse_list(row.get("raw_ingredients") or "")
+                if item is not None and str(item).strip()
+            ]
+            if not raw_ingredients:
+                raw_ingredients = list(ingredients)
             directions = parse_list(row["directions"])
             ner = parse_list(row["NER"])
             parsed_ingredients = parse_normalized_ingredients(
-                row["normalized_ingredients"]
+                row.get("normalized_ingredients") or ""
             )
+            normalized_ingredients = [
+                ingredient.name for ingredient in parsed_ingredients if ingredient.name
+            ]
 
             recipe = RecipeDataPoint(
                 title=row["title"],
                 ingredients=ingredients,
+                raw_ingredients=raw_ingredients,
                 parsed_ingredients=parsed_ingredients,
+                normalized_ingredients=normalized_ingredients,
                 directions=directions,
                 link=row["link"],
                 source=row["source"],

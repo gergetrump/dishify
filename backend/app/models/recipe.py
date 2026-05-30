@@ -24,8 +24,14 @@ class RecipeDataPoint:
         default_factory=list
     )  # Example: ["1 c. sugar", "1/2 c. milk", "1 stick margarine"]
 
+    # Raw ingredient strings (verbatim) used for filtering and payloads
+    raw_ingredients: list[str] = field(default_factory=list)
+
     # Structured ingredient representation for filtering, matching, quantities, units
     parsed_ingredients: list[ParsedIngredient] = field(default_factory=list)
+
+    # Normalized ingredient names derived from parsed_ingredients (token-free strings)
+    normalized_ingredients: list[str] = field(default_factory=list)
 
     directions: list[str] = field(
         default_factory=list

@@ -51,10 +51,10 @@ class RecipeVectorStore:
                 ),
             )
 
-        # Create payload index on 'ner' field for filtering.
+        # Create payload index on 'raw_ingredients' field for filtering.
         self.client.create_payload_index(
             collection_name=self.collection_name,
-            field_name="ner",
+            field_name="raw_ingredients",
             field_schema="keyword",
         )
 
@@ -66,7 +66,8 @@ class RecipeVectorStore:
         for idx, recipe in enumerate(recipes):
             text_for_embedding = f"""
             Title: {recipe.title}
-            Ingredients: {", ".join(recipe.ingredients)}
+            Ingredients: {", ".join(str(item) for item in recipe.ingredients)}
+            Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
             Directions: {" ".join(recipe.directions)}
             Source: {recipe.source}
             """
@@ -88,6 +89,7 @@ class RecipeVectorStore:
                         }
                         for ingredient in recipe.parsed_ingredients
                     ],
+                    "raw_ingredients": recipe.raw_ingredients,
                     "directions": recipe.directions,
                     "link": recipe.link,
                     "source": recipe.source,
@@ -121,13 +123,16 @@ class RecipeVectorStore:
         query_vector = self.embedding_model.encode(query).tolist()
 
         query_filter = None
+        excluded_norm = [
+            item.strip().lower() for item in (excluded_ingredients or []) if item
+        ]
 
-        if excluded_ingredients:
+        if excluded_norm:
             query_filter = Filter(
                 must_not=[
                     FieldCondition(
-                        key="ner",
-                        match=MatchAny(any=excluded_ingredients),
+                        key="raw_ingredients",
+                        match=MatchAny(any=excluded_norm),
                     )
                 ]
             )
@@ -149,6 +154,7 @@ class RecipeVectorStore:
                     "score": result.score,
                     "title": result.payload.get("title"),
                     "ingredients": result.payload.get("ingredients"),
+                    "raw_ingredients": result.payload.get("raw_ingredients"),
                     "directions": result.payload.get("directions"),
                     "link": result.payload.get("link"),
                     "source": result.payload.get("source"),
@@ -167,6 +173,6 @@ class RecipeVectorStore:
         return f"""
                 Title: {recipe.title}
                 Ingredients: {", ".join(recipe.ingredients)}
-                Normalized ingredients: {", ".join(recipe.ner)}
+                Raw ingredients: {", ".join(recipe.raw_ingredients)}
                 Directions: {" ".join(recipe.directions)}
                 """.strip()
