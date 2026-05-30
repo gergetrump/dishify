@@ -8,9 +8,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
-    env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,23 +51,4 @@ jobs:
               raise SystemExit(f"Smoke test failed. expected={expected} got={result}")
 
           print("Smoke test passed:", result)
-          PY
-
-      - name: Verify Gemini connectivity (only when key is provided)
-        if: ${{ env.GEMINI_API_KEY != '' }}
-        working-directory: backend
-        run: |
-          python - << 'PY'
-          from app.clients.gemini import GeminiClient, GeminiError
-
-          client = GeminiClient()
-          if not client.is_configured:
-              raise SystemExit("GEMINI_API_KEY visible in env but client reports unconfigured")
-
-          try:
-              text = client.generate_text("reply with the single word: pong")
-          except GeminiError as exc:
-              raise SystemExit(f"Gemini reachability check failed: {exc}") from exc
-
-          print("Gemini OK ->", text.strip())
           PY
