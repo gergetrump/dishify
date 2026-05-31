@@ -51,6 +51,16 @@ services:
       # Persist the embedding cache + .npz snapshot between runs.
       - ./data:/app/data
 
+  keycloak: 
+    image: quay.io/keycloak/keycloak:26.6.2
+    container_name: keycloak 
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin 
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin 
+    command: start-dev
+    ports: 
+      - 8080:8080
+
 volumes:
   postgres_data:
   qdrant_data:

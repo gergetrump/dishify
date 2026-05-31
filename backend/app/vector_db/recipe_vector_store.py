@@ -206,3 +206,36 @@ class RecipeVectorStore:
             )
 
         return recipes
+
+    @staticmethod
+    def print_recipes(results: list[RetrievedRecipe], title: str) -> None:
+        print("\n" + "=" * 60)
+        print(title)
+        print("=" * 60)
+        print(f"Retrieved {len(results)} recipes:\n")
+
+        def _format_ner(value: object) -> str:
+            if isinstance(value, list):
+                return ", ".join(str(item) for item in value)
+            if value is None:
+                return ""
+            return str(value)
+
+        for rank, recipe in enumerate(results, start=1):
+            print(f"#{rank}")
+            print(f"Score: {recipe.score}")
+            print(f"Title: {recipe.title}")
+            print(f"Ingredients: {', '.join(recipe.ingredients or [])}")
+            print(f"Raw ingredients: {', '.join(recipe.raw_ingredients or [])}")
+            print(f"NER: {_format_ner(recipe.ner)}")
+            print(
+                "Exclusion restrictions: "
+                f"{_format_ner(recipe.exclusion_restrictions)}"
+            )
+            print(
+                "Exclusion restrictions count: "
+                f"{recipe.exclusion_restrictions_count}"
+            )
+            print(f"Directions: {' '.join(recipe.directions or [])}")
+            print(f"Link: {recipe.link}")
+            print("-" * 60)

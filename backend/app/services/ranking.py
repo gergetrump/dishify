@@ -50,7 +50,8 @@ def score_recipes_by_inventory(
     recipes: list[RetrievedRecipe],
     available_ingredients: Iterable[object] | None,
     *,
-    weight: float = 0.2,
+    ingredient_weight: float = 0.3,
+    semantic_weight: float = 0.7,
 ) -> list[RetrievedRecipe]:
     """Re-rank recipes using available ingredients with optional qty/unit checks.
 
@@ -58,14 +59,23 @@ def score_recipes_by_inventory(
     - inventory_score: float in [0, 1]
     - inventory_matched: list[str]
     - inventory_missing: list[str]
+    - score: final_score = semantic_weight * semantic_score + ingredient_weight * inventory_score
     """
 
     available = _normalize_available_ingredients(available_ingredients)
     if not available:
         return recipes
 
+    total_weight = semantic_weight + ingredient_weight
+    if total_weight <= 0:
+        return recipes
+
+    semantic_weight /= total_weight
+    ingredient_weight /= total_weight
+
     scored: list[RetrievedRecipe] = []
     for recipe in recipes:
+        semantic_score = float(recipe.score or 0)
         parsed = recipe.parsed_ingredients or []
         recipe_names: list[str] = []
         full_matches = 0
@@ -105,13 +115,16 @@ def score_recipes_by_inventory(
 
         matched_names = [n for n in recipe_names if n in available]
         missing_names = [n for n in recipe_names if n not in available]
+        final_score = (semantic_weight * semantic_score) + (
+            ingredient_weight * inventory_score
+        )
 
-        updated = recipe.copy(
+        updated = recipe.model_copy(
             update={
                 "inventory_score": inventory_score,
                 "inventory_matched": matched_names,
                 "inventory_missing": missing_names,
-                "score": float(recipe.score or 0) + weight * inventory_score,
+                "score": final_score,
             }
         )
         scored.append(updated)

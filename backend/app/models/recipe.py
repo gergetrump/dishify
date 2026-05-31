@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+# Parsed ingredient used for structured ingredient data.
 @dataclass(slots=True)
 class ParsedIngredient:
     """Structured representation of one ingredient."""
@@ -13,6 +14,7 @@ class ParsedIngredient:
     raw_text: str = ""  # Example: "1 c. sugar"
 
 
+# Dataset recipe payload used during indexing and filtering.
 @dataclass(slots=True)
 class RecipeDataPoint:
     """Represents one row from `data/full_dataset.csv`."""

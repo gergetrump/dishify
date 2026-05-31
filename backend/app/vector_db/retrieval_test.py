@@ -52,64 +52,22 @@ def run_smoke_test() -> None:
 
     query = "something italian with tomato"
 
-    print("\n" + "=" * 60)
-    print("WITHOUT FILTERS")
-    print("=" * 60)
     results = recipe_store.retrieve_recipes(
         query=query,
     )
-
     print(f"\nQuery: {query}")
-    print(f"Retrieved {len(results)} recipes:\n")
-
-    def _format_ner(value: object) -> str:
-        if isinstance(value, list):
-            return ", ".join(str(item) for item in value)
-        if value is None:
-            return ""
-        return str(value)
-
-    for rank, recipe in enumerate(results, start=1):
-        print(f"#{rank}")
-        print(f"Score: {recipe.score}")
-        print(f"Title: {recipe.title}")
-        print(f"Ingredients: {', '.join(recipe.ingredients or [])}")
-        print(f"Raw ingredients: {', '.join(recipe.raw_ingredients or [])}")
-        print(f"NER: {_format_ner(recipe.ner)}")
-        print(
-            "Exclusion restrictions: " f"{_format_ner(recipe.exclusion_restrictions)}"
-        )
-        print("Exclusion restrictions count: " f"{recipe.exclusion_restrictions_count}")
-        print(f"Directions: {' '.join(recipe.directions or [])}")
-        print(f"Link: {recipe.link}")
-        print("-" * 60)
+    RecipeVectorStore.print_recipes(results, "WITHOUT FILTERS")
 
     excluded_ingredients = ["milk_allergy"]
-    print("\n" + "=" * 60)
-    print(f"WITH FILTERS: Excluding {excluded_ingredients}")
-    print("=" * 60)
     filtered_results = recipe_store.retrieve_recipes(
         query=query,
         excluded_ingredients=excluded_ingredients,
     )
-
     print(f"\nQuery: {query}")
-    print(f"Retrieved {len(filtered_results)} recipes (filtered):\n")
-
-    for rank, recipe in enumerate(filtered_results, start=1):
-        print(f"#{rank}")
-        print(f"Score: {recipe.score}")
-        print(f"Title: {recipe.title}")
-        print(f"Ingredients: {', '.join(recipe.ingredients or [])}")
-        print(f"Raw ingredients: {', '.join(recipe.raw_ingredients or [])}")
-        print(f"NER: {_format_ner(recipe.ner)}")
-        print(
-            "Exclusion restrictions: " f"{_format_ner(recipe.exclusion_restrictions)}"
-        )
-        print("Exclusion restrictions count: " f"{recipe.exclusion_restrictions_count}")
-        print(f"Directions: {' '.join(recipe.directions or [])}")
-        print(f"Link: {recipe.link}")
-        print("-" * 60)
+    RecipeVectorStore.print_recipes(
+        filtered_results,
+        f"WITH FILTERS: Excluding {excluded_ingredients}",
+    )
 
 
 if __name__ == "__main__":
