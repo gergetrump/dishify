@@ -11,7 +11,7 @@ from qdrant_client.models import (
 )
 from sentence_transformers import SentenceTransformer
 
-from backend.app.models.recipe import RecipeDataPoint
+from services.app.models.recipe import RecipeDataPoint
 
 
 class RecipeVectorStore:

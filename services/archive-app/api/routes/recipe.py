@@ -71,7 +71,7 @@ def search_recipes(request: Request, payload: SearchRequest):
     qdrant_url = os.getenv("QDRANT_URL", "").strip()
     if qdrant_url:
         try:
-            from backend.app.vector_db.recipe_vector_store import RecipeVectorStore
+            from services.app.vector_db.recipe_vector_store import RecipeVectorStore
             from qdrant_client import QdrantClient
         except Exception as exc:  # pragma: no cover
             raise HTTPException(

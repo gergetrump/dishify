@@ -33,9 +33,9 @@ def annotate_row(ingredient_names: list[str], rules: dict[str, list[str]]) -> li
 
 
 def main():
-    csv_path = Path("../data/dataset_full_normalized.csv")
-    out_path = Path("../data/dataset_full_annotated.csv")
-    rules_path = Path("../data/restriction_rules.json")
+    csv_path = Path("./data/dataset_full_normalized.csv")
+    out_path = Path("./data/dataset_full_annotated.csv")
+    rules_path = Path("./data/restriction_rules.json")
     chunk_size = 10_000
 
     # Load restriction rules from JSON.
