@@ -11,7 +11,12 @@ from qdrant_client.models import (
 )
 from sentence_transformers import SentenceTransformer
 
+<<<<<<< HEAD:backend/app/vector_db/recipe_vector_store.py
+from backend.app.models.recipe import RecipeDataPoint
+from backend.app.models.retrieval import RetrievedRecipe
+=======
 from services.app.models.recipe import RecipeDataPoint
+>>>>>>> main:services/archive-app/vector_db/recipe_vector_store.py
 
 
 class RecipeVectorStore:
@@ -51,10 +56,17 @@ class RecipeVectorStore:
                 ),
             )
 
-        # Create payload index on 'ner' field for filtering.
+        # Create payload index on 'raw_ingredients' field for filtering.
         self.client.create_payload_index(
             collection_name=self.collection_name,
-            field_name="ner",
+            field_name="raw_ingredients",
+            field_schema="keyword",
+        )
+
+        # Create payload index on 'exclusion_restrictions' for hard filtering.
+        self.client.create_payload_index(
+            collection_name=self.collection_name,
+            field_name="exclusion_restrictions",
             field_schema="keyword",
         )
 
@@ -66,10 +78,9 @@ class RecipeVectorStore:
         for idx, recipe in enumerate(recipes):
             text_for_embedding = f"""
             Title: {recipe.title}
-            Ingredients: {", ".join(recipe.ingredients)}
-            Directions: {" ".join(recipe.directions)}
-            Source: {recipe.source}
-            """
+            Title: {recipe.title}
+            Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
+            """  # more weight on the title of the recipe
 
             vector = self.embedding_model.encode(text_for_embedding).tolist()
 
@@ -88,10 +99,13 @@ class RecipeVectorStore:
                         }
                         for ingredient in recipe.parsed_ingredients
                     ],
+                    "raw_ingredients": recipe.raw_ingredients,
                     "directions": recipe.directions,
                     "link": recipe.link,
                     "source": recipe.source,
                     "ner": recipe.ner,
+                    "exclusion_restrictions": recipe.exclusion_restrictions,
+                    "exclusion_restrictions_count": recipe.exclusion_restrictions_count,
                 },
             )
 
@@ -112,22 +126,55 @@ class RecipeVectorStore:
                 points=points,
             )
 
+    @staticmethod
+    def _normalize_ingredient_names(values: list[object] | None) -> list[str]:
+        if not values:
+            return []
+
+        names: list[str] = []
+        for item in values:
+            if item is None:
+                continue
+            if isinstance(item, str):
+                name = item
+            elif isinstance(item, dict):
+                name = item.get("name") or item.get("raw_text") or ""
+            else:
+                name = getattr(item, "name", "") or getattr(item, "raw_text", "")
+            name = str(name).strip()
+            if name:
+                names.append(name)
+        return names
+
+    def build_query_text(
+        self, query: str, available_ingredients: list[object] | None = None
+    ) -> str:
+        names = self._normalize_ingredient_names(available_ingredients)
+        if not names:
+            return f"Query: {query}"
+        return f"Query: {query}\nAvailable ingredients: {', '.join(names)}"
+
     def retrieve_recipes(
         self,
         query: str,
         top_k: int = 5,
         excluded_ingredients: list[str] | None = None,
-    ) -> list[dict]:
-        query_vector = self.embedding_model.encode(query).tolist()
+        available_ingredients: list[object] | None = None,
+    ) -> list[RetrievedRecipe]:
+        query_text = self.build_query_text(query, available_ingredients)
+        query_vector = self.embedding_model.encode(query_text).tolist()
 
         query_filter = None
+        excluded_norm = [
+            item.strip().lower() for item in (excluded_ingredients or []) if item
+        ]
 
-        if excluded_ingredients:
+        if excluded_norm:
             query_filter = Filter(
                 must_not=[
                     FieldCondition(
-                        key="ner",
-                        match=MatchAny(any=excluded_ingredients),
+                        key="exclusion_restrictions",
+                        match=MatchAny(any=excluded_norm),
                     )
                 ]
             )
@@ -140,33 +187,59 @@ class RecipeVectorStore:
             with_payload=True,
         )
 
-        recipes: list[dict] = []
+        recipes: list[RetrievedRecipe] = []
 
         for result in response.points:
             recipes.append(
-                {
-                    "id": result.id,
-                    "score": result.score,
-                    "title": result.payload.get("title"),
-                    "ingredients": result.payload.get("ingredients"),
-                    "directions": result.payload.get("directions"),
-                    "link": result.payload.get("link"),
-                    "source": result.payload.get("source"),
-                    "ner": result.payload.get("ner"),
-                }
+                RetrievedRecipe(
+                    id=int(result.id),
+                    score=float(result.score or 0),
+                    title=result.payload.get("title"),
+                    ingredients=result.payload.get("ingredients"),
+                    raw_ingredients=result.payload.get("raw_ingredients"),
+                    parsed_ingredients=result.payload.get("parsed_ingredients") or [],
+                    directions=result.payload.get("directions"),
+                    link=result.payload.get("link"),
+                    source=result.payload.get("source"),
+                    ner=result.payload.get("ner"),
+                    exclusion_restrictions=result.payload.get("exclusion_restrictions"),
+                    exclusion_restrictions_count=result.payload.get(
+                        "exclusion_restrictions_count"
+                    ),
+                )
             )
 
         return recipes
 
-    def _recipe_to_embedding_text(self, recipe: RecipeDataPoint) -> str:
-        """
-        Converts a RecipeDataPoint into text used for semantic embedding.
-        This text is not necessarily shown to the user.
-        """
+    @staticmethod
+    def print_recipes(results: list[RetrievedRecipe], title: str) -> None:
+        print("\n" + "=" * 60)
+        print(title)
+        print("=" * 60)
+        print(f"Retrieved {len(results)} recipes:\n")
 
-        return f"""
-                Title: {recipe.title}
-                Ingredients: {", ".join(recipe.ingredients)}
-                Normalized ingredients: {", ".join(recipe.ner)}
-                Directions: {" ".join(recipe.directions)}
-                """.strip()
+        def _format_ner(value: object) -> str:
+            if isinstance(value, list):
+                return ", ".join(str(item) for item in value)
+            if value is None:
+                return ""
+            return str(value)
+
+        for rank, recipe in enumerate(results, start=1):
+            print(f"#{rank}")
+            print(f"Score: {recipe.score}")
+            print(f"Title: {recipe.title}")
+            print(f"Ingredients: {', '.join(recipe.ingredients or [])}")
+            print(f"Raw ingredients: {', '.join(recipe.raw_ingredients or [])}")
+            print(f"NER: {_format_ner(recipe.ner)}")
+            print(
+                "Exclusion restrictions: "
+                f"{_format_ner(recipe.exclusion_restrictions)}"
+            )
+            print(
+                "Exclusion restrictions count: "
+                f"{recipe.exclusion_restrictions_count}"
+            )
+            print(f"Directions: {' '.join(recipe.directions or [])}")
+            print(f"Link: {recipe.link}")
+            print("-" * 60)

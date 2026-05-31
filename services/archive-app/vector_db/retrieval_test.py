@@ -31,59 +31,43 @@ def run_smoke_test() -> None:
         collection_name=COLLECTION_NAME,
     )
 
-    # Ensure the 'ner' field has an index for filtering.
+    # Ensure payload indexes exist for filtering.
     try:
         client.create_payload_index(
             collection_name=COLLECTION_NAME,
-            field_name="ner",
+            field_name="raw_ingredients",
             field_schema="keyword",
         )
     except Exception as e:
-        print(f"Note: Could not create index on 'ner' field: {e}")
+        print(f"Note: Could not create index on 'raw_ingredients' field: {e}")
 
-    query = "quick meal with tomato and cheese"
+    try:
+        client.create_payload_index(
+            collection_name=COLLECTION_NAME,
+            field_name="exclusion_restrictions",
+            field_schema="keyword",
+        )
+    except Exception as e:
+        print("Note: Could not create index on 'exclusion_restrictions' field: " f"{e}")
 
-    print("\n" + "=" * 60)
-    print("WITHOUT FILTERS")
-    print("=" * 60)
+    query = "something italian with tomato"
+
     results = recipe_store.retrieve_recipes(
         query=query,
-        top_k=10,
     )
-
     print(f"\nQuery: {query}")
-    print(f"Retrieved {len(results)} recipes:\n")
+    RecipeVectorStore.print_recipes(results, "WITHOUT FILTERS")
 
-    for rank, recipe in enumerate(results, start=1):
-        print(f"#{rank}")
-        print(f"Score: {recipe['score']}")
-        print(f"Title: {recipe['title']}")
-        print(f"Ingredients: {', '.join(recipe['ingredients'])}")
-        print(f"Directions: {' '.join(recipe['directions'])}")
-        print(f"Link: {recipe['link']}")
-        print("-" * 60)
-
-    excluded_allergens = ["nuts", "dairy", "milk"]
-    print("\n" + "=" * 60)
-    print(f"WITH FILTERS: Excluding {excluded_allergens}")
-    print("=" * 60)
+    excluded_ingredients = ["milk_allergy"]
     filtered_results = recipe_store.retrieve_recipes(
         query=query,
-        top_k=10,
-        excluded_ingredients=excluded_allergens,
+        excluded_ingredients=excluded_ingredients,
     )
-
     print(f"\nQuery: {query}")
-    print(f"Retrieved {len(filtered_results)} recipes (filtered):\n")
-
-    for rank, recipe in enumerate(filtered_results, start=1):
-        print(f"#{rank}")
-        print(f"Score: {recipe['score']}")
-        print(f"Title: {recipe['title']}")
-        print(f"Ingredients: {', '.join(recipe['ingredients'])}")
-        print(f"Directions: {' '.join(recipe['directions'])}")
-        print(f"Link: {recipe['link']}")
-        print("-" * 60)
+    RecipeVectorStore.print_recipes(
+        filtered_results,
+        f"WITH FILTERS: Excluding {excluded_ingredients}",
+    )
 
 
 if __name__ == "__main__":

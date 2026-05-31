@@ -12,6 +12,7 @@ numpy
 tqdm
 python-dotenv
 httpx
+python-jose[cryptography]>=3.3
 pytest>=8
 pytest-asyncio>=0.23
 ruff>=0.6

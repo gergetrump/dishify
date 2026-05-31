@@ -1,12 +1,4 @@
-"""SQLAlchemy engine + session factory.
-
-`DATABASE_URL` controls the backend:
-	* unset / empty -> ``sqlite:///./dishify.db`` (file in repo root)
-	* ``postgresql+psycopg://user:pass@host:5432/dbname`` for Postgres
-
-SQLite is the default so the project works without Docker. The schema uses
-generic ``JSON`` columns that map cleanly to both backends.
-"""
+"""SQLAlchemy engine + session factory."""
 
 from __future__ import annotations
 
@@ -18,7 +10,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-# Repo root: backend/app/db/base.py -> parents[3] is the repo root.
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -26,9 +17,12 @@ def _resolve_database_url() -> str:
     url = os.getenv("DATABASE_URL", "").strip()
     if url:
         return url
+<<<<<<< HEAD:backend/app/db/base.py
+=======
     # Default to a SQLite file at the repo root so the path is stable regardless
     # of where the process happens to be launched from (uvicorn from backend/,
     # scripts from repo root, tests from anywhere).
+>>>>>>> main:services/archive-app/db/base.py
     return f"sqlite:///{REPO_ROOT / 'dishify.db'}"
 
 
@@ -57,8 +51,14 @@ def get_session() -> Iterator[Session]:
 
 
 def create_all() -> None:
+<<<<<<< HEAD:backend/app/db/base.py
+    """Create tables. Idempotent."""
+
+    from . import models  # noqa: F401
+=======
     """Create tables. Idempotent. Used by the loader script and tests."""
 
     from . import models  # noqa: F401  -- ensure models are imported for metadata
+>>>>>>> main:services/archive-app/db/base.py
 
     Base.metadata.create_all(bind=engine)
