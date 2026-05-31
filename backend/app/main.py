@@ -34,6 +34,7 @@ class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1)
     top_k: int = Field(default=5, ge=1, le=50)
     excluded_ingredients: List[str] | None = None
+    available_ingredients: List[str] | None = None
 
 
 class SearchHitModel(BaseModel):
@@ -133,6 +134,7 @@ def search_recipes(
             payload.query,
             top_k=payload.top_k,
             excluded_ingredients=merged_exclusions or None,
+            available_ingredients=payload.available_ingredients or None,
         )
         if allowed_ids is not None:
             allowed_set = {int(item) for item in allowed_ids}

@@ -73,11 +73,9 @@ class RecipeVectorStore:
         for idx, recipe in enumerate(recipes):
             text_for_embedding = f"""
             Title: {recipe.title}
-            Ingredients: {", ".join(str(item) for item in recipe.ingredients)}
+            Title: {recipe.title}
             Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
-            Directions: {" ".join(recipe.directions)}
-            Source: {recipe.source}
-            """
+            """  # more weight on the title of the recipe
 
             vector = self.embedding_model.encode(text_for_embedding).tolist()
 
@@ -123,13 +121,43 @@ class RecipeVectorStore:
                 points=points,
             )
 
+    @staticmethod
+    def _normalize_ingredient_names(values: list[object] | None) -> list[str]:
+        if not values:
+            return []
+
+        names: list[str] = []
+        for item in values:
+            if item is None:
+                continue
+            if isinstance(item, str):
+                name = item
+            elif isinstance(item, dict):
+                name = item.get("name") or item.get("raw_text") or ""
+            else:
+                name = getattr(item, "name", "") or getattr(item, "raw_text", "")
+            name = str(name).strip()
+            if name:
+                names.append(name)
+        return names
+
+    def build_query_text(
+        self, query: str, available_ingredients: list[object] | None = None
+    ) -> str:
+        names = self._normalize_ingredient_names(available_ingredients)
+        if not names:
+            return f"Query: {query}"
+        return f"Query: {query}\nAvailable ingredients: {', '.join(names)}"
+
     def retrieve_recipes(
         self,
         query: str,
         top_k: int = 5,
         excluded_ingredients: list[str] | None = None,
+        available_ingredients: list[object] | None = None,
     ) -> list[dict]:
-        query_vector = self.embedding_model.encode(query).tolist()
+        query_text = self.build_query_text(query, available_ingredients)
+        query_vector = self.embedding_model.encode(query_text).tolist()
 
         query_filter = None
         excluded_norm = [
@@ -178,16 +206,3 @@ class RecipeVectorStore:
             )
 
         return recipes
-
-    def _recipe_to_embedding_text(self, recipe: RecipeDataPoint) -> str:
-        """
-        Converts a RecipeDataPoint into text used for semantic embedding.
-        This text is not necessarily shown to the user.
-        """
-
-        return f"""
-                Title: {recipe.title}
-                Ingredients: {", ".join(recipe.ingredients)}
-                Raw ingredients: {", ".join(recipe.raw_ingredients)}
-                Directions: {" ".join(recipe.directions)}
-                """.strip()

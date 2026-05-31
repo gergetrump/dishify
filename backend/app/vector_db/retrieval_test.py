@@ -88,13 +88,13 @@ def run_smoke_test() -> None:
         print(f"Link: {recipe['link']}")
         print("-" * 60)
 
-    excluded_allergens = ["milk_allergy"]
+    excluded_ingredients = ["milk_allergy"]
     print("\n" + "=" * 60)
-    print(f"WITH FILTERS: Excluding {excluded_allergens}")
+    print(f"WITH FILTERS: Excluding {excluded_ingredients}")
     print("=" * 60)
     filtered_results = recipe_store.retrieve_recipes(
         query=query,
-        excluded_ingredients=excluded_allergens,
+        excluded_ingredients=excluded_ingredients,
     )
 
     print(f"\nQuery: {query}")
