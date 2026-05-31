@@ -12,9 +12,44 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dishify"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+  
+  redis:
+    image: redis:7.4-alpine
+    container_name: dishify-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: dishify-keycloak
+    volumes:
+      - ./keycloak/create-realm.sh:/opt/keycloak/create-realm.sh
+    entrypoint: ["sh", "/opt/keycloak/create-realm.sh"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: dishify
+      KC_DB_USERNAME: ${POSTGRES_USER:-dishify}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-dishify}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin-secret}
+      KEYCLOAK_BACKEND_SECRET: ${KEYCLOAK_BACKEND_SECRET:-backend-secret}
+      KEYCLOAK_USER_SERVICE_SECRET: ${KEYCLOAK_USER_SERVICE_SECRET:-user-service-secret}
+      KEYCLOAK_TEST_USER: ${KEYCLOAK_TEST_USER:-testuser}
+      KEYCLOAK_TEST_EMAIL: ${KEYCLOAK_TEST_EMAIL:-test@dishify.com}
+      KEYCLOAK_TEST_PASSWORD: ${KEYCLOAK_TEST_PASSWORD:-test-secret}
+      FRONTEND_URL: http://localhost:4200
+    ports:
+      - "9001:9001"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   qdrant:
     image: qdrant/qdrant:v1.12.4
@@ -30,37 +65,75 @@ services:
       timeout: 3s
       retries: 5
 
-  backend:
+  frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: dishify-backend
+    container_name: dishify-frontend
+    ports:
+      - "4200:4200"
     depends_on:
-      postgres:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
+      - api-gateway
+      - keycloak
+
+  generate-service:
+    build:
+      context: ./services/generate-service
+      dockerfile: Dockerfile
+    container_name: dishify-generate-service
     environment:
       DATABASE_URL: postgresql+psycopg://dishify:dishify@postgres:5432/dishify
       QDRANT_URL: http://qdrant:6333
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
-      - "8000:8000"
-    volumes:
-      # Persist the embedding cache + .npz snapshot between runs.
-      - ./data:/app/data
+      - "8001:8001"
+    depends_on:
+      - postgres
+      - qdrant
 
-  keycloak: 
-    image: quay.io/keycloak/keycloak:26.6.2
-    container_name: keycloak 
+  llm-service:
+    build:
+      context: ./services/llm-service
+      dockerfile: Dockerfile
+    container_name: dishify-llm-service
     environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin 
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin 
-    command: start-dev
-    ports: 
-      - 8080:8080
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    ports:
+      - "8002:8002"
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: dishify-user-service
+    ports:
+      - "8003:8003"
+    environment:
+      KEYCLOAK_URL: http://keycloak:9001
+      KEYCLOAK_REALM: dishify
+      KEYCLOAK_CLIENT_ID: dishify-user-service
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_USER_SERVICE_SECRET:-user-service-secret}
+    depends_on:
+      - keycloak
+      - postgres
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: dishify-api-gateway
+    environment:
+      GENERATE_SERVICE_URL: http://generate-service:8001
+      LLM_SERVICE_URL: http://llm-service:8002
+      USER_SERVICE_URL: http://user-service:8003
+      FRONTEND_URL: http://localhost:4200
+    ports:
+      - "8004:8004"
+    depends_on:
+      - generate-service
+      - llm-service
+      - user-service
 
 volumes:
   postgres_data:
   qdrant_data:
+  redis-data:
