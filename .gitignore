@@ -10,3 +10,4 @@ data/backup/*
 venv
 backend/app/clients/gemini.py
 .claude/*
+.vscode/*
