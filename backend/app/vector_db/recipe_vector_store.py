@@ -12,6 +12,7 @@ from qdrant_client.models import (
 from sentence_transformers import SentenceTransformer
 
 from backend.app.models.recipe import RecipeDataPoint
+from backend.app.models.retrieval import RetrievedRecipe
 
 
 class RecipeVectorStore:
@@ -155,7 +156,7 @@ class RecipeVectorStore:
         top_k: int = 5,
         excluded_ingredients: list[str] | None = None,
         available_ingredients: list[object] | None = None,
-    ) -> list[dict]:
+    ) -> list[RetrievedRecipe]:
         query_text = self.build_query_text(query, available_ingredients)
         query_vector = self.embedding_model.encode(query_text).tolist()
 
@@ -182,27 +183,26 @@ class RecipeVectorStore:
             with_payload=True,
         )
 
-        recipes: list[dict] = []
+        recipes: list[RetrievedRecipe] = []
 
         for result in response.points:
             recipes.append(
-                {
-                    "id": result.id,
-                    "score": result.score,
-                    "title": result.payload.get("title"),
-                    "ingredients": result.payload.get("ingredients"),
-                    "raw_ingredients": result.payload.get("raw_ingredients"),
-                    "directions": result.payload.get("directions"),
-                    "link": result.payload.get("link"),
-                    "source": result.payload.get("source"),
-                    "ner": result.payload.get("ner"),
-                    "exclusion_restrictions": result.payload.get(
-                        "exclusion_restrictions"
-                    ),
-                    "exclusion_restrictions_count": result.payload.get(
+                RetrievedRecipe(
+                    id=int(result.id),
+                    score=float(result.score or 0),
+                    title=result.payload.get("title"),
+                    ingredients=result.payload.get("ingredients"),
+                    raw_ingredients=result.payload.get("raw_ingredients"),
+                    parsed_ingredients=result.payload.get("parsed_ingredients") or [],
+                    directions=result.payload.get("directions"),
+                    link=result.payload.get("link"),
+                    source=result.payload.get("source"),
+                    ner=result.payload.get("ner"),
+                    exclusion_restrictions=result.payload.get("exclusion_restrictions"),
+                    exclusion_restrictions_count=result.payload.get(
                         "exclusion_restrictions_count"
                     ),
-                }
+                )
             )
 
         return recipes

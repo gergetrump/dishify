@@ -71,21 +71,17 @@ def run_smoke_test() -> None:
 
     for rank, recipe in enumerate(results, start=1):
         print(f"#{rank}")
-        print(f"Score: {recipe['score']}")
-        print(f"Title: {recipe['title']}")
-        print(f"Ingredients: {', '.join(recipe['ingredients'])}")
-        print(f"Raw ingredients: {', '.join(recipe.get('raw_ingredients') or [])}")
-        print(f"NER: {_format_ner(recipe.get('ner'))}")
+        print(f"Score: {recipe.score}")
+        print(f"Title: {recipe.title}")
+        print(f"Ingredients: {', '.join(recipe.ingredients or [])}")
+        print(f"Raw ingredients: {', '.join(recipe.raw_ingredients or [])}")
+        print(f"NER: {_format_ner(recipe.ner)}")
         print(
-            "Exclusion restrictions: "
-            f"{_format_ner(recipe.get('exclusion_restrictions'))}"
+            "Exclusion restrictions: " f"{_format_ner(recipe.exclusion_restrictions)}"
         )
-        print(
-            "Exclusion restrictions count: "
-            f"{recipe.get('exclusion_restrictions_count')}"
-        )
-        print(f"Directions: {' '.join(recipe['directions'])}")
-        print(f"Link: {recipe['link']}")
+        print("Exclusion restrictions count: " f"{recipe.exclusion_restrictions_count}")
+        print(f"Directions: {' '.join(recipe.directions or [])}")
+        print(f"Link: {recipe.link}")
         print("-" * 60)
 
     excluded_ingredients = ["milk_allergy"]
@@ -102,21 +98,17 @@ def run_smoke_test() -> None:
 
     for rank, recipe in enumerate(filtered_results, start=1):
         print(f"#{rank}")
-        print(f"Score: {recipe['score']}")
-        print(f"Title: {recipe['title']}")
-        print(f"Ingredients: {', '.join(recipe['ingredients'])}")
-        print(f"Raw ingredients: {', '.join(recipe.get('raw_ingredients') or [])}")
-        print(f"NER: {_format_ner(recipe.get('ner'))}")
+        print(f"Score: {recipe.score}")
+        print(f"Title: {recipe.title}")
+        print(f"Ingredients: {', '.join(recipe.ingredients or [])}")
+        print(f"Raw ingredients: {', '.join(recipe.raw_ingredients or [])}")
+        print(f"NER: {_format_ner(recipe.ner)}")
         print(
-            "Exclusion restrictions: "
-            f"{_format_ner(recipe.get('exclusion_restrictions'))}"
+            "Exclusion restrictions: " f"{_format_ner(recipe.exclusion_restrictions)}"
         )
-        print(
-            "Exclusion restrictions count: "
-            f"{recipe.get('exclusion_restrictions_count')}"
-        )
-        print(f"Directions: {' '.join(recipe['directions'])}")
-        print(f"Link: {recipe['link']}")
+        print("Exclusion restrictions count: " f"{recipe.exclusion_restrictions_count}")
+        print(f"Directions: {' '.join(recipe.directions or [])}")
+        print(f"Link: {recipe.link}")
         print("-" * 60)
 
 
