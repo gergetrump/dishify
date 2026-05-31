@@ -13,8 +13,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 load_dotenv(PROJECT_ROOT / ".env")
 
-from backend.app.vector_db.parsing import load_recipes_from_csv
-from backend.app.vector_db.recipe_vector_store import RecipeVectorStore
+from services.app.vector_db.parsing import load_recipes_from_csv
+from services.app.vector_db.recipe_vector_store import RecipeVectorStore
 
 CSV_PATH = PROJECT_ROOT / "data" / "dataset_normalized_10000.csv"
 COLLECTION_NAME = "recipes_10000"

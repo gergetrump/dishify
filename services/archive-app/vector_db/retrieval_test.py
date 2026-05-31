@@ -13,7 +13,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 load_dotenv(PROJECT_ROOT / ".env")
 
-from backend.app.vector_db.recipe_vector_store import RecipeVectorStore
+from services.app.vector_db.recipe_vector_store import RecipeVectorStore
 
 COLLECTION_NAME = "recipes_10000"
 
