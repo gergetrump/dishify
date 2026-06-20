@@ -1,0 +1,156 @@
+# Dishify — project TODO (through launch)
+
+## Testing scripts (already in repo)
+
+- [x] `backend/scripts/smoke_test_api.py` — health + POST /recommend
+- [x] `backend/scripts/workflow_test.py` — register → login → prefs → recommend
+- [x] `backend/scripts/index_recipes.py` — local Qdrant indexing (non-Docker)
+- [ ] `backend/scripts/e2e_api_audit.py` — full endpoint + error-case audit (not yet written)
+- [ ] Wire API tests into `.github/workflows/ci.yml` (CI only checks restriction_rules.json today)
+
+Run:
+```bash
+python backend/scripts/smoke_test_api.py
+python backend/scripts/workflow_test.py
+```
+
+---
+
+## Phase 0 — Infra & data (mostly done)
+
+- [x] Docker Compose: Postgres, Keycloak, Qdrant, microservices
+- [x] Keycloak realm + clients (web, iOS, backend)
+- [x] Qdrant indexing worker (`docker compose run --rm indexing-worker --recreate`)
+- [x] 10k annotated dev dataset + restriction_rules.json
+- [ ] Fix Qdrant Docker healthcheck (shows unhealthy but works)
+- [ ] Document one-command bootstrap in README (`start.sh` + index + smoke test)
+
+---
+
+## Phase 1 — Backend MVP (mostly done)
+
+- [x] Gateway: /health, /recommend, auth proxy, user proxy
+- [x] Recommendation pipeline: retrieve → rank → explain
+- [x] User service: register, login, /me, /me/preferences (Postgres)
+- [x] Shared contracts (`dishify-contracts`) + ranking lib (`dishify-ranking`)
+- [x] Hard-filter on exclusion_restrictions in Qdrant
+- [x] Stored prefs applied on authenticated /recommend when body omits restrictions
+- [ ] Remove or archive legacy monolith under `backend/app/` once fully migrated
+- [ ] Gateway `/health` should reflect downstream dependency status (optional readiness probe)
+
+---
+
+## Phase 2 — Auth (backend wiring + production config)
+
+- [ ] Set `DISABLE_AUTH=false` on gateway for staging/production
+- [ ] Fix `GET /auth/config` public URLs (`KEYCLOAK_PUBLIC_URL` → `localhost:9001` / prod domain, not `keycloak:9001`)
+- [ ] Retest full flow with auth required on /recommend
+- [ ] `POST /auth/refresh` — refresh-token exchange (post-MVP but needed before long sessions)
+- [ ] `POST /auth/logout` — server-side or documented client-side Keycloak logout
+- [ ] `POST /auth/forgot-password` — password reset flow
+- [ ] Token expiry UX guidance for clients (access_token TTL = 300s)
+- [ ] CORS: restrict origins in production (currently all origins in dev)
+- [ ] Rate limiting on /auth/login and /recommend
+- [ ] Secrets management (.env → prod vault / GitHub secrets)
+
+---
+
+## Phase 3 — Frontend (web)
+
+- [ ] Scaffold / verify Vite + React app runs (`npm run dev`)
+- [ ] API client: base URL, typed request/response (`docs/API.md`)
+- [ ] Auth shell: login + register screens (`POST /auth/login`, `/auth/register`)
+- [ ] Store JWT; attach `Authorization: Bearer` on all protected calls
+- [ ] Protected routes (recommend, preferences require login)
+- [ ] Preferences screen: GET/PUT `/me/preferences` (exclusion_restrictions picker from known tags)
+- [ ] Recommend screen: query input, pantry/ingredient list, top_k
+- [ ] Results UI: title, score, reasoning (+/−), directions, inventory matched/missing
+- [ ] Loading / error states (401, 422, 503)
+- [ ] Optional: PKCE via Keycloak (`dishify-web`) instead of password login
+- [ ] `.env` for `VITE_API_URL`, Keycloak URLs
+- [ ] Responsive layout + basic accessibility
+- [ ] Connect to backend with `DISABLE_AUTH=false` before launch
+
+---
+
+## Phase 4 — iOS app
+
+- [x] Basic RecommendView + APIClient scaffold
+- [x] KeycloakAuthService (PKCE)
+- [ ] Login flow end-to-end against local/prod Keycloak
+- [ ] Preferences screen (stored restrictions)
+- [ ] Pantry / ingredient input
+- [ ] Results detail view (directions, inventory)
+- [ ] Handle token refresh / re-auth on 401
+- [ ] App Store config: URL schemes, Keycloak redirect (`dishify://callback`)
+- [ ] Test on device against staging API
+
+---
+
+## Phase 5 — Recommendation quality & LLM
+
+- [ ] Enable `ENABLE_LLM_REASONING=true` + `OPENROUTER_API_KEY` in staging
+- [ ] Verify `explain` stage returns useful positive/negative reasoning
+- [ ] Tune ranking weights (`dishify-ranking`)
+- [ ] Evaluate restriction hard-filter accuracy on sample queries
+- [ ] Populate `summary` and `time_minutes` in results if data available in corpus
+- [ ] Scoring inspection notebook updated for microservice stack
+
+---
+
+## Phase 6 — Data & indexing (scale beyond 10k)
+
+- [ ] Run full corpus normalization (`dataset.csv` → normalized)
+- [ ] Full corpus restriction annotation
+- [ ] Index full corpus into Qdrant (collection name, memory, batch size)
+- [ ] Benchmark retrieval latency at scale
+- [ ] Re-index pipeline documented for prod updates
+
+---
+
+## Phase 7 — Testing & CI/CD
+
+- [ ] Add `e2e_api_audit.py` (all endpoints, error codes, schema checks)
+- [ ] CI job: docker compose up + index + smoke + workflow tests
+- [ ] Unit tests for `dishify-ranking` in CI (pytest already exists)
+- [ ] Contract tests: response shapes match `dishify-contracts`
+- [ ] Load test /recommend (latency p95, concurrent users)
+- [ ] Staging environment (compose or cloud)
+- [ ] Production deployment (hosting, TLS, domain, env vars)
+- [ ] Monitoring: logs, health alerts, Qdrant/Postgres/Keycloak uptime
+
+---
+
+## Phase 8 — API & product gaps (post-core, pre-launch polish)
+
+- [ ] `GET /recipes/{id}` — single recipe detail (if UI needs it without re-fetching recommend)
+- [ ] Search history / saved recipes (if in product scope)
+- [ ] User feedback on recommendations (if in product scope)
+- [ ] OpenAPI kept in sync with `docs/API.md`
+- [ ] Versioned API path or changelog if breaking changes
+
+---
+
+## Phase 9 — Documentation & handoff
+
+- [ ] Update root README (frontend + iOS in repo layout)
+- [ ] Frontend README: setup, env, auth flow
+- [ ] iOS README: Xcode setup, Keycloak config
+- [ ] `docs/INTEGRATION.md` — add frontend/iOS checklist
+- [ ] Production runbook: deploy, re-index, rotate secrets, rollback
+- [ ] Demo script / test user for stakeholders
+
+---
+
+## Phase 10 — Launch checklist
+
+- [ ] `DISABLE_AUTH=false` in production
+- [ ] Public Keycloak + API URLs with TLS
+- [ ] CORS locked to prod web origin
+- [ ] Rate limits enabled
+- [ ] Qdrant indexed with target corpus
+- [ ] LLM reasoning on or explicitly off with fallback copy in UI
+- [ ] smoke_test + workflow_test pass against staging
+- [ ] iOS + web tested against staging
+- [ ] Privacy policy / terms if shipping to App Store
+- [ ] App Store / web deploy

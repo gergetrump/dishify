@@ -21,6 +21,7 @@ services:
     container_name: dishify-keycloak
     volumes:
       - ./keycloak/create-realm.sh:/opt/keycloak/create-realm.sh
+      - ./keycloak/dishify-user-profile.json:/opt/keycloak/dishify-user-profile.json
     entrypoint: ["sh", "/opt/keycloak/create-realm.sh"]
     environment:
       KC_DB: postgres
@@ -54,22 +55,133 @@ services:
       timeout: 3s
       retries: 5
 
-  backend:
+  retrieval:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    container_name: dishify-backend
+      dockerfile: services/retrieval/Dockerfile
+    container_name: dishify-retrieval
+    ports:
+      - "8002:8002"
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_COLLECTION: recipes_10000
+    depends_on:
+      - qdrant
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/health')\""]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  reasoning:
+    build:
+      context: ./backend
+      dockerfile: services/reasoning/Dockerfile
+    container_name: dishify-reasoning
+    ports:
+      - "8003:8003"
+    environment:
+      ENABLE_LLM_REASONING: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  recommendation:
+    build:
+      context: ./backend
+      dockerfile: services/recommendation/Dockerfile
+    container_name: dishify-recommendation
+    ports:
+      - "8001:8001"
+    environment:
+      RETRIEVAL_URL: http://retrieval:8002
+      REASONING_URL: http://reasoning:8003
+      ENABLE_LLM_REASONING: "false"
+      RESTRICTION_RULES_PATH: /data/restriction_rules.json
+    volumes:
+      - ./data:/data:ro
+    depends_on:
+      - retrieval
+      - reasoning
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build:
+      context: ./backend
+      dockerfile: services/gateway/Dockerfile
+    container_name: dishify-gateway
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://dishify:dishify@postgres:5432/dishify
-      QDRANT_URL: http://qdrant:6333
+      RECOMMENDATION_URL: http://recommendation:8001
+      USER_URL: http://user:8004
       KEYCLOAK_URL: http://keycloak:9001
       KEYCLOAK_REALM: dishify
       DISABLE_AUTH: "true"
+      RESTRICTION_RULES_PATH: /data/restriction_rules.json
+    volumes:
+      - ./data:/data:ro
     depends_on:
-      - postgres
+      - recommendation
+      - user
+      - keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user:
+    build:
+      context: ./backend
+      dockerfile: services/user/Dockerfile
+    container_name: dishify-user
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql+psycopg://dishify:dishify@postgres:5432/dishify
+      KEYCLOAK_URL: http://keycloak:9001
+      KEYCLOAK_REALM: dishify
+      KEYCLOAK_CLIENT_ID: dishify-backend
+      KEYCLOAK_LOGIN_CLIENT_ID: dishify-web
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_BACKEND_SECRET:-backend-secret}
+      KEYCLOAK_IOS_CLIENT_ID: dishify-ios
+      KEYCLOAK_WEB_CLIENT_ID: dishify-web
+      RESTRICTION_RULES_PATH: /data/restriction_rules.json
+    volumes:
+      - ./data:/data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  indexing-worker:
+    profiles: ["tools"]
+    build:
+      context: ./backend
+      dockerfile: services/indexing/Dockerfile
+    container_name: dishify-indexing-worker
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_COLLECTION: recipes_10000
+    volumes:
+      - ./data:/data:ro
+    depends_on:
       - qdrant
+    command: ["--csv", "/data/dataset_10000_annotated.csv", "--recreate"]
 
 volumes:
   postgres_data:

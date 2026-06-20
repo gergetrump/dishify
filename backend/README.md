@@ -1,31 +1,105 @@
-# Backend
+# Dishify Backend (Microservices)
 
-FastAPI recommendation API.
+FastAPI microservice stack aligned with `notebooks/end_to_end_pipeline.ipynb`.
 
-## Run locally
+## Architecture
+
+| Service | Port | Role |
+|---------|------|------|
+| `gateway` | 8000 | Public API, JWT auth, CORS |
+| `recommendation` | 8001 | Pipeline orchestrator (retrieve → rank → explain) |
+| `retrieval` | 8002 | Embeddings + Qdrant search |
+| `reasoning` | 8003 | Optional LLM reasoning (OpenRouter) |
+| `user` | 8004 | Registration, login, profile & preferences (Keycloak) |
+| `indexing-worker` | — | Offline batch indexing into Qdrant |
+
+Shared libraries: `shared/dishify-contracts`, `shared/dishify-ranking`.
+
+## Run with Docker Compose (from repo root)
 
 ```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+docker compose up -d
+docker compose run --rm indexing-worker --recreate
+curl http://localhost:8000/health
 ```
 
-Or via Docker Compose from repo root: `docker compose up -d backend`
+## Run locally (without Docker)
 
-## Endpoints
+Start Qdrant first, index recipes, then run each service in separate terminals:
 
-- `GET /health`
-- `POST /recommend` — MVP stub matching [`docs/API.md`](../docs/API.md)
-- OpenAPI: http://localhost:8000/docs
+```bash
+# Terminal 1 — retrieval
+cd backend/services/retrieval
+pip install -r requirements.txt ../../shared/dishify-contracts
+PYTHONPATH=. uvicorn app.main:app --reload --port 8002
+
+# Terminal 2 — reasoning
+cd backend/services/reasoning
+pip install -r requirements.txt ../../shared/dishify-contracts
+PYTHONPATH=. uvicorn app.main:app --reload --port 8003
+
+# Terminal 3 — recommendation
+cd backend/services/recommendation
+pip install -r requirements.txt ../../shared/dishify-contracts ../../shared/dishify-ranking
+PYTHONPATH=. uvicorn app.main:app --reload --port 8001
+
+# Terminal 4 — user
+cd backend/services/user
+pip install -r requirements.txt ../../shared/dishify-contracts
+PYTHONPATH=. uvicorn app.main:app --reload --port 8004
+
+# Terminal 5 — gateway
+cd backend/services/gateway
+pip install -r requirements.txt ../../shared/dishify-contracts
+PYTHONPATH=. uvicorn app.main:app --reload --port 8000
+```
+
+Index recipes:
+
+```bash
+cd backend/services/indexing
+pip install -r requirements.txt
+PYTHONPATH=. python -m app.main --recreate
+```
+
+## Endpoints (public)
+
+- `GET /health` — on gateway (`:8000`)
+- `POST /recommend` — on gateway (`:8000`)
+- `GET /auth/config` — OIDC discovery + client IDs
+- `POST /auth/register` — create account (Keycloak admin API via `dishify-backend` service account)
+- `POST /auth/login` — username/password token (password grant on `dishify-backend`)
+- `GET /me` — current user profile (Bearer token required)
+- `GET /me/preferences` — `exclusion_restrictions`
+- `PUT /me/preferences` — update preference attributes in Keycloak
+
+See [`docs/API.md`](../docs/API.md) for recommend request/response shapes.
+
+## User service & Keycloak
+
+The user service uses the `dishify-backend` confidential client from [`keycloak/create-realm.sh`](../keycloak/create-realm.sh):
+
+- **Service account** (`manage-users`, `view-users`) — registration and preference updates
+- **Direct access grants** — `POST /auth/login` password flow
+- **User attributes** — `exclusion_restrictions` (hard-filter tags from `restriction_rules.json`)
+
+API clients can use OIDC PKCE directly; use `GET /auth/config` for issuer and client IDs.
+
+Env vars (see `.env.example`): `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`.
 
 ## Auth
 
-Set `DISABLE_AUTH=true` in `.env` for Day 1 dev (default). JWT validation to be added on `feature/backend-mvp`.
+Set `DISABLE_AUTH=true` on the gateway for Day 1 dev. When enabled, the gateway validates Keycloak JWTs via JWKS.
 
-Keycloak provisioning: [`keycloak/`](../keycloak/) at repo root.
+## Optional LLM reasoning
 
-## Build order
+Set on `reasoning` and `recommendation` services:
 
-See [`agent/architecture-plan.md`](../agent/architecture-plan.md) (local) or root README.
+```
+ENABLE_LLM_REASONING=true
+OPENROUTER_API_KEY=...
+```
+
+## Legacy monolith
+
+The original single-process app remains under `backend/app/` for reference during migration.

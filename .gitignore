@@ -17,3 +17,5 @@ venv
 agent/
 dishify.db
 .pytest_cache/
+node_modules/
+frontend/dist/

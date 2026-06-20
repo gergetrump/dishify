@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: dishify-ranking
+Version: 0.1.0
+Summary: Inventory re-ranking for Dishify recommendation pipeline
+Requires-Python: >=3.12
+Requires-Dist: dishify-contracts
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"

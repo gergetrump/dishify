@@ -8,26 +8,23 @@ The old backend was removed (June 2026). Git history still has everything if we 
 
 - **Data cleaning pipeline** — `notebooks/data_cleaning/` and `data/restriction_rules.json`
 - **Infra** — Postgres, Keycloak, and Qdrant via Docker Compose
-- **Backend** — MVP in `backend/` (`/health`, `/recommend` stub)
-- **iOS app** — SwiftUI scaffold in `ios/` with Keycloak login
+- **Backend** — Microservice stack in `backend/` (`/health`, `/recommend`, auth, user preferences)
 
 ## Repo layout
 
 ```
 dishify/
-├── backend/       # FastAPI app (to build)
-├── ios/           # SwiftUI app (not started)
-├── keycloak/      # Shared auth infra — realm + clients (NOT inside backend)
-├── data/          # Recipe datasets + restriction rules
-├── notebooks/     # Data cleaning pipeline
+├── backend/       # FastAPI microservices
+├── keycloak/      # Shared auth infra
+├── data/
+├── notebooks/
 └── docker-compose.yml
 ```
 
 | Folder | Role |
 |--------|------|
-| `keycloak/` | Standalone identity provider config — used by both backend and iOS |
-| `backend/app/auth/` | JWT validation only; does not run or configure Keycloak |
-| `ios/` | OIDC login flow + API client |
+| `keycloak/` | Standalone identity provider for backend API clients |
+| `backend/services/gateway/` | Public API, JWT validation, CORS |
 
 ## Quick start
 
@@ -75,22 +72,23 @@ docker compose up -d
 | Keycloak | `http://localhost:9001` |
 | Qdrant | `http://localhost:6333` |
 
-Keycloak realm provisioning runs automatically via `keycloak/create-realm.sh`. Clients: `dishify-ios` (PKCE) and `dishify-backend` (confidential).
+Keycloak realm provisioning runs automatically via `keycloak/create-realm.sh`. Clients: `dishify-web`, `dishify-ios` (PKCE), and `dishify-backend` (confidential).
 
 ## Collaboration
 
 - API contract: [`docs/API.md`](docs/API.md)
 - Agent scope rules: [`AGENTS.md`](AGENTS.md)
-- Day 2 integration: [`docs/INTEGRATION.md`](docs/INTEGRATION.md)
+- Integration: [`docs/INTEGRATION.md`](docs/INTEGRATION.md)
 
 ## Backend
 
 ```bash
-cd backend && pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+docker compose up -d
+docker compose run --rm indexing-worker --recreate
+curl http://localhost:8000/health
 ```
 
-Or: `docker compose up -d backend`
+See [`backend/README.md`](backend/README.md) for local multi-service development.
 
 ## Notebooks (reference only)
 

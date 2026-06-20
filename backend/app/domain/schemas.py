@@ -1,23 +1,29 @@
 from pydantic import BaseModel, Field
 
+from app.models.retrieval import ParsedIngredientModel, RetrievalRequest
+
 
 class HealthResponse(BaseModel):
 	status: str
 	service: str
 
 
-class RecommendRequest(BaseModel):
-	ingredients: list[str] = Field(..., min_length=1)
-	limit: int = Field(default=5, ge=1, le=20)
+class ReasoningDetail(BaseModel):
+	positive: list[str] = Field(default_factory=list)
+	negative: list[str] = Field(default_factory=list)
 
 
-class RecommendationItem(BaseModel):
-	recipe_id: str
-	title: str
+class RecipeResult(BaseModel):
+	rank: int
+	id: int
+	title: str | None = None
+	summary: str | None = None
+	time_minutes: int | None = None
 	score: float
-	matched_ingredients: list[str]
-	missing_ingredients: list[str]
-	reason: str
+	reasoning: ReasoningDetail | None = None
+	directions: list[str] | None = None
+	inventory_matched: list[str] | None = None
+	inventory_missing: list[str] | None = None
 
 
 class PipelineStage(BaseModel):
@@ -26,6 +32,21 @@ class PipelineStage(BaseModel):
 	latency_ms: int
 
 
+class RecommendRequest(RetrievalRequest):
+	"""Same shape as the end-to-end notebook RetrievalRequest."""
+
+
 class RecommendResponse(BaseModel):
-	recommendations: list[RecommendationItem]
+	results: list[RecipeResult]
 	stages: list[PipelineStage]
+
+
+__all__ = [
+	"HealthResponse",
+	"ParsedIngredientModel",
+	"ReasoningDetail",
+	"RecipeResult",
+	"PipelineStage",
+	"RecommendRequest",
+	"RecommendResponse",
+]

@@ -1,0 +1,4 @@
+dishify-contracts
+
+[dev]
+pytest>=8
