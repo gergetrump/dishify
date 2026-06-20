@@ -8,8 +8,8 @@ The old backend was removed (June 2026). Git history still has everything if we 
 
 - **Data cleaning pipeline** — `notebooks/data_cleaning/` and `data/restriction_rules.json`
 - **Infra** — Postgres, Keycloak, and Qdrant via Docker Compose
-- **Backend** — scaffold in `backend/`; to be rebuilt (see `agent/architecture-plan.md`, gitignored locally)
-- **iOS app** — scaffold in `ios/`; not started
+- **Backend** — MVP in `backend/` (`/health`, `/recommend` stub)
+- **iOS app** — SwiftUI scaffold in `ios/` with Keycloak login
 
 ## Repo layout
 
@@ -62,7 +62,7 @@ Batch script equivalents: `2_normalize_data_full.py`, `3_annotate_restrictions_f
 
 ## Infrastructure
 
-Start Postgres, Keycloak, and Qdrant:
+Start Postgres, Keycloak, Qdrant, and backend:
 
 ```bash
 docker compose up -d
@@ -70,11 +70,27 @@ docker compose up -d
 
 | Service | URL |
 |---------|-----|
+| Backend | `http://localhost:8000` |
 | Postgres | `localhost:5432` (user/pass/db: `dishify`) |
 | Keycloak | `http://localhost:9001` |
 | Qdrant | `http://localhost:6333` |
 
 Keycloak realm provisioning runs automatically via `keycloak/create-realm.sh`. Clients: `dishify-ios` (PKCE) and `dishify-backend` (confidential).
+
+## Collaboration
+
+- API contract: [`docs/API.md`](docs/API.md)
+- Agent scope rules: [`AGENTS.md`](AGENTS.md)
+- Day 2 integration: [`docs/INTEGRATION.md`](docs/INTEGRATION.md)
+
+## Backend
+
+```bash
+cd backend && pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Or: `docker compose up -d backend`
 
 ## Notebooks (reference only)
 

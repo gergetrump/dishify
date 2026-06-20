@@ -1,39 +1,31 @@
 # Backend
 
-FastAPI recommendation API — **not implemented yet**.
+FastAPI recommendation API.
 
-Greenfield design lives in `agent/architecture-plan.md` (local, gitignored).
+## Run locally
 
-## Planned layout
-
-```
-backend/
-├── app/
-│   ├── main.py
-│   ├── config.py
-│   ├── auth/           # JWT validation (consumes Keycloak; does not run it)
-│   ├── api/
-│   ├── domain/
-│   ├── pipeline/
-│   ├── db/
-│   ├── vector/
-│   └── clients/
-├── scripts/
-├── tests/
-├── Dockerfile
-├── requirements.txt
-└── pyproject.toml
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-## Auth note
+Or via Docker Compose from repo root: `docker compose up -d backend`
 
-Keycloak realm provisioning stays at repo root in [`keycloak/`](../keycloak/) — shared by backend and iOS. This folder only contains token validation middleware under `app/auth/`.
+## Endpoints
+
+- `GET /health`
+- `POST /recommend` — MVP stub matching [`docs/API.md`](../docs/API.md)
+- OpenAPI: http://localhost:8000/docs
+
+## Auth
+
+Set `DISABLE_AUTH=true` in `.env` for Day 1 dev (default). JWT validation to be added on `feature/backend-mvp`.
+
+Keycloak provisioning: [`keycloak/`](../keycloak/) at repo root.
 
 ## Build order
 
-1. `/health` + config + Dockerfile
-2. DB models + recipe loader
-3. Qdrant indexing + retrieval
-4. Pipeline stages 1–5
-5. Keycloak JWT middleware
-6. LLM explain stage + `/me/preferences`
+See [`agent/architecture-plan.md`](../agent/architecture-plan.md) (local) or root README.

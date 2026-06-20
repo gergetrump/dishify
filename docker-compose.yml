@@ -54,6 +54,23 @@ services:
       timeout: 3s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dishify-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://dishify:dishify@postgres:5432/dishify
+      QDRANT_URL: http://qdrant:6333
+      KEYCLOAK_URL: http://keycloak:9001
+      KEYCLOAK_REALM: dishify
+      DISABLE_AUTH: "true"
+    depends_on:
+      - postgres
+      - qdrant
+
 volumes:
   postgres_data:
   qdrant_data:
