@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: dishify
       POSTGRES_DB: dishify
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -81,8 +81,14 @@ services:
     container_name: dishify-reasoning
     ports:
       - "8003:8003"
+    env_file:
+      - .env.secret
     environment:
-      ENABLE_LLM_REASONING: "false"
+      ENABLE_LLM_REASONING: "true"
+      RESTRICTION_RULES_PATH: /data/restriction_rules.json
+      LLM_TIMEOUT_SECONDS: "120"
+    volumes:
+      - ./data:/data:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
       interval: 10s
@@ -99,8 +105,9 @@ services:
     environment:
       RETRIEVAL_URL: http://retrieval:8002
       REASONING_URL: http://reasoning:8003
-      ENABLE_LLM_REASONING: "false"
+      ENABLE_LLM_REASONING: "true"
       RESTRICTION_RULES_PATH: /data/restriction_rules.json
+      REQUEST_TIMEOUT_SECONDS: "150"
     volumes:
       - ./data:/data:ro
     depends_on:
@@ -127,6 +134,7 @@ services:
       KEYCLOAK_REALM: dishify
       DISABLE_AUTH: "true"
       RESTRICTION_RULES_PATH: /data/restriction_rules.json
+      REQUEST_TIMEOUT_SECONDS: "180"
     volumes:
       - ./data:/data:ro
     depends_on:
@@ -138,6 +146,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  web-client:
+    build:
+      context: ./web-client
+    container_name: dishify-web-client
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - gateway
 
   user:
     build:
@@ -152,7 +171,8 @@ services:
       KEYCLOAK_PUBLIC_URL: http://localhost:9001
       KEYCLOAK_REALM: dishify
       KEYCLOAK_CLIENT_ID: dishify-backend
-      KEYCLOAK_LOGIN_CLIENT_ID: dishify-web
+      KEYCLOAK_LOGIN_CLIENT_ID: dishify-api
+      KEYCLOAK_LOGIN_CLIENT_SECRET: ${KEYCLOAK_BACKEND_SECRET:-backend-secret}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_BACKEND_SECRET:-backend-secret}
       KEYCLOAK_IOS_CLIENT_ID: dishify-ios
       KEYCLOAK_WEB_CLIENT_ID: dishify-web
