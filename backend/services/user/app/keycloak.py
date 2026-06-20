@@ -7,7 +7,6 @@ from typing import Any
 import httpx
 
 from app.config import settings
-from dishify_contracts import UserPreferences
 
 _lock = threading.Lock()
 _service_token: str | None = None
@@ -291,13 +290,13 @@ def _merge_dedupe(*lists: list[str]) -> list[str]:
 	return merged
 
 
-def user_to_preferences(user: dict[str, Any]) -> UserPreferences:
+def user_to_preferences(user: dict[str, Any]) -> dict[str, list[str]]:
 	attributes = user.get("attributes") or {}
 	exclusions = attribute_list(attributes, "exclusion_restrictions")
 	legacy_cuisine = attribute_list(attributes, "cuisine_preferences")
 	if legacy_cuisine:
 		exclusions = _merge_dedupe(exclusions, legacy_cuisine)
-	return UserPreferences(exclusion_restrictions=exclusions)
+	return {"exclusion_restrictions": exclusions}
 
 
 def migrate_legacy_preferences(user_id: str, client: KeycloakClient) -> None:
