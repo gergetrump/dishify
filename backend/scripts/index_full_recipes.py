@@ -105,8 +105,12 @@ class RecipeVectorStore:
         batch_size: int = 100,
         start_id: int = 0,
         embedding_batch_size: int | None = None,
-    ) -> None:
+        upload_retries: int = 3,
+        retry_sleep_seconds: float = 5.0,
+        skip_upload_errors: bool = True,
+    ) -> list[dict[str, object]]:
         points: list[PointStruct] = []
+        failed_uploads: list[dict[str, object]] = []
         embedding_texts = [recipe_to_embedding_text(recipe) for recipe in recipes]
         vectors = self.embedding_model.encode(
             embedding_texts,
@@ -142,17 +146,72 @@ class RecipeVectorStore:
             points.append(point)
 
             if len(points) >= batch_size:
+                failure = self._upsert_points(
+                    points,
+                    upload_retries=upload_retries,
+                    retry_sleep_seconds=retry_sleep_seconds,
+                    skip_upload_errors=skip_upload_errors,
+                )
+                if failure:
+                    failed_uploads.append(failure)
+                points = []
+
+        if points:
+            failure = self._upsert_points(
+                points,
+                upload_retries=upload_retries,
+                retry_sleep_seconds=retry_sleep_seconds,
+                skip_upload_errors=skip_upload_errors,
+            )
+            if failure:
+                failed_uploads.append(failure)
+
+        return failed_uploads
+
+    def _upsert_points(
+        self,
+        points: list[PointStruct],
+        *,
+        upload_retries: int,
+        retry_sleep_seconds: float,
+        skip_upload_errors: bool,
+    ) -> dict[str, object] | None:
+        first_id = int(points[0].id)
+        last_id = int(points[-1].id)
+
+        for attempt in range(1, upload_retries + 2):
+            try:
                 self.client.upsert(
                     collection_name=self.collection_name,
                     points=points,
                 )
-                points = []
+                return None
+            except Exception as exc:
+                if attempt <= upload_retries:
+                    print(
+                        "Qdrant upsert failed "
+                        f"for points {first_id:,}-{last_id:,}; "
+                        f"retry {attempt}/{upload_retries} in "
+                        f"{retry_sleep_seconds:.1f}s: {exc}"
+                    )
+                    time.sleep(retry_sleep_seconds)
+                    continue
 
-        if points:
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=points,
-            )
+                if not skip_upload_errors:
+                    raise
+
+                print(
+                    "Skipping failed Qdrant upload after retries: "
+                    f"points {first_id:,}-{last_id:,}: {exc}"
+                )
+                return {
+                    "first_id": first_id,
+                    "last_id": last_id,
+                    "count": len(points),
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                    "updated_at": time.time(),
+                }
 
     def collection_exists(self) -> bool:
         try:
@@ -292,6 +351,17 @@ def save_checkpoint(path: Path, checkpoint: Checkpoint) -> None:
     tmp_path.replace(path)
 
 
+def append_skipped_uploads(path: Path, skipped_uploads: list[dict[str, object]]) -> None:
+    if not skipped_uploads:
+        return
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as file:
+        for skipped in skipped_uploads:
+            file.write(json.dumps(skipped, sort_keys=True))
+            file.write("\n")
+
+
 def validate_checkpoint(
     checkpoint: Checkpoint,
     csv_path: Path,
@@ -388,8 +458,37 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--upload-batch-size",
         type=positive_int,
-        default=100,
+        default=50,
         help="Number of Qdrant points per upsert request.",
+    )
+    parser.add_argument(
+        "--qdrant-timeout",
+        type=positive_int,
+        default=120,
+        help="Qdrant HTTP timeout in seconds.",
+    )
+    parser.add_argument(
+        "--upload-retries",
+        type=int,
+        default=3,
+        help="Retries per Qdrant upload chunk before skipping or failing.",
+    )
+    parser.add_argument(
+        "--retry-sleep",
+        type=float,
+        default=5.0,
+        help="Seconds to sleep between Qdrant upload retries.",
+    )
+    parser.add_argument(
+        "--fail-on-upload-error",
+        action="store_true",
+        help="Stop the run if a Qdrant upload chunk still fails after retries.",
+    )
+    parser.add_argument(
+        "--skipped-upload-log",
+        type=Path,
+        default=REPO_ROOT / "data" / ".recipes_full_skipped_uploads.jsonl",
+        help="JSONL log for upload chunks skipped after all retries fail.",
     )
     parser.add_argument(
         "--embedding-batch-size",
@@ -440,6 +539,10 @@ def main() -> None:
 
     if args.recreate and args.resume:
         raise ValueError("Use either --recreate or --resume, not both.")
+    if args.upload_retries < 0:
+        raise ValueError("--upload-retries must be zero or greater.")
+    if args.retry_sleep < 0:
+        raise ValueError("--retry-sleep must be zero or greater.")
 
     checkpoint = load_checkpoint(args.checkpoint) if args.resume else None
     if checkpoint:
@@ -460,7 +563,7 @@ def main() -> None:
 
     total_rows = count_csv_rows(csv_path) if args.count_total else None
 
-    client_kwargs: dict = {"url": QDRANT_URL}
+    client_kwargs: dict = {"url": QDRANT_URL, "timeout": args.qdrant_timeout}
     if QDRANT_API_KEY:
         client_kwargs["api_key"] = QDRANT_API_KEY
 
@@ -470,6 +573,10 @@ def main() -> None:
     print(f"Embedding model: {EMBEDDING_MODEL}")
     print(f"Start row: {start_row:,}")
     print(f"Dry run: {args.dry_run}")
+    print(f"Qdrant timeout: {args.qdrant_timeout}s")
+    print(f"Upload batch size: {args.upload_batch_size:,}")
+    print(f"Upload retries: {args.upload_retries}")
+    print(f"Skip upload errors: {not args.fail_on_upload_error}")
     if total_rows is not None:
         print(f"Total rows: {total_rows:,}")
 
@@ -495,6 +602,7 @@ def main() -> None:
 
     started_at = time.monotonic()
     indexed = 0
+    skipped_points = 0
 
     for batch_start, recipes in iter_recipe_batches(
         csv_path,
@@ -516,12 +624,17 @@ def main() -> None:
                 print(f"Sample vector dimensions: {len(vectors[0])}")
                 print(f"Sample restrictions: {recipes[0].exclusion_restrictions[:10]}")
         else:
-            store.index_recipes(
+            skipped_uploads = store.index_recipes(
                 recipes,
                 batch_size=args.upload_batch_size,
                 start_id=batch_start,
                 embedding_batch_size=args.embedding_batch_size,
+                upload_retries=args.upload_retries,
+                retry_sleep_seconds=args.retry_sleep,
+                skip_upload_errors=not args.fail_on_upload_error,
             )
+            append_skipped_uploads(args.skipped_upload_log, skipped_uploads)
+            skipped_points += sum(int(item["count"]) for item in skipped_uploads)
             checkpoint.next_row = batch_start + len(recipes)
             save_checkpoint(args.checkpoint, checkpoint)
 
@@ -537,6 +650,7 @@ def main() -> None:
         print(
             f"Rows {progress} | batch={len(recipes):,} "
             f"in {batch_elapsed:.1f}s | avg={rows_per_second:.1f} rows/s"
+            f" | skipped_upload_points={skipped_points:,}"
         )
 
     elapsed = time.monotonic() - started_at
@@ -544,6 +658,9 @@ def main() -> None:
     print(f"{mode} complete: {indexed:,} rows in {elapsed / 60:.1f} min")
     if not args.dry_run:
         print(f"Checkpoint: {args.checkpoint}")
+        if skipped_points:
+            print(f"Skipped upload points: {skipped_points:,}")
+            print(f"Skipped upload log: {args.skipped_upload_log}")
 
 
 if __name__ == "__main__":

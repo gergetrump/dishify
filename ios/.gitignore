@@ -1,0 +1,17 @@
+# Xcode user-specific data
+xcuserdata/
+*.xcuserstate
+
+# Build artifacts
+DerivedData/
+build/
+
+# Swift Package Manager (if added later)
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Local staging overrides (copy from Config/Staging.example.xcconfig)
+Config/Staging.local.xcconfig

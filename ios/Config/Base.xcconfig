@@ -1,0 +1,5 @@
+// Shared Dishify build settings (included by Debug, Release, and Staging).
+
+DISHIFY_REALM = dishify
+DISHIFY_IOS_CLIENT_ID = dishify-ios
+DISHIFY_REDIRECT_URI = dishify:/$()/callback

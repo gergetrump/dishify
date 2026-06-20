@@ -62,11 +62,10 @@ services:
     container_name: dishify-retrieval
     ports:
       - "8002:8002"
+    env_file:
+      - .env.secret
     environment:
-      QDRANT_URL: http://qdrant:6333
       QDRANT_COLLECTION: recipes_10000
-    depends_on:
-      - qdrant
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/health')\""]
       interval: 15s
