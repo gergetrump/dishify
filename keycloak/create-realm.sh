@@ -8,13 +8,14 @@ REALM="dishify"
 # ---------------------------------------------------------------------------
 # Required env vars:
 #   KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD
-#   KEYCLOAK_BACKEND_SECRET       — client secret for dishify-backend
-#   KEYCLOAK_USER_SERVICE_SECRET  — client secret for dishify-user-service
-#   KEYCLOAK_TEST_USER            — test user username
-#   KEYCLOAK_TEST_EMAIL           — test user email
-#   KEYCLOAK_TEST_PASSWORD        — test user password
-#   FRONTEND_URL                  — origin of the frontend (e.g. http://localhost:4200)
+#   KEYCLOAK_BACKEND_SECRET  — client secret for dishify-backend
+#   KEYCLOAK_TEST_USER         — test user username
+#   KEYCLOAK_TEST_EMAIL        — test user email
+#   KEYCLOAK_TEST_PASSWORD     — test user password
+#   IOS_REDIRECT_URI           — optional; default dishify://callback
 # ---------------------------------------------------------------------------
+
+IOS_REDIRECT_URI="${IOS_REDIRECT_URI:-dishify://callback}"
 
 # Start Keycloak in background
 $KC start-dev --http-port=9001 &
@@ -50,29 +51,27 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 2. Frontend public client (PKCE)
+# 2. iOS public client (PKCE)
 # ---------------------------------------------------------------------------
-if ! $KCADM get clients -r $REALM | grep '"clientId" : "dishify-frontend"' > /dev/null; then
+if ! $KCADM get clients -r $REALM | grep '"clientId" : "dishify-ios"' > /dev/null; then
   $KCADM create clients -r $REALM \
-    -s clientId=dishify-frontend \
-    -s name="Dishify Frontend" \
+    -s clientId=dishify-ios \
+    -s name="Dishify iOS" \
     -s enabled=true \
     -s publicClient=true \
     -s standardFlowEnabled=true \
     -s directAccessGrantsEnabled=false \
     -s protocol=openid-connect \
-    -s rootUrl="$FRONTEND_URL" \
-    -s 'redirectUris=["*"]' \
+    -s "redirectUris=[\"$IOS_REDIRECT_URI\"]" \
     -s 'webOrigins=["*"]' \
     -s 'attributes.pkce.code.challenge.method=S256'
-  echo "Client 'dishify-frontend' created."
+  echo "Client 'dishify-ios' created."
 
-  FRONTEND_UUID=$($KCADM get clients -r $REALM --fields id,clientId | \
-    grep -B1 '"clientId" : "dishify-frontend"' | \
+  IOS_UUID=$($KCADM get clients -r $REALM --fields id,clientId | \
+    grep -B1 '"clientId" : "dishify-ios"' | \
     grep '"id"' | sed 's/.*"id" : "\(.*\)".*/\1/')
 
-  # Protocol mapper: exclusion_restrictions (multivalued string array in JWT)
-  $KCADM create clients/$FRONTEND_UUID/protocol-mappers/models -r $REALM \
+  $KCADM create clients/$IOS_UUID/protocol-mappers/models -r $REALM \
     -s name=exclusion_restrictions \
     -s protocol=openid-connect \
     -s protocolMapper=oidc-usermodel-attribute-mapper \
@@ -84,9 +83,7 @@ if ! $KCADM get clients -r $REALM | grep '"clientId" : "dishify-frontend"' > /de
     -s 'config."id.token.claim"=true' \
     -s 'config."userinfo.token.claim"=true'
 
-  # Protocol mapper: cuisine_preferences (multivalued string array in JWT)
-  # Rename this field if needed
-  $KCADM create clients/$FRONTEND_UUID/protocol-mappers/models -r $REALM \
+  $KCADM create clients/$IOS_UUID/protocol-mappers/models -r $REALM \
     -s name=cuisine_preferences \
     -s protocol=openid-connect \
     -s protocolMapper=oidc-usermodel-attribute-mapper \
@@ -100,7 +97,7 @@ if ! $KCADM get clients -r $REALM | grep '"clientId" : "dishify-frontend"' > /de
 
   echo "Protocol mappers added."
 else
-  echo "Client 'dishify-frontend' already exists."
+  echo "Client 'dishify-ios' already exists."
 fi
 
 # ---------------------------------------------------------------------------
@@ -127,32 +124,6 @@ if ! $KCADM get clients -r $REALM | grep '"clientId" : "dishify-backend"' > /dev
   echo "Client 'dishify-backend' created."
 else
   echo "Client 'dishify-backend' already exists."
-fi
-
-# ---------------------------------------------------------------------------
-# 3b. User-service confidential client (service account — manages users)
-# ---------------------------------------------------------------------------
-if ! $KCADM get clients -r $REALM | grep '"clientId" : "dishify-user-service"' > /dev/null; then
-  $KCADM create clients -r $REALM \
-    -s clientId=dishify-user-service \
-    -s name="Dishify User Service" \
-    -s enabled=true \
-    -s publicClient=false \
-    -s serviceAccountsEnabled=true \
-    -s standardFlowEnabled=false \
-    -s directAccessGrantsEnabled=false \
-    -s clientAuthenticatorType=client-secret \
-    -s secret="$KEYCLOAK_USER_SERVICE_SECRET"
-
-  $KCADM add-roles -r $REALM \
-    --uusername service-account-dishify-user-service \
-    --rolename manage-users \
-    --rolename view-users \
-    --cclientid realm-management
-
-  echo "Client 'dishify-user-service' created."
-else
-  echo "Client 'dishify-user-service' already exists."
 fi
 
 # ---------------------------------------------------------------------------
