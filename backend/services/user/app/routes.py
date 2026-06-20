@@ -53,14 +53,15 @@ def auth_config() -> AuthConfigResponse:
 			status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
 			detail=f"Keycloak unavailable: {exc}",
 		) from exc
+	public_realm_url = settings.keycloak_public_realm_url
 
 	return AuthConfigResponse(
-		issuer=oidc["issuer"],
-		authorization_endpoint=oidc["authorization_endpoint"],
-		token_endpoint=oidc["token_endpoint"],
-		logout_endpoint=oidc["end_session_endpoint"],
-		userinfo_endpoint=oidc["userinfo_endpoint"],
-		jwks_uri=oidc["jwks_uri"],
+		issuer=public_realm_url,
+		authorization_endpoint=f"{public_realm_url}/protocol/openid-connect/auth",
+		token_endpoint=f"{public_realm_url}/protocol/openid-connect/token",
+		logout_endpoint=f"{public_realm_url}/protocol/openid-connect/logout",
+		userinfo_endpoint=f"{public_realm_url}/protocol/openid-connect/userinfo",
+		jwks_uri=f"{public_realm_url}/protocol/openid-connect/certs",
 		realm=settings.keycloak_realm,
 		clients={
 			"ios": settings.keycloak_ios_client_id,

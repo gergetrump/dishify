@@ -14,13 +14,15 @@ REALM="dishify"
 #   KEYCLOAK_TEST_PASSWORD     — test user password
 #   IOS_REDIRECT_URI           — optional; default dishify://callback
 #   WEB_REDIRECT_URI           — optional; default http://localhost:5173/*
+#   KEYCLOAK_PUBLIC_URL        — optional; frontend URL used in OIDC issuer/metadata
 # ---------------------------------------------------------------------------
 
 IOS_REDIRECT_URI="${IOS_REDIRECT_URI:-dishify://callback}"
 WEB_REDIRECT_URI="${WEB_REDIRECT_URI:-http://localhost:5173/*}"
+KEYCLOAK_PUBLIC_URL="${KEYCLOAK_PUBLIC_URL:-http://localhost:9001}"
 
 # Start Keycloak in background
-$KC start-dev --http-port=9001 &
+$KC start-dev --http-port=9001 --hostname-url="$KEYCLOAK_PUBLIC_URL" --hostname-strict=false &
 KC_PID=$!
 
 echo "Waiting for Keycloak to become ready..."

@@ -21,11 +21,9 @@ class KeycloakError(RuntimeError):
 
 class KeycloakClient:
 	def __init__(self) -> None:
-		self.realm_base = (
-			f"{settings.keycloak_url.rstrip('/')}/realms/{settings.keycloak_realm}"
-		)
+		self.realm_base = settings.keycloak_internal_realm_url
 		self.admin_base = (
-			f"{settings.keycloak_url.rstrip('/')}/admin/realms/{settings.keycloak_realm}"
+			f"{settings.keycloak_internal_base_url}/admin/realms/{settings.keycloak_realm}"
 		)
 		self.timeout = settings.request_timeout_seconds
 

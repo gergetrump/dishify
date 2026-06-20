@@ -13,11 +13,11 @@ _jwk_client_url: str | None = None
 
 
 def _realm_base() -> str:
-	return f"{settings.keycloak_url.rstrip('/')}/realms/{settings.keycloak_realm}"
+	return settings.keycloak_public_realm_url
 
 
 def _jwks_url() -> str:
-	return f"{_realm_base()}/protocol/openid-connect/certs"
+	return f"{settings.keycloak_internal_realm_url}/protocol/openid-connect/certs"
 
 
 def _get_jwk_client() -> PyJWKClient:
