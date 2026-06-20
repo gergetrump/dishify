@@ -1,84 +1,118 @@
 import SwiftUI
 
-struct ResultRow: View {
-    let result: RecipeResult
+struct RecipeCard: View {
+    @EnvironmentObject private var router: AppRouter
+    let recipe: RecipeResult
+
+    private var score: Int { Int((recipe.score * 100).rounded()) }
+    private var matched: [String] { recipe.inventoryMatched ?? [] }
+    private var missing: [String] { recipe.inventoryMissing ?? [] }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                    Text("#\(result.rank)")
-                        .font(Theme.Typography.caption)
-                        .foregroundStyle(Theme.Colors.textSecondary)
-
-                    Text(result.title)
-                        .font(Theme.Typography.headline)
-                        .foregroundStyle(Theme.Colors.textPrimary)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Eyebrow(text: "Rank \(recipe.rank)")
+                    Text(recipe.title ?? "Untitled recipe")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundStyle(Theme.Colors.text)
+                    HStack(spacing: 10) {
+                        if let minutes = recipe.timeMinutes {
+                            MetaPill(text: "\(minutes) min")
+                        }
+                        MetaPill(text: "Score \(score)")
+                    }
                 }
-
-                Spacer(minLength: Theme.Spacing.sm)
-
-                scoreBadge
+                Spacer()
+                Text("\(score)")
+                    .font(.system(size: 28, weight: .black))
+                    .foregroundStyle(Theme.Colors.green)
             }
 
-            ProgressView(value: min(max(result.score, 0), 1))
-                .tint(Theme.Colors.accent)
-                .accessibilityLabel("Match score")
-                .accessibilityValue(RecipeResultFormatting.matchLabel(for: result.score))
-
-            if !inventorySummary.isEmpty {
-                Text(inventorySummary)
-                    .font(Theme.Typography.caption)
-                    .foregroundStyle(Theme.Colors.textSecondary)
+            if let summary = recipe.summary {
+                Text(summary)
+                    .foregroundStyle(Theme.Colors.muted)
             }
+
+            reasoningPreview
+            tagList
+
+            HStack {
+                Text("\(matched.count) matched")
+                Text("\(missing.count) missing")
+                Spacer()
+                Button("View recipe") {
+                    router.go(.recipe(recipe.id))
+                }
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Theme.Colors.primaryDark)
+            }
+            .font(.system(size: 14, weight: .heavy))
+            .foregroundStyle(Theme.Colors.muted)
         }
-        .padding(Theme.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
         .background(Theme.Colors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
         .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.md)
-                .stroke(Theme.Colors.border.opacity(0.6), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Theme.Colors.border, lineWidth: 1)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    private var scoreBadge: some View {
-        Text(RecipeResultFormatting.matchLabel(for: result.score))
-            .font(Theme.Typography.caption.weight(.semibold))
-            .foregroundStyle(Theme.Colors.primaryActionText)
-            .padding(.horizontal, Theme.Spacing.sm)
-            .padding(.vertical, Theme.Spacing.xs)
-            .background(Theme.Colors.accent)
-            .clipShape(Capsule())
-            .accessibilityHidden(true)
+    @ViewBuilder
+    private var reasoningPreview: some View {
+        let positive = recipe.reasoning?.positive ?? []
+        let negative = recipe.reasoning?.negative ?? []
+        if !positive.isEmpty || !negative.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                if !positive.isEmpty {
+                    ReasoningBlock(title: "Why it fits", items: Array(positive.prefix(2)))
+                }
+                if !negative.isEmpty {
+                    ReasoningBlock(title: "Watch for", items: Array(negative.prefix(2)))
+                }
+            }
+        }
     }
 
-    private var inventorySummary: String {
-        var parts: [String] = []
-        if !result.inventoryMatched.isEmpty {
-            parts.append("\(result.inventoryMatched.count) matched")
+    private var tagList: some View {
+        let visibleTags = Array(matched.prefix(4)) + Array(missing.prefix(4))
+        return FlowLayout(visibleTags, spacing: 8) { item in
+            let isMatched = matched.prefix(4).contains(item)
+            Text("\(isMatched ? "Have" : "Need") \(item)")
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(isMatched ? Theme.Colors.green : Theme.Colors.primaryDark)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(isMatched ? Color(red: 0.898, green: 0.957, blue: 0.914) : Color(red: 1, green: 0.945, blue: 0.918))
+                .clipShape(Capsule())
         }
-        if !result.inventoryMissing.isEmpty {
-            parts.append("\(result.inventoryMissing.count) missing")
-        }
-        return parts.joined(separator: " · ")
     }
 }
 
-enum RecipeResultFormatting {
-    static func matchLabel(for score: Double) -> String {
-        String(format: "%.0f%% match", score * 100)
-    }
+private struct ReasoningBlock: View {
+    let title: String
+    let items: [String]
 
-    static func durationLabel(for minutes: Int) -> String {
-        minutes == 1 ? "1 minute" : "\(minutes) minutes"
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 14, weight: .black))
+            ForEach(items, id: \.self) { item in
+                Text("• \(item)")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.Colors.muted)
+            }
+        }
     }
 }
 
-#Preview {
-    ResultRow(result: ResultDetailPreviewData.sample)
-        .padding()
-        .background(Theme.Colors.background)
+struct MetaPill: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 13, weight: .heavy))
+            .foregroundStyle(Theme.Colors.muted)
+    }
 }

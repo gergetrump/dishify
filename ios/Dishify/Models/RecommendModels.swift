@@ -1,12 +1,14 @@
 import Foundation
 
-struct ParsedIngredient: Codable, Equatable {
+struct ParsedIngredient: Codable, Equatable, Identifiable {
+    var id: String?
     let name: String
     let quantity: Double?
     let unit: String?
     let rawText: String
 
     enum CodingKeys: String, CodingKey {
+        case id
         case name
         case quantity
         case unit
@@ -28,22 +30,22 @@ struct RecommendRequest: Codable, Equatable {
     }
 }
 
-struct Reasoning: Codable, Equatable {
+struct ReasoningDetail: Codable, Equatable {
     let positive: [String]
     let negative: [String]
 }
 
-struct RecipeResult: Codable, Equatable {
+struct RecipeResult: Codable, Equatable, Identifiable {
     let rank: Int
     let id: Int
-    let title: String
+    let title: String?
     let summary: String?
     let timeMinutes: Int?
     let score: Double
-    let reasoning: Reasoning?
-    let directions: [String]
-    let inventoryMatched: [String]
-    let inventoryMissing: [String]
+    let reasoning: ReasoningDetail?
+    let directions: [String]?
+    let inventoryMatched: [String]?
+    let inventoryMissing: [String]?
 
     enum CodingKeys: String, CodingKey {
         case rank
@@ -59,7 +61,8 @@ struct RecipeResult: Codable, Equatable {
     }
 }
 
-struct PipelineStage: Codable, Equatable {
+struct PipelineStage: Codable, Equatable, Identifiable {
+    var id: String { name }
     let name: String
     let status: String
     let latencyMs: Int
@@ -76,7 +79,7 @@ struct RecommendResponse: Codable, Equatable {
     let stages: [PipelineStage]
 }
 
-struct HealthResponse: Codable, Equatable {
-    let status: String
-    let service: String
+struct RecommendationSession: Codable, Equatable {
+    let request: RecommendRequest
+    let response: RecommendResponse
 }

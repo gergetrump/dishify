@@ -2,12 +2,14 @@ import SwiftUI
 
 @main
 struct DishifyApp: App {
-    @StateObject private var sessionStore = SessionStore()
+    @StateObject private var session = SessionStore()
+    @StateObject private var router = AppRouter()
 
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environmentObject(sessionStore)
+                .environmentObject(session)
+                .environmentObject(router)
         }
     }
 }

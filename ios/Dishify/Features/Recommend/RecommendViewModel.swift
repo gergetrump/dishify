@@ -1,138 +1,114 @@
-import Foundation
+import SwiftUI
 
-@MainActor
-final class RecommendViewModel: ObservableObject {
-    private static let recommendTimeoutSeconds: Duration = .seconds(45)
+struct ResultsPage: View {
+    @EnvironmentObject private var router: AppRouter
 
-    @Published private(set) var state: AsyncState<RecommendResponse> = .idle
-    @Published var query = ""
-    @Published var topK = 5
-    @Published var pantryIngredients: [ParsedIngredient] = []
-    #if DEBUG
-    @Published var debugSkipAuthForRecommend = false
-    #endif
+    @State private var session = RecommendationStore.load()
+    @State private var error: String?
+    @State private var isRetrying = false
 
-    private let session: SessionStore
-    private var recommendTask: Task<Void, Never>?
+    private let api = APIClient()
 
-    var results: [RecipeResult] {
-        state.value?.results ?? []
-    }
-
-    var stageNotice: String? {
-        guard let response = state.value else {
-            return nil
-        }
-
-        guard let explainStage = response.stages.first(where: { $0.name == "explain" }) else {
-            return nil
-        }
-
-        switch explainStage.status {
-        case "skipped":
-            return "AI explanations are unavailable for this search."
-        case "error":
-            return "We couldn't generate explanations for these results."
-        default:
-            return nil
-        }
-    }
-
-    init(session: SessionStore) {
-        self.session = session
-    }
-
-    func recommend() async {
-        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedQuery.isEmpty else {
-            state = .failed("Enter what you'd like to cook.")
-            return
-        }
-
-        recommendTask?.cancel()
-
-        state = .loading
-
-        let request = RecommendRequest(
-            query: trimmedQuery,
-            topK: min(max(topK, 1), 100),
-            availableIngredients: pantryIngredients.isEmpty ? nil : pantryIngredients,
-            exclusionRestrictions: nil
-        )
-        #if DEBUG
-        let skipAuthForRecommend = debugSkipAuthForRecommend
-        #endif
-
-        let task = Task { [weak self] in
-            guard let self else { return }
-            do {
-                let response = try await Self.withTimeout(Self.recommendTimeoutSeconds) {
-                    #if DEBUG
-                    if skipAuthForRecommend {
-                        return try await APIClient().request(
-                            "/recommend",
-                            method: .post,
-                            body: request,
-                            requiresAuth: false
-                        ) as RecommendResponse
+    var body: some View {
+        if let session {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Eyebrow(text: "Recipe suggestions")
+                        Text("Best matches")
+                            .font(.system(size: 40, weight: .black))
+                            .foregroundStyle(Theme.Colors.text)
+                        Text("For: \(session.request.query)")
+                            .foregroundStyle(Theme.Colors.muted)
                     }
-                    #endif
-
-                    let client = try await self.session.makeAuthenticatedClient()
-                    return try await client.request(
-                        "/recommend",
-                        method: .post,
-                        body: request,
-                        requiresAuth: true
-                    ) as RecommendResponse
+                    Spacer()
+                    Button(isRetrying ? "Retrying..." : "Retry") {
+                        Task { await retry() }
+                    }
+                    .buttonStyle(PrimaryButtonStyle(variant: .secondary))
+                    .disabled(isRetrying)
+                    .frame(width: 150)
                 }
-                try Task.checkCancellation()
-                self.state = .loaded(response)
-            } catch is CancellationError {
-                return
-            } catch TimeoutError.recommendRequestTimedOut {
-                self.state = .failed("Request timed out. Please try again.")
-            } catch {
-                if (error as? URLError)?.code == .cancelled { return }
-                self.state = .failed(self.session.message(for: error, context: .recommend))
-            }
-        }
 
-        recommendTask = task
-        await task.value
+                if let error {
+                    AlertBanner(text: error)
+                }
+
+                VStack(spacing: 16) {
+                    if session.response.results.isEmpty {
+                        EmptyState(text: "Dishify did not return any recipes for this search.")
+                    } else {
+                        ForEach(session.response.results) { recipe in
+                            RecipeCard(recipe: recipe)
+                        }
+                    }
+                }
+
+                DisclosureGroup("Pipeline details") {
+                    VStack(spacing: 10) {
+                        ForEach(session.response.stages) { stage in
+                            HStack {
+                                Text(stage.name)
+                                Spacer()
+                                Text(stage.status)
+                                    .font(.system(size: 14, weight: .black))
+                                Text("\(stage.latencyMs) ms")
+                                    .foregroundStyle(Theme.Colors.muted)
+                            }
+                            .padding(12)
+                            .background(Theme.Colors.surfaceMuted)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                    .padding(.top, 12)
+                }
+                .font(.system(size: 16, weight: .heavy))
+            }
+            .surfacePanel()
+        } else {
+            VStack(alignment: .leading, spacing: 16) {
+                Eyebrow(text: "Recipe suggestions")
+                Text("No results yet")
+                    .font(.system(size: 40, weight: .black))
+                Text("Add pantry ingredients and describe what sounds good first.")
+                    .foregroundStyle(Theme.Colors.muted)
+                Button("Start cooking") {
+                    router.go(.cook)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+            }
+            .surfacePanel()
+        }
     }
 
-    func cancel() {
-        recommendTask?.cancel()
-        recommendTask = nil
-        if state.isLoading {
-            state = .idle
+    private func retry() async {
+        guard let session else { return }
+        error = nil
+        isRetrying = true
+        defer { isRetrying = false }
+        do {
+            let response = try await api.recommend(session.request)
+            let next = RecommendationSession(request: session.request, response: response)
+            RecommendationStore.save(next)
+            self.session = next
+        } catch {
+            self.error = error.localizedDescription
         }
     }
+}
 
-    private enum TimeoutError: Error {
-        case recommendRequestTimedOut
-    }
+struct EmptyState: View {
+    let text: String
 
-    private static func withTimeout<T: Sendable>(
-        _ timeout: Duration,
-        operation: @escaping @Sendable () async throws -> T
-    ) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask {
-                try await operation()
-            }
-            group.addTask {
-                try await Task.sleep(for: timeout)
-                throw TimeoutError.recommendRequestTimedOut
-            }
-
-            guard let firstResult = try await group.next() else {
-                group.cancelAll()
-                throw TimeoutError.recommendRequestTimedOut
-            }
-            group.cancelAll()
-            return firstResult
-        }
+    var body: some View {
+        Text(text)
+            .foregroundStyle(Theme.Colors.muted)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(Color(red: 0.980, green: 0.969, blue: 0.949))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Theme.Colors.border, style: StrokeStyle(lineWidth: 1, dash: [5]))
+            )
     }
 }

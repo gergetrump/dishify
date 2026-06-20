@@ -18,32 +18,6 @@ final class ModelDecodingTests: XCTestCase {
         XCTAssertEqual(response.service, "dishify-backend")
     }
 
-    func testDecodesAuthConfig() throws {
-        let json = """
-        {
-          "issuer": "http://localhost:9001/realms/dishify",
-          "authorization_endpoint": "http://localhost:9001/realms/dishify/protocol/openid-connect/auth",
-          "token_endpoint": "http://localhost:9001/realms/dishify/protocol/openid-connect/token",
-          "logout_endpoint": "http://localhost:9001/realms/dishify/protocol/openid-connect/logout",
-          "userinfo_endpoint": "http://localhost:9001/realms/dishify/protocol/openid-connect/userinfo",
-          "jwks_uri": "http://localhost:9001/realms/dishify/protocol/openid-connect/certs",
-          "realm": "dishify",
-          "clients": {
-            "ios": "dishify-ios",
-            "web": "dishify-web",
-            "backend": "dishify-backend",
-            "api": "dishify-web"
-          }
-        }
-        """
-
-        let config = try decoder.decode(AuthConfig.self, from: Data(json.utf8))
-
-        XCTAssertEqual(config.realm, "dishify")
-        XCTAssertEqual(config.clients.ios, "dishify-ios")
-        XCTAssertEqual(config.tokenEndpoint, "http://localhost:9001/realms/dishify/protocol/openid-connect/token")
-    }
-
     func testDecodesTokenResponse() throws {
         let json = """
         {
@@ -98,6 +72,25 @@ final class ModelDecodingTests: XCTestCase {
         XCTAssertEqual(profile.username, "demo_user")
         XCTAssertTrue(profile.emailVerified)
         XCTAssertEqual(profile.lastName, "User")
+    }
+
+    func testDecodesUserProfileWithNullNames() throws {
+        let json = """
+        {
+          "id": "25f4a8eb-ac4e-42a0-be47-e8a9c65b0b17",
+          "username": "testuser",
+          "email": "test@dishify.com",
+          "email_verified": true,
+          "first_name": null,
+          "last_name": null
+        }
+        """
+
+        let profile = try decoder.decode(UserProfile.self, from: Data(json.utf8))
+
+        XCTAssertEqual(profile.username, "testuser")
+        XCTAssertNil(profile.firstName)
+        XCTAssertNil(profile.lastName)
     }
 
     func testDecodesUserPreferences() throws {
@@ -250,7 +243,7 @@ final class ModelDecodingTests: XCTestCase {
     }
 
     func testEncodesPreferencesUpdateRequestFromAPIExample() throws {
-        let request = PreferencesUpdateRequest(
+        let request = UpdatePreferencesRequest(
             exclusionRestrictions: ["shellfish_allergy", "nut_allergy", "vegetarian"]
         )
 

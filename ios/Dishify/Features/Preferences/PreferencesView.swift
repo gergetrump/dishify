@@ -1,114 +1,115 @@
 import SwiftUI
 
-struct PreferencesView: View {
-    @ObservedObject var viewModel: PreferencesViewModel
+struct PreferencesPage: View {
+    @State private var selected: Set<String> = []
+    @State private var error: String?
+    @State private var status: String?
+    @State private var isLoading = true
+    @State private var isSaving = false
+
+    private let api = APIClient()
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("Preferences")
-                .searchable(text: $viewModel.searchText, prompt: "Search restrictions")
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Save") {
-                            Task { await viewModel.save() }
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Eyebrow(text: "Hard filters")
+                Text("Food preferences")
+                    .font(.system(size: 40, weight: .black))
+                Text("Choose allergies, diets, and restrictions Dishify should always avoid.")
+                    .foregroundStyle(Theme.Colors.muted)
+            }
+
+            if let error { AlertBanner(text: error) }
+            if let status { AlertBanner(text: status, kind: .success) }
+
+            HStack {
+                Text("\(selected.count) selected")
+                    .foregroundStyle(Theme.Colors.muted)
+                Spacer()
+                Button("Clear all") {
+                    status = nil
+                    selected = []
+                }
+                .buttonStyle(PrimaryButtonStyle(variant: .ghost))
+                .frame(width: 120)
+                Button(isSaving ? "Saving..." : "Save preferences") {
+                    Task { await save() }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .frame(width: 190)
+                .disabled(isLoading || isSaving)
+            }
+            .padding(.vertical, 16)
+            .overlay(Divider(), alignment: .top)
+            .overlay(Divider(), alignment: .bottom)
+
+            if isLoading {
+                Text("Loading preferences...")
+                    .foregroundStyle(Theme.Colors.muted)
+            }
+
+            VStack(alignment: .leading, spacing: 28) {
+                ForEach(restrictionSections) { section in
+                    VStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(section.title)
+                                .font(.system(size: 18, weight: .black))
+                            Text(section.description)
+                                .foregroundStyle(Theme.Colors.muted)
                         }
-                        .disabled(!viewModel.hasUnsavedChanges || viewModel.isSaving)
-                        .accessibilityLabel("Save preferences")
-                        .accessibilityHint(viewModel.hasUnsavedChanges ? "Saves your selected dietary restrictions." : "No changes to save.")
-                    }
-                }
-                .task {
-                    if case .idle = viewModel.loadState {
-                        await viewModel.load()
-                    }
-                }
-        }
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch viewModel.loadState {
-        case .idle, .loading:
-            LoadingStateView(message: "Loading preferences…")
-        case .failed(let message):
-            ErrorStateView(message: message) {
-                Task { await viewModel.load() }
-            }
-        case .loaded:
-            preferencesList
-        }
-    }
-
-    private var preferencesList: some View {
-        List {
-            if let statusMessage = viewModel.statusMessage {
-                Section {
-                    Label(statusMessage, systemImage: statusIcon(for: statusMessage))
-                        .font(Theme.Typography.caption)
-                        .foregroundStyle(statusColor(for: statusMessage))
-                        .accessibilityLabel(statusMessage)
-                }
-            }
-
-            if viewModel.filteredSections.isEmpty {
-                Section {
-                    IllustratedEmptyState(
-                        systemImage: "leaf",
-                        title: "No restrictions found",
-                        message: "Try a different search term to find dietary restrictions."
-                    )
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                }
-            } else {
-                ForEach(viewModel.filteredSections, id: \.0) { category, tags in
-                    Section(category.title) {
-                        ForEach(tags) { tag in
-                            Button {
-                                viewModel.toggle(tag)
-                            } label: {
-                                HStack {
-                                    Text(tag.label)
-                                        .font(Theme.Typography.body)
-                                        .foregroundStyle(Theme.Colors.textPrimary)
-                                    Spacer()
-                                    if viewModel.selectedTags.contains(tag.id) {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(Theme.Colors.accent)
-                                    }
-                                }
+                        FlowLayout(section.tags, spacing: 10) { tag in
+                            ChipButton(
+                                title: formatRestrictionLabel(tag),
+                                selected: selected.contains(tag),
+                                disabled: isLoading
+                            ) {
+                                toggle(tag)
                             }
-                            .frame(minHeight: Theme.Layout.minTapTarget)
-                            .accessibilityLabel(tag.label)
-                            .accessibilityValue(viewModel.selectedTags.contains(tag.id) ? "Selected" : "Not selected")
-                            .accessibilityHint("Double tap to toggle this restriction.")
                         }
                     }
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .overlay {
-            if viewModel.isSaving {
-                ProgressView("Saving…")
-                    .padding(Theme.Spacing.md)
-                    .background(Theme.Colors.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
-                    .accessibilityLabel("Saving preferences")
-            }
+        .surfacePanel()
+        .task {
+            await load()
         }
     }
 
-    private func statusColor(for message: String) -> Color {
-        message == "Preferences saved." ? Theme.Colors.success : Theme.Colors.error
+    private func toggle(_ tag: String) {
+        status = nil
+        if selected.contains(tag) {
+            selected.remove(tag)
+        } else {
+            selected.insert(tag)
+        }
     }
 
-    private func statusIcon(for message: String) -> String {
-        message == "Preferences saved." ? "checkmark.circle.fill" : "exclamationmark.circle.fill"
+    private func load() async {
+        error = nil
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let preferences = try await api.preferences()
+            selected = Set(preferences.exclusionRestrictions)
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
-}
 
-#Preview {
-    PreferencesView(viewModel: PreferencesViewModel(session: SessionStore()))
+    private func save() async {
+        error = nil
+        status = nil
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            let preferences = try await api.updatePreferences(
+                UpdatePreferencesRequest(exclusionRestrictions: Array(selected))
+            )
+            selected = Set(preferences.exclusionRestrictions)
+            status = "Preferences saved."
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
 }

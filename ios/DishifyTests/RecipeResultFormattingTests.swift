@@ -2,17 +2,30 @@ import XCTest
 @testable import Dishify
 
 final class RecipeResultFormattingTests: XCTestCase {
-    func testMatchLabelFormatsPercentage() {
-        XCTAssertEqual(RecipeResultFormatting.matchLabel(for: 0.59), "59% match")
-        XCTAssertEqual(RecipeResultFormatting.matchLabel(for: 0), "0% match")
-        XCTAssertEqual(RecipeResultFormatting.matchLabel(for: 1), "100% match")
-    }
+    func testRecipeResultDecodesWebShape() throws {
+        let json = """
+        {
+          "rank": 1,
+          "id": 3136,
+          "title": "Pasta With Spinach Sauce",
+          "summary": null,
+          "time_minutes": 30,
+          "score": 0.87,
+          "reasoning": {
+            "positive": ["Uses spinach from your pantry."],
+            "negative": ["You may need cream."]
+          },
+          "directions": ["Cook pasta.", "Blend spinach sauce."],
+          "inventory_matched": ["spinach", "pasta"],
+          "inventory_missing": ["cream"]
+        }
+        """
 
-    func testDurationLabelUsesSingularMinute() {
-        XCTAssertEqual(RecipeResultFormatting.durationLabel(for: 1), "1 minute")
-    }
+        let recipe = try JSONDecoder().decode(RecipeResult.self, from: Data(json.utf8))
 
-    func testDurationLabelUsesPluralMinutes() {
-        XCTAssertEqual(RecipeResultFormatting.durationLabel(for: 45), "45 minutes")
+        XCTAssertEqual(recipe.id, 3136)
+        XCTAssertEqual(recipe.timeMinutes, 30)
+        XCTAssertEqual(recipe.inventoryMatched, ["spinach", "pasta"])
+        XCTAssertEqual(recipe.reasoning?.positive.first, "Uses spinach from your pantry.")
     }
 }

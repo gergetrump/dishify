@@ -44,7 +44,7 @@ final class APIClientTests: XCTestCase {
             _ = try await client.health() as HealthResponse
             XCTFail("Expected unauthorized error")
         } catch let error as APIError {
-            XCTAssertEqual(error.errorDescription, APIError.unauthorized.errorDescription)
+            XCTAssertEqual(error.errorDescription, APIError.auth.errorDescription)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -93,28 +93,11 @@ final class APIClientTests: XCTestCase {
             _ = try await client.health() as HealthResponse
             XCTFail("Expected server unavailable error")
         } catch let error as APIError {
-            if case .serverUnavailable(let detail) = error {
+            if case .unavailable(let detail) = error {
                 XCTAssertEqual(detail, "Service unavailable")
             } else {
-                XCTFail("Expected serverUnavailable error, got \(error)")
+                XCTFail("Expected unavailable error, got \(error)")
             }
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
-    func testRequiresAuthWhenTokenMissing() async {
-        let client = APIClient(
-            baseURL: URL(string: "http://localhost:8000")!,
-            session: makeSession(),
-            tokenProvider: { nil }
-        )
-
-        do {
-            let _: UserProfile = try await client.request("/me", requiresAuth: true)
-            XCTFail("Expected unauthorized error")
-        } catch let error as APIError {
-            XCTAssertEqual(error.errorDescription, APIError.unauthorized.errorDescription)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -138,28 +121,13 @@ final class APIClientTests: XCTestCase {
         _ = try await client.health()
     }
 
-    func testRetriesOnceAfter401WhenTokenRefreshSucceeds() async throws {
-        var apiRequestCount = 0
-        var refreshCallCount = 0
-        var unauthorizedHandled = false
-        var currentToken = "stale-token"
-
-        let client = makeClient(
-            tokenProvider: { currentToken },
-            tokenRefresher: {
-                refreshCallCount += 1
-                currentToken = "fresh-token"
-                return currentToken
-            },
-            onUnauthorized: {
-                unauthorizedHandled = true
-            }
-        ) { request in
-            apiRequestCount += 1
-            let statusCode = request.value(forHTTPHeaderField: "Authorization") == "Bearer stale-token" ? 401 : 200
+    func testMeUsesBearerToken() async throws {
+        let client = makeClient(tokenProvider: { "test-token" }) { request in
+            XCTAssertEqual(request.url?.path, "/me")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token")
             let response = HTTPURLResponse(
                 url: request.url!,
-                statusCode: statusCode,
+                statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
             )!
@@ -169,67 +137,20 @@ final class APIClientTests: XCTestCase {
             return (response, body)
         }
 
-        let profile: UserProfile = try await client.request("/me", requiresAuth: true)
+        let profile = try await client.me()
 
         XCTAssertEqual(profile.username, "test")
-        XCTAssertEqual(apiRequestCount, 2)
-        XCTAssertEqual(refreshCallCount, 1)
-        XCTAssertFalse(unauthorizedHandled)
-    }
-
-    func testSignsOutWhenTokenRefreshFailsAfter401() async {
-        var unauthorizedHandled = false
-
-        let client = makeClient(
-            tokenProvider: { "stale-token" },
-            tokenRefresher: { nil },
-            onUnauthorized: { unauthorizedHandled = true }
-        ) { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 401,
-                httpVersion: nil,
-                headerFields: nil
-            )!
-            return (response, Data())
-        }
-
-        do {
-            let _: UserProfile = try await client.request("/me", requiresAuth: true)
-            XCTFail("Expected unauthorized error")
-        } catch let error as APIError {
-            XCTAssertEqual(error.errorDescription, APIError.unauthorized.errorDescription)
-            XCTAssertTrue(unauthorizedHandled)
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
     }
 
     private func makeClient(
-        tokenProvider: AccessTokenProvider? = nil,
-        tokenRefresher: AccessTokenRefresher? = nil,
-        onUnauthorized: UnauthorizedHandler? = nil,
+        tokenProvider: (() -> String?)? = nil,
         handler: @escaping (URLRequest) throws -> (HTTPURLResponse, Data)
     ) -> APIClient {
         MockURLProtocol.requestHandler = handler
         return APIClient(
             baseURL: URL(string: "http://localhost:8000")!,
-            session: makeSession(),
-            tokenProvider: tokenProvider,
-            tokenRefresher: tokenRefresher,
-            onUnauthorized: onUnauthorized
-        )
-    }
-
-    private func makeClient(
-        tokenProvider: AccessTokenProvider? = nil,
-        handler: @escaping (URLRequest) throws -> (HTTPURLResponse, Data)
-    ) -> APIClient {
-        makeClient(
-            tokenProvider: tokenProvider,
-            tokenRefresher: nil,
-            onUnauthorized: nil,
-            handler: handler
+            tokenProvider: tokenProvider ?? { nil },
+            session: makeSession()
         )
     }
 

@@ -1,66 +1,52 @@
 import Foundation
 
-struct PantryItem: Identifiable, Equatable {
-    let id: UUID
-    var rawText: String
-    var quantityText: String
-    var unit: String
+enum PantryStore {
+    private static let key = "dishify.pantry"
 
-    init(
-        id: UUID = UUID(),
-        rawText: String = "",
-        quantityText: String = "",
-        unit: String = ""
-    ) {
-        self.id = id
-        self.rawText = rawText
-        self.quantityText = quantityText
-        self.unit = unit
+    static func load() -> [ParsedIngredient] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let items = try? JSONDecoder().decode([ParsedIngredient].self, from: data) else {
+            return []
+        }
+        return items.filter { !$0.name.isEmpty }
     }
 
-    init(parsedIngredient: ParsedIngredient) {
-        id = UUID()
-        rawText = parsedIngredient.rawText
-        quantityText = parsedIngredient.quantity.map(Self.formatQuantity) ?? ""
-        unit = parsedIngredient.unit ?? ""
+    static func save(_ items: [ParsedIngredient]) {
+        guard let data = try? JSONEncoder().encode(items) else { return }
+        UserDefaults.standard.set(data, forKey: key)
     }
 
-    func toParsedIngredient() -> ParsedIngredient? {
-        let trimmedRawText = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedRawText.isEmpty else {
-            return nil
-        }
-
-        let trimmedUnit = unit.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedQuantity = quantityText.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let quantity: Double?
-        if trimmedQuantity.isEmpty {
-            quantity = nil
-        } else {
-            quantity = Double(trimmedQuantity)
-        }
-
+    static func make(name: String, quantity: Double?, unit: String?) -> ParsedIngredient {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedUnit = unit?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let amount = quantity.map { String(format: "%g", $0) } ?? ""
+        let rawText = [amount, normalizedUnit ?? "", trimmedName]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
         return ParsedIngredient(
-            name: trimmedRawText,
+            id: UUID().uuidString,
+            name: trimmedName,
             quantity: quantity,
-            unit: trimmedUnit.isEmpty ? nil : trimmedUnit,
-            rawText: trimmedRawText
+            unit: normalizedUnit?.isEmpty == true ? nil : normalizedUnit,
+            rawText: rawText
         )
     }
+}
 
-    static func parsedIngredients(from items: [PantryItem]) -> [ParsedIngredient] {
-        items.compactMap { $0.toParsedIngredient() }
+enum RecommendationStore {
+    private static let key = "dishify.last_recommendation"
+
+    static func load() -> RecommendationSession? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(RecommendationSession.self, from: data)
     }
 
-    static func items(from ingredients: [ParsedIngredient]) -> [PantryItem] {
-        ingredients.map { PantryItem(parsedIngredient: $0) }
+    static func save(_ session: RecommendationSession) {
+        guard let data = try? JSONEncoder().encode(session) else { return }
+        UserDefaults.standard.set(data, forKey: key)
     }
 
-    private static func formatQuantity(_ value: Double) -> String {
-        if value.rounded() == value {
-            return String(Int(value))
-        }
-        return String(value)
+    static func findRecipe(id: Int) -> RecipeResult? {
+        load()?.response.results.first { $0.id == id }
     }
 }

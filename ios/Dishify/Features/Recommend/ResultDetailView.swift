@@ -1,192 +1,155 @@
 import SwiftUI
 
-struct ResultDetailView: View {
-    let result: RecipeResult
+struct RecipeDetailPage: View {
+    @EnvironmentObject private var router: AppRouter
+    let recipeID: Int
+
+    private var recipe: RecipeResult? {
+        RecommendationStore.findRecipe(id: recipeID)
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                headerSection
+        if let recipe {
+            detail(recipe)
+        } else {
+            VStack(alignment: .leading, spacing: 16) {
+                Eyebrow(text: "Recipe")
+                Text("Recipe not found")
+                    .font(.system(size: 40, weight: .black))
+                Text("Recipe detail is available after choosing a recommendation from the latest results.")
+                    .foregroundStyle(Theme.Colors.muted)
+                Button("Back to results") {
+                    router.go(.results)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+            }
+            .surfacePanel()
+        }
+    }
 
-                if let summary = result.summary, !summary.isEmpty {
-                    detailSection(title: "Summary") {
-                        Text(summary)
-                            .font(Theme.Typography.body)
-                            .foregroundStyle(Theme.Colors.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
+    private func detail(_ recipe: RecipeResult) -> some View {
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Eyebrow(text: "Recipe")
+                    Text(recipe.title ?? "Untitled recipe")
+                        .font(.system(size: 40, weight: .black))
+                    HStack(spacing: 10) {
+                        if let minutes = recipe.timeMinutes {
+                            MetaPill(text: "\(minutes) min")
+                        }
+                        MetaPill(text: "Score \(Int((recipe.score * 100).rounded()))")
+                        MetaPill(text: "Rank \(recipe.rank)")
                     }
                 }
-
-                if let reasoning = result.reasoning {
-                    reasoningSection(reasoning)
+                Spacer()
+                Button("Back to results") {
+                    router.go(.results)
                 }
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Theme.Colors.primaryDark)
+            }
 
-                if !result.inventoryMatched.isEmpty || !result.inventoryMissing.isEmpty {
-                    inventorySection
+            if let summary = recipe.summary {
+                Text(summary)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Theme.Colors.muted)
+            }
+
+            VStack(spacing: 16) {
+                DetailPanel(title: "Ingredient match") {
+                    TagSection(title: "You have", items: recipe.inventoryMatched ?? [], empty: "No matched ingredients returned.")
+                    TagSection(title: "You may need", items: recipe.inventoryMissing ?? [], empty: "No missing ingredients returned.")
                 }
-
-                if !result.directions.isEmpty {
-                    directionsSection
+                DetailPanel(title: "Reasoning") {
+                    BulletSection(title: "Why it fits", items: recipe.reasoning?.positive ?? [], empty: "No positive reasoning returned.")
+                    BulletSection(title: "Watch for", items: recipe.reasoning?.negative ?? [], empty: "No concerns returned.")
                 }
             }
-            .padding(Theme.Spacing.md)
-            .frame(maxWidth: Theme.Layout.contentMaxWidth)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .background(Theme.Colors.background)
-        .navigationTitle(result.title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            Text(RecipeResultFormatting.matchLabel(for: result.score))
-                .font(Theme.Typography.headline)
-                .foregroundStyle(Theme.Colors.accent)
-
-            ProgressView(value: min(max(result.score, 0), 1))
-                .tint(Theme.Colors.accent)
-                .accessibilityLabel("Match score")
-                .accessibilityValue(RecipeResultFormatting.matchLabel(for: result.score))
-
-            if let minutes = result.timeMinutes {
-                Label(
-                    RecipeResultFormatting.durationLabel(for: minutes),
-                    systemImage: "clock"
-                )
-                .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Colors.textSecondary)
-                .accessibilityLabel("Cooking time")
-                .accessibilityValue(RecipeResultFormatting.durationLabel(for: minutes))
-            }
-        }
-        .surfaceCard()
-    }
-
-    private func reasoningSection(_ reasoning: Reasoning) -> some View {
-        detailSection(title: "Why this recipe") {
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                if reasoning.positive.isEmpty && reasoning.negative.isEmpty {
-                    Text("No explanation was provided for this result.")
-                        .font(Theme.Typography.body)
-                        .foregroundStyle(Theme.Colors.textSecondary)
+            DetailPanel(title: "Directions") {
+                if let directions = recipe.directions, !directions.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(Array(directions.enumerated()), id: \.offset) { index, step in
+                            HStack(alignment: .top, spacing: 10) {
+                                Text("\(index + 1).")
+                                    .font(.system(size: 15, weight: .black))
+                                Text(step)
+                            }
+                        }
+                    }
                 } else {
-                    ForEach(reasoning.positive, id: \.self) { item in
-                        reasoningRow(symbol: "checkmark.circle.fill", text: item, color: Theme.Colors.success, trait: "Positive")
-                    }
-
-                    ForEach(reasoning.negative, id: \.self) { item in
-                        reasoningRow(symbol: "xmark.circle.fill", text: item, color: Theme.Colors.error, trait: "Negative")
-                    }
+                    EmptyState(text: "No directions were returned for this recipe.")
                 }
             }
         }
-    }
-
-    private var inventorySection: some View {
-        detailSection(title: "Your pantry") {
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                if !result.inventoryMatched.isEmpty {
-                    inventoryGroup(title: "Matched", items: result.inventoryMatched, color: Theme.Colors.success)
-                }
-
-                if !result.inventoryMissing.isEmpty {
-                    inventoryGroup(title: "Missing", items: result.inventoryMissing, color: Theme.Colors.error)
-                }
-            }
-        }
-    }
-
-    private var directionsSection: some View {
-        detailSection(title: "Directions") {
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                ForEach(Array(result.directions.enumerated()), id: \.offset) { index, step in
-                    HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-                        Text("\(index + 1).")
-                            .font(Theme.Typography.body.weight(.semibold))
-                            .foregroundStyle(Theme.Colors.accent)
-                            .frame(width: 28, alignment: .leading)
-                            .accessibilityHidden(true)
-
-                        Text(step)
-                            .font(Theme.Typography.body)
-                            .foregroundStyle(Theme.Colors.textPrimary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Step \(index + 1), \(step)")
-                }
-            }
-        }
-    }
-
-    private func detailSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            Text(title)
-                .font(Theme.Typography.headline)
-                .foregroundStyle(Theme.Colors.textPrimary)
-                .accessibilityAddTraits(.isHeader)
-
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .surfaceCard()
-    }
-
-    private func reasoningRow(symbol: String, text: String, color: Color, trait: String) -> some View {
-        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-            Image(systemName: symbol)
-                .foregroundStyle(color)
-                .frame(width: 20)
-                .accessibilityHidden(true)
-
-            Text(text)
-                .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Colors.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(trait): \(text)")
-    }
-
-    private func inventoryGroup(title: String, items: [String], color: Color) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            Text(title)
-                .font(Theme.Typography.caption.weight(.semibold))
-                .foregroundStyle(color)
-
-            Text(items.joined(separator: ", "))
-                .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Colors.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title) ingredients: \(items.joined(separator: ", "))")
+        .surfacePanel()
     }
 }
 
-enum ResultDetailPreviewData {
-    static let sample = RecipeResult(
-        rank: 1,
-        id: 3136,
-        title: "Pasta With Spinach Sauce",
-        summary: nil,
-        timeMinutes: nil,
-        score: 0.59,
-        reasoning: Reasoning(
-            positive: ["Uses penne and spinach from your pantry."],
-            negative: ["Requires bacon and whipping cream."]
-        ),
-        directions: ["Cook pasta as directed.", "Combine spinach and sauce."],
-        inventoryMatched: ["penne", "spinach"],
-        inventoryMissing: ["bacon", "whipping cream"]
-    )
+private struct DetailPanel<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title)
+                .font(.system(size: 20, weight: .black))
+            content
+        }
+        .padding(18)
+        .background(Color(red: 0.980, green: 0.969, blue: 0.949))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Theme.Colors.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
 }
 
-#Preview {
-    NavigationStack {
-        ResultDetailView(result: ResultDetailPreviewData.sample)
+private struct TagSection: View {
+    let title: String
+    let items: [String]
+    let empty: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 15, weight: .black))
+            if items.isEmpty {
+                Text(empty).foregroundStyle(Theme.Colors.muted)
+            } else {
+                FlowLayout(items, spacing: 8) { item in
+                    Text(item)
+                        .font(.system(size: 13, weight: .heavy))
+                        .foregroundStyle(Theme.Colors.green)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(Color(red: 0.898, green: 0.957, blue: 0.914))
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+}
+
+private struct BulletSection: View {
+    let title: String
+    let items: [String]
+    let empty: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 15, weight: .black))
+            if items.isEmpty {
+                Text(empty).foregroundStyle(Theme.Colors.muted)
+            } else {
+                ForEach(items, id: \.self) { item in
+                    Text("• \(item)")
+                        .foregroundStyle(Theme.Colors.muted)
+                }
+            }
+        }
     }
 }

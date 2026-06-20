@@ -2,11 +2,11 @@ import Foundation
 
 struct UserProfile: Codable, Equatable {
     let id: String
-    let username: String
-    let email: String
-    let emailVerified: Bool
-    let firstName: String
-    let lastName: String
+    let username: String?
+    let email: String?
+    let emailVerified: Bool?
+    let firstName: String?
+    let lastName: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -26,7 +26,7 @@ struct UserPreferences: Codable, Equatable {
     }
 }
 
-struct PreferencesUpdateRequest: Codable, Equatable {
+struct UpdatePreferencesRequest: Codable, Equatable {
     let exclusionRestrictions: [String]?
 
     enum CodingKeys: String, CodingKey {

@@ -1,177 +1,88 @@
 import Foundation
 
-enum SessionState: Equatable {
-    case unknown
-    case signedOut
-    case signedIn(UserProfile?)
+@MainActor
+final class AppRouter: ObservableObject {
+    enum Page: Hashable {
+        case welcome
+        case login
+        case register
+        case cook
+        case preferences
+        case results
+        case recipe(Int)
+        case profile
+    }
+
+    @Published var page: Page = AccessTokenStore.load() == nil ? .welcome : .cook
+
+    func go(_ page: Page) {
+        self.page = page
+    }
 }
 
 @MainActor
 final class SessionStore: ObservableObject {
-    @Published private(set) var state: SessionState = .unknown
-    @Published private(set) var isLoading = false
-    @Published var errorMessage: String?
+    @Published private(set) var token: String?
+    @Published private(set) var user: UserProfile?
+    @Published private(set) var isLoadingUser = false
 
-    private let authService: AuthService
-    private let apiClient: APIClient
-    private var tokenRefreshTask: Task<Void, Never>?
-    private var authOperationInFlight = false
+    private let api = APIClient()
 
-    init(authService: AuthService? = nil) {
-        self.authService = authService ?? AuthService()
-        self.apiClient = APIClient()
-    }
-
-    var currentProfile: UserProfile? {
-        if case .signedIn(let profile) = state {
-            return profile
-        }
-        return nil
-    }
-
-    func bootstrap() async {
-        guard case .unknown = state else { return }
-
-        isLoading = true
-        defer { isLoading = false }
-
-        authService.restoreSession()
-
-        guard authService.isSignedIn else {
-            state = .signedOut
-            return
-        }
-
-        await restoreSignedInSession()
-    }
-
-    func signIn() async {
-        await performAuthOperation { try await authService.signIn() }
-    }
-
-    func signIn(username: String, password: String) async {
-        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmedUsername.isEmpty, !trimmedPassword.isEmpty else {
-            errorMessage = "Enter a username and password."
-            return
-        }
-
-        await performAuthOperation {
-            try await authService.signIn(username: trimmedUsername, password: trimmedPassword)
+    init() {
+        self.token = AccessTokenStore.load()
+        if token != nil {
+            Task { await loadUserOrLogout() }
         }
     }
 
-    func register(username: String, email: String, password: String) async {
-        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+    var isAuthenticated: Bool {
+        token != nil
+    }
 
-        guard !trimmedUsername.isEmpty, !trimmedEmail.isEmpty, !trimmedPassword.isEmpty else {
-            errorMessage = "Enter a username, email, and password."
-            return
-        }
+    func login(username: String, password: String) async throws {
+        let response = try await api.login(LoginRequest(username: username, password: password))
+        AccessTokenStore.save(response.accessToken)
+        token = response.accessToken
+        _ = try await loadUser()
+    }
 
-        await performAuthOperation {
-            let _: RegisterResponse = try await apiClient.request(
-                "/auth/register",
-                method: .post,
-                body: RegisterRequest(
-                    username: trimmedUsername,
-                    email: trimmedEmail,
-                    password: trimmedPassword,
-                    exclusionRestrictions: nil
-                )
+    func register(
+        username: String,
+        email: String,
+        password: String,
+        exclusionRestrictions: [String]
+    ) async throws {
+        _ = try await api.register(
+            RegisterRequest(
+                username: username,
+                email: email,
+                password: password,
+                exclusionRestrictions: exclusionRestrictions
             )
-            try await authService.signIn(username: trimmedUsername, password: trimmedPassword)
-        }
-    }
-
-    func signOut() {
-        tokenRefreshTask?.cancel()
-        tokenRefreshTask = nil
-        authService.signOut()
-        state = .signedOut
-        errorMessage = nil
-    }
-
-    func makeAuthenticatedClient() async throws -> APIClient {
-        guard try await authService.currentAccessToken() != nil else {
-            signOut()
-            throw APIError.unauthorized
-        }
-
-        let tokenHolder = authService.accessTokenHolder
-        let authService = self.authService
-
-        return APIClient(
-            tokenProvider: { tokenHolder.get() },
-            tokenRefresher: {
-                try await Task { @MainActor in
-                    try await authService.forceRefreshAccessToken()
-                }.value
-            },
-            onUnauthorized: { [weak self] in
-                await MainActor.run {
-                    self?.signOut()
-                }
-            }
         )
+        try await login(username: username, password: password)
     }
 
-    func message(for error: Error, context: APIError.Context = .general) -> String {
-        if let apiError = error as? APIError {
-            return apiError.userMessage(for: context)
-        }
-        return error.localizedDescription
+    @discardableResult
+    func loadUser() async throws -> UserProfile {
+        isLoadingUser = true
+        defer { isLoadingUser = false }
+        let profile = try await api.me()
+        user = profile
+        return profile
     }
 
-    private func performAuthOperation(_ operation: () async throws -> Void) async {
-        guard !authOperationInFlight else { return }
-        authOperationInFlight = true
-        isLoading = true
-        errorMessage = nil
-        defer {
-            isLoading = false
-            authOperationInFlight = false
-        }
-
+    func loadUserOrLogout() async {
         do {
-            try await operation()
-            await restoreSignedInSession()
-        } catch AuthError.signInCancelled {
-            return
+            _ = try await loadUser()
         } catch {
-            errorMessage = error.localizedDescription
+            logout()
         }
     }
 
-    private func restoreSignedInSession() async {
-        do {
-            let profile = try await fetchProfile()
-            state = .signedIn(profile)
-            startProactiveTokenRefresh()
-        } catch {
-            signOut()
-            errorMessage = message(for: error)
-        }
+    func logout() {
+        AccessTokenStore.clear()
+        token = nil
+        user = nil
     }
-
-    private func fetchProfile() async throws -> UserProfile {
-        let client = try await makeAuthenticatedClient()
-        return try await client.request("/me", requiresAuth: true)
-    }
-
-    private func startProactiveTokenRefresh() {
-        tokenRefreshTask?.cancel()
-        tokenRefreshTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
-                guard !Task.isCancelled else { return }
-                _ = try? await self?.authService.currentAccessToken()
-            }
-        }
-    }
-
 }

@@ -2,121 +2,48 @@ import XCTest
 @testable import Dishify
 
 final class APIErrorTests: XCTestCase {
-    func testFromResponseMaps401ToUnauthorized() {
-        let error = APIError.fromResponse(status: 401, body: "")
-        XCTAssertEqual(error.errorDescription, APIError.unauthorized.errorDescription)
-    }
-
-    func testFromResponseMaps503ToServerUnavailable() {
-        let error = APIError.fromResponse(status: 503, body: "")
-        if case .serverUnavailable(let detail) = error {
-            XCTAssertNil(detail)
-        } else {
-            XCTFail("Expected serverUnavailable error, got \(error)")
-        }
-    }
-
-    func testFromResponse503PreservesDetailFromJSONBody() {
-        let error = APIError.fromResponse(
-            status: 503,
-            body: """
-            {"detail":"Qdrant collection 'recipes_10000' not found. Run: docker compose run --rm indexing-worker --recreate"}
-            """
+    func testAuthDescription() {
+        XCTAssertEqual(
+            APIError.auth.errorDescription,
+            "Your session is missing or expired. Log in again."
         )
-
-        if case .serverUnavailable(let detail) = error {
-            XCTAssertEqual(
-                detail,
-                "Qdrant collection 'recipes_10000' not found. Run: docker compose run --rm indexing-worker --recreate"
-            )
-        } else {
-            XCTFail("Expected serverUnavailable error, got \(error)")
-        }
     }
 
-    func testFromResponseMaps422WithDetailString() {
-        let error = APIError.fromResponse(
-            status: 422,
-            body: """
-            {"detail":"Unknown restriction tag"}
-            """
+    func testUnavailableDescriptionFallsBackWhenDetailMissing() {
+        XCTAssertEqual(
+            APIError.unavailable(nil).errorDescription,
+            "Dishify is not ready yet. Check backend services and indexing."
         )
-
-        if case .validation(let message) = error {
-            XCTAssertEqual(message, "Unknown restriction tag")
-        } else {
-            XCTFail("Expected validation error, got \(error)")
-        }
     }
 
-    func testFromResponseMaps422WithMessageField() {
-        let error = APIError.fromResponse(
-            status: 422,
-            body: """
-            {"message":"Invalid request payload"}
-            """
+    func testUnavailableDescriptionUsesDetailWhenPresent() {
+        XCTAssertEqual(
+            APIError.unavailable("Recipes are not indexed yet.").errorDescription,
+            "Recipes are not indexed yet."
         )
-
-        if case .validation(let message) = error {
-            XCTAssertEqual(message, "Invalid request payload")
-        } else {
-            XCTFail("Expected validation error, got \(error)")
-        }
     }
 
-    func testFromResponseMaps422WithPydanticDetailArray() {
-        let error = APIError.fromResponse(
-            status: 422,
-            body: """
-            {"detail":[{"msg":"Field required"}]}
-            """
-        )
-
-        if case .validation(let message) = error {
-            XCTAssertEqual(message, "Field required")
-        } else {
-            XCTFail("Expected validation error, got \(error)")
-        }
-    }
-
-    func testFromResponseMaps422WithEmptyBody() {
-        let error = APIError.fromResponse(status: 422, body: "")
-
-        if case .validation(let message) = error {
-            XCTAssertEqual(message, "Validation failed.")
-        } else {
-            XCTFail("Expected validation error, got \(error)")
-        }
-    }
-
-    func testFromResponseMapsUnknownStatusToHTTP() {
-        let error = APIError.fromResponse(status: 409, body: "Conflict")
-
-        if case .http(let status, let body) = error {
-            XCTAssertEqual(status, 409)
-            XCTAssertEqual(body, "Conflict")
-        } else {
-            XCTFail("Expected http error, got \(error)")
-        }
+    func testValidationDescriptionPassesThroughMessage() {
+        XCTAssertEqual(APIError.validation("Unknown restriction tag").errorDescription, "Unknown restriction tag")
     }
 
     func testUserMessageUsesContextForServerUnavailable() {
         XCTAssertEqual(
-            APIError.serverUnavailable().userMessage(for: .recommend),
+            APIError.unavailable(nil).userMessage(for: .recommend),
             "The recommendation service is warming up. Make sure the backend is running and recipes are indexed."
         )
         XCTAssertEqual(
-            APIError.serverUnavailable().userMessage(for: .preferences),
+            APIError.unavailable(nil).userMessage(for: .preferences),
             "Preferences service is temporarily unavailable. Try again shortly."
         )
         XCTAssertEqual(
-            APIError.serverUnavailable().userMessage(for: .general),
+            APIError.unavailable(nil).userMessage(for: .general),
             "Service temporarily unavailable."
         )
     }
 
     func testUserMessageAppendsServerDetailWhenPresent() {
-        let error = APIError.serverUnavailable(detail: "Recipes are not indexed yet.")
+        let error = APIError.unavailable("Recipes are not indexed yet.")
         let message = error.userMessage(for: .recommend)
         XCTAssertTrue(
             message.contains("The recommendation service is warming up."),
@@ -135,7 +62,7 @@ final class APIErrorTests: XCTestCase {
 
     func testUserMessageForUnauthorized() {
         XCTAssertEqual(
-            APIError.unauthorized.userMessage(for: .general),
+            APIError.auth.userMessage(for: .general),
             "Your session expired. Sign in again."
         )
     }

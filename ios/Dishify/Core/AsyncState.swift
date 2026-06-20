@@ -35,11 +35,11 @@ extension APIError {
 
     func userMessage(for context: Context = .general) -> String {
         switch self {
-        case .unauthorized:
+        case .auth:
             return "Your session expired. Sign in again."
         case .validation(let message):
             return message
-        case .serverUnavailable(let detail):
+        case .unavailable(let detail):
             let fallback: String
             switch context {
             case .recommend:
