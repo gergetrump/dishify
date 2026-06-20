@@ -10,6 +10,7 @@ __pycache__/
 .env.secret
 data/dataset.csv
 data/dataset_full*.csv
+data/.recipes_full_index_checkpoint.json
 data/backup/*
 venv
 .claude/*

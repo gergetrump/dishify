@@ -4,30 +4,25 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
 import json
 import os
-import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Iterator
 
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_ROOT.parent
-sys.path.insert(0, str(BACKEND_ROOT))
 
 load_dotenv(REPO_ROOT / ".env")
 load_dotenv(REPO_ROOT / ".env.secret", override=True)
-
-from app.models.recipe import RecipeDataPoint  # noqa: E402
-from app.vector_db.parsing import recipe_from_csv_row  # noqa: E402
-from app.vector_db.recipe_vector_store import RecipeVectorStore  # noqa: E402
-
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY") or None
@@ -35,6 +30,241 @@ EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL",
     "sentence-transformers/all-MiniLM-L6-v2",
 )
+
+
+@dataclass(slots=True)
+class ParsedIngredient:
+    name: str = ""
+    quantity: float | None = None
+    unit: str | None = None
+    raw_text: str = ""
+
+
+@dataclass(slots=True)
+class RecipeDataPoint:
+    title: str = ""
+    ingredients: list[str] = field(default_factory=list)
+    raw_ingredients: list[str] = field(default_factory=list)
+    parsed_ingredients: list[ParsedIngredient] = field(default_factory=list)
+    normalized_ingredients: list[str] = field(default_factory=list)
+    directions: list[str] = field(default_factory=list)
+    link: str = ""
+    source: str = ""
+    ner: list[str] = field(default_factory=list)
+    exclusion_restrictions: list[str] = field(default_factory=list)
+    exclusion_restrictions_count: int | None = None
+
+
+class RecipeVectorStore:
+    def __init__(
+        self,
+        qdrant_client: QdrantClient,
+        embedding_model: SentenceTransformer,
+        collection_name: str = "recipes",
+    ):
+        self.client = qdrant_client
+        self.embedding_model = embedding_model
+        self.collection_name = collection_name
+        if hasattr(embedding_model, "get_sentence_embedding_dimension"):
+            self.vector_size = embedding_model.get_sentence_embedding_dimension()
+        else:
+            self.vector_size = embedding_model.get_embedding_dimension()
+
+    def create_collection(self, recreate: bool = False) -> None:
+        if recreate:
+            self.client.recreate_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(
+                    size=self.vector_size,
+                    distance=Distance.COSINE,
+                ),
+            )
+        else:
+            self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config=VectorParams(
+                    size=self.vector_size,
+                    distance=Distance.COSINE,
+                ),
+            )
+
+        self.client.create_payload_index(
+            collection_name=self.collection_name,
+            field_name="raw_ingredients",
+            field_schema="keyword",
+        )
+        self.client.create_payload_index(
+            collection_name=self.collection_name,
+            field_name="exclusion_restrictions",
+            field_schema="keyword",
+        )
+
+    def index_recipes(
+        self,
+        recipes: list[RecipeDataPoint],
+        batch_size: int = 100,
+        start_id: int = 0,
+        embedding_batch_size: int | None = None,
+    ) -> None:
+        points: list[PointStruct] = []
+        embedding_texts = [recipe_to_embedding_text(recipe) for recipe in recipes]
+        vectors = self.embedding_model.encode(
+            embedding_texts,
+            batch_size=embedding_batch_size or batch_size,
+            show_progress_bar=False,
+        ).tolist()
+
+        for idx, (recipe, vector) in enumerate(zip(recipes, vectors), start=start_id):
+            point = PointStruct(
+                id=idx,
+                vector=vector,
+                payload={
+                    "title": recipe.title,
+                    "ingredients": recipe.ingredients,
+                    "parsed_ingredients": [
+                        {
+                            "name": ingredient.name,
+                            "quantity": ingredient.quantity,
+                            "unit": ingredient.unit,
+                            "raw_text": ingredient.raw_text,
+                        }
+                        for ingredient in recipe.parsed_ingredients
+                    ],
+                    "raw_ingredients": recipe.raw_ingredients,
+                    "directions": recipe.directions,
+                    "link": recipe.link,
+                    "source": recipe.source,
+                    "ner": recipe.ner,
+                    "exclusion_restrictions": recipe.exclusion_restrictions,
+                    "exclusion_restrictions_count": recipe.exclusion_restrictions_count,
+                },
+            )
+            points.append(point)
+
+            if len(points) >= batch_size:
+                self.client.upsert(
+                    collection_name=self.collection_name,
+                    points=points,
+                )
+                points = []
+
+        if points:
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=points,
+            )
+
+    def collection_exists(self) -> bool:
+        try:
+            collections = self.client.get_collections().collections
+            return any(
+                collection.name == self.collection_name for collection in collections
+            )
+        except Exception:
+            return False
+
+
+def parse_list(value: str | None) -> list[str]:
+    if not value:
+        return []
+
+    parsed = ast.literal_eval(value)
+    return list(parsed)
+
+
+def parse_quantity(value: str | None) -> float | None:
+    if value is None:
+        return None
+
+    value = value.strip()
+    if value == "":
+        return None
+
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def parse_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+
+    value = value.strip()
+    if value == "":
+        return None
+
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def parse_normalized_ingredients(value: str | None) -> list[ParsedIngredient]:
+    if not value:
+        return []
+
+    parsed = ast.literal_eval(value)
+    ingredients: list[ParsedIngredient] = []
+
+    for name, quantity, unit in parsed:
+        ingredients.append(
+            ParsedIngredient(
+                name=name,
+                quantity=parse_quantity(quantity),
+                unit=unit,
+                raw_text=name,
+            )
+        )
+
+    return ingredients
+
+
+def recipe_from_csv_row(row: dict[str, str]) -> RecipeDataPoint:
+    ingredients = [
+        str(item).strip()
+        for item in parse_list(row["ingredients"])
+        if item is not None and str(item).strip()
+    ]
+    raw_ingredients = [
+        str(item).strip()
+        for item in parse_list(row.get("raw_ingredients") or "")
+        if item is not None and str(item).strip()
+    ]
+    if not raw_ingredients:
+        raw_ingredients = list(ingredients)
+    directions = parse_list(row["directions"])
+    ner = parse_list(row.get("NER") or "")
+    parsed_ingredients = parse_normalized_ingredients(
+        row.get("normalized_ingredients") or ""
+    )
+    normalized_ingredients = [
+        ingredient.name for ingredient in parsed_ingredients if ingredient.name
+    ]
+    exclusion_restrictions = parse_list(row.get("exclusion_restrictions") or "")
+    exclusion_restrictions_count = parse_int(row.get("exclusion_restrictions_count"))
+
+    return RecipeDataPoint(
+        title=row["title"],
+        ingredients=ingredients,
+        raw_ingredients=raw_ingredients,
+        parsed_ingredients=parsed_ingredients,
+        normalized_ingredients=normalized_ingredients,
+        directions=directions,
+        link=row["link"],
+        source=row["source"],
+        ner=ner,
+        exclusion_restrictions=exclusion_restrictions,
+        exclusion_restrictions_count=exclusion_restrictions_count,
+    )
+
+
+def recipe_to_embedding_text(recipe: RecipeDataPoint) -> str:
+    return f"""
+    Title: {recipe.title}
+    Title: {recipe.title}
+    Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
+    """
 
 
 @dataclass
@@ -275,14 +505,7 @@ def main() -> None:
         batch_started_at = time.monotonic()
 
         if args.dry_run:
-            texts = [
-                f"""
-                Title: {recipe.title}
-                Title: {recipe.title}
-                Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
-                """
-                for recipe in recipes
-            ]
+            texts = [recipe_to_embedding_text(recipe) for recipe in recipes]
             vectors = model.encode(
                 texts,
                 batch_size=args.embedding_batch_size,
