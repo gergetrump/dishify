@@ -6,4 +6,3 @@ ingredient-parser-nlp
 # Dev tooling
 python-dotenv
 pytest>=8
-ruff>=0.6
