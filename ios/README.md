@@ -1,16 +1,30 @@
 # iOS
 
-SwiftUI client — **not started**.
+SwiftUI client with Keycloak login and recipe recommendations.
 
-## Auth (when implemented)
+## Open in Xcode
 
-- OIDC login via `ASWebAuthenticationSession`
-- Keycloak client: `dishify-ios` (public, PKCE)
-- Redirect URI: `dishify://callback`
-- API calls to backend with `Authorization: Bearer <access_token>`
+```bash
+open ios/Dishify.xcodeproj
+```
 
-Keycloak realm config lives at [`keycloak/`](../keycloak/), not in this folder.
+Set your **Development Team** in Signing & Capabilities, then run on the simulator.
 
-## Backend dependency
+## Local dev
 
-The app will call the FastAPI backend in [`backend/`](../backend/) — primarily `POST /recommend`.
+1. Start infra: `docker compose up -d` (from repo root)
+2. Backend: `http://127.0.0.1:8000` — see [`backend/README.md`](../backend/README.md)
+3. Keycloak: `http://127.0.0.1:9001` — client `dishify-ios`, redirect `dishify://callback`
+
+## Mock vs real API
+
+In `Dishify/Services/APIClient.swift`:
+
+- `useMock = true` — Day 1 (offline UI dev)
+- `useMock = false` — Day 2 (after backend merge)
+
+See [`docs/INTEGRATION.md`](../docs/INTEGRATION.md) for the merge checklist.
+
+## API contract
+
+[`docs/API.md`](../docs/API.md)
