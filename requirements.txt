@@ -6,3 +6,8 @@ ingredient-parser-nlp
 # Dev tooling
 python-dotenv
 pytest>=8
+
+# Qdrant client and dependencies
+qdrant-client
+sentence-transformers
+pydantic_settings
