@@ -63,6 +63,45 @@ def parse_normalized_ingredients(value: str) -> list[ParsedIngredient]:
     return ingredients
 
 
+def recipe_from_csv_row(row: dict[str, str]) -> RecipeDataPoint:
+    ingredients = [
+        str(item).strip()
+        for item in parse_list(row["ingredients"])
+        if item is not None and str(item).strip()
+    ]
+    raw_ingredients = [
+        str(item).strip()
+        for item in parse_list(row.get("raw_ingredients") or "")
+        if item is not None and str(item).strip()
+    ]
+    if not raw_ingredients:
+        raw_ingredients = list(ingredients)
+    directions = parse_list(row["directions"])
+    ner = parse_list(row.get("NER") or "")
+    parsed_ingredients = parse_normalized_ingredients(
+        row.get("normalized_ingredients") or ""
+    )
+    normalized_ingredients = [
+        ingredient.name for ingredient in parsed_ingredients if ingredient.name
+    ]
+    exclusion_restrictions = parse_list(row.get("exclusion_restrictions") or "")
+    exclusion_restrictions_count = parse_int(row.get("exclusion_restrictions_count"))
+
+    return RecipeDataPoint(
+        title=row["title"],
+        ingredients=ingredients,
+        raw_ingredients=raw_ingredients,
+        parsed_ingredients=parsed_ingredients,
+        normalized_ingredients=normalized_ingredients,
+        directions=directions,
+        link=row["link"],
+        source=row["source"],
+        ner=ner,
+        exclusion_restrictions=exclusion_restrictions,
+        exclusion_restrictions_count=exclusion_restrictions_count,
+    )
+
+
 def load_recipes_from_csv(csv_path: Path) -> list[RecipeDataPoint]:
     recipes: list[RecipeDataPoint] = []
 
@@ -70,45 +109,6 @@ def load_recipes_from_csv(csv_path: Path) -> list[RecipeDataPoint]:
         reader = csv.DictReader(file)
 
         for row in reader:
-            ingredients = [
-                str(item).strip()
-                for item in parse_list(row["ingredients"])
-                if item is not None and str(item).strip()
-            ]
-            raw_ingredients = [
-                str(item).strip()
-                for item in parse_list(row.get("raw_ingredients") or "")
-                if item is not None and str(item).strip()
-            ]
-            if not raw_ingredients:
-                raw_ingredients = list(ingredients)
-            directions = parse_list(row["directions"])
-            ner = parse_list(row.get("NER") or "")
-            parsed_ingredients = parse_normalized_ingredients(
-                row.get("normalized_ingredients") or ""
-            )
-            normalized_ingredients = [
-                ingredient.name for ingredient in parsed_ingredients if ingredient.name
-            ]
-            exclusion_restrictions = parse_list(row.get("exclusion_restrictions") or "")
-            exclusion_restrictions_count = parse_int(
-                row.get("exclusion_restrictions_count")
-            )
-
-            recipe = RecipeDataPoint(
-                title=row["title"],
-                ingredients=ingredients,
-                raw_ingredients=raw_ingredients,
-                parsed_ingredients=parsed_ingredients,
-                normalized_ingredients=normalized_ingredients,
-                directions=directions,
-                link=row["link"],
-                source=row["source"],
-                ner=ner,
-                exclusion_restrictions=exclusion_restrictions,
-                exclusion_restrictions_count=exclusion_restrictions_count,
-            )
-
-            recipes.append(recipe)
+            recipes.append(recipe_from_csv_row(row))
 
     return recipes

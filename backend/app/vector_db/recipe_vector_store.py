@@ -60,19 +60,29 @@ class RecipeVectorStore:
         )
 
     def index_recipes(
-        self, recipes: list[RecipeDataPoint], batch_size: int = 100
+        self,
+        recipes: list[RecipeDataPoint],
+        batch_size: int = 100,
+        start_id: int = 0,
+        embedding_batch_size: int | None = None,
+        show_progress_bar: bool = False,
     ) -> None:
         points: list[PointStruct] = []
-
-        for idx, recipe in enumerate(recipes):
-            text_for_embedding = f"""
+        embedding_texts = [
+            f"""
             Title: {recipe.title}
             Title: {recipe.title}
             Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
             """
+            for recipe in recipes
+        ]
+        vectors = self.embedding_model.encode(
+            embedding_texts,
+            batch_size=embedding_batch_size or batch_size,
+            show_progress_bar=show_progress_bar,
+        ).tolist()
 
-            vector = self.embedding_model.encode(text_for_embedding).tolist()
-
+        for idx, (recipe, vector) in enumerate(zip(recipes, vectors), start=start_id):
             point = PointStruct(
                 id=idx,
                 vector=vector,
