@@ -1,4 +1,5 @@
 import time
+import logging
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -14,6 +15,7 @@ from dishify_contracts import (
 )
 
 router = APIRouter(tags=["reasoning"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -48,6 +50,7 @@ def explain(body: ExplainRequest) -> ExplainResponse:
 			timeout=settings.llm_timeout_seconds,
 		)
 	except Exception as exc:
+		logger.exception("LLM reasoning failed")
 		raise HTTPException(
 			status_code=status.HTTP_502_BAD_GATEWAY,
 			detail=f"LLM reasoning failed: {exc}",

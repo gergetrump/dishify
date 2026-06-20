@@ -160,7 +160,13 @@ def _call_llm(
 		response = requests.post(
 			url, headers=headers, data=json.dumps(payload), timeout=timeout
 		)
-		response.raise_for_status()
+		try:
+			response.raise_for_status()
+		except requests.HTTPError as exc:
+			raise RuntimeError(
+				"OpenRouter request failed "
+				f"status={response.status_code} body={response.text[:1000]}"
+			) from exc
 		result = response.json()
 		return result["choices"][0]["message"]["content"].strip()
 
