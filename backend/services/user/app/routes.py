@@ -4,6 +4,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.auth import user_id_from_claims, validate_token
 from app.config import settings
 from app.keycloak import KeycloakClient, KeycloakError, user_to_profile
+from app.oidc_urls import publicize_oidc_config
 from app.preferences_service import load_preferences, save_preferences, seed_preferences_on_register
 from dishify_contracts import (
 	AuthConfigResponse,
@@ -53,6 +54,13 @@ def auth_config() -> AuthConfigResponse:
 			status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
 			detail=f"Keycloak unavailable: {exc}",
 		) from exc
+
+	public_base = settings.keycloak_public_url or settings.keycloak_url
+	oidc = publicize_oidc_config(
+		oidc,
+		internal_base=settings.keycloak_url,
+		public_base=public_base,
+	)
 
 	return AuthConfigResponse(
 		issuer=oidc["issuer"],

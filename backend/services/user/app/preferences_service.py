@@ -32,7 +32,7 @@ def load_preferences(user_id: str, keycloak: KeycloakClient) -> UserPreferences:
 		return UserPreferences(exclusion_restrictions=[])
 
 	legacy = user_to_preferences(user)
-	restrictions = legacy.exclusion_restrictions
+	restrictions = legacy.get("exclusion_restrictions") or []
 	if not restrictions:
 		return UserPreferences(exclusion_restrictions=[])
 

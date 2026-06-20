@@ -1,0 +1,60 @@
+/*
+ * Dishify design tokens — web (React/Vite).
+ * Values mirror design/tokens.json. Update tokens.json first, then sync this file.
+ */
+
+:root {
+  color-scheme: light;
+
+  --color-background: #f6f3ee;
+  --color-surface: #ffffff;
+  --color-text-primary: #222222;
+  --color-text-secondary: #6b6560;
+  --color-accent: #f28c66;
+  --color-primary-action: #2b2a25;
+  --color-primary-action-text: #ffffff;
+  --color-border: #e4ded7;
+  --color-success: #2d6a4f;
+  --color-error: #b42318;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --font-size-title: 28px;
+  --font-size-headline: 18px;
+  --font-size-body: 16px;
+  --font-size-caption: 13px;
+
+  --font-weight-title: 700;
+  --font-weight-headline: 600;
+  --font-weight-body: 400;
+  --font-weight-caption: 400;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --layout-content-max-width: 720px;
+  --layout-min-tap-target: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-background: #1a1917;
+    --color-surface: #262522;
+    --color-text-primary: #f6f3ee;
+    --color-text-secondary: #a8a29e;
+    --color-accent: #f28c66;
+    --color-primary-action: #f6f3ee;
+    --color-primary-action-text: #2b2a25;
+    --color-border: #3d3a36;
+    --color-success: #52b788;
+    --color-error: #f87171;
+  }
+}

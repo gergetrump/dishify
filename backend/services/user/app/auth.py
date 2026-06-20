@@ -7,6 +7,7 @@ import jwt
 from jwt import PyJWKClient
 
 from app.config import settings
+from app.jwt_issuers import accepted_issuers
 
 _jwk_client: PyJWKClient | None = None
 _jwk_client_url: str | None = None
@@ -36,7 +37,11 @@ def validate_token(token: str) -> dict[str, Any]:
 		token,
 		signing_key.key,
 		algorithms=["RS256"],
-		issuer=_realm_base(),
+		issuer=accepted_issuers(
+			keycloak_url=settings.keycloak_url,
+			keycloak_realm=settings.keycloak_realm,
+			keycloak_public_url=settings.keycloak_public_url,
+		),
 		options={"verify_aud": False},
 	)
 

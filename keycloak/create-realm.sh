@@ -18,6 +18,8 @@ REALM="dishify"
 
 IOS_REDIRECT_URI="${IOS_REDIRECT_URI:-dishify://callback}"
 WEB_REDIRECT_URI="${WEB_REDIRECT_URI:-http://localhost:5173/*}"
+# Keycloak 24 rejects some custom-scheme URIs without a wildcard (e.g. dishify://callback alone).
+IOS_REDIRECT_URIS='["'"$IOS_REDIRECT_URI"'","dishify://*"]'
 
 # Start Keycloak in background
 $KC start-dev --http-port=9001 &
@@ -74,7 +76,7 @@ echo "User profile updated with preference attributes."
 # 2. iOS public client (PKCE)
 # ---------------------------------------------------------------------------
 if ! client_exists "dishify-ios"; then
-  $KCADM create clients -r $REALM \
+  if $KCADM create clients -r $REALM \
     -s clientId=dishify-ios \
     -s name="Dishify iOS" \
     -s enabled=true \
@@ -82,14 +84,18 @@ if ! client_exists "dishify-ios"; then
     -s standardFlowEnabled=true \
     -s directAccessGrantsEnabled=false \
     -s protocol=openid-connect \
-    -s 'redirectUris=["'"$IOS_REDIRECT_URI"'"]' \
+    -s "redirectUris=$IOS_REDIRECT_URIS" \
     -s 'webOrigins=["*"]' \
-    -s 'attributes.pkce.code.challenge.method=S256'
-  echo "Client 'dishify-ios' created."
+    -s 'attributes.pkce.code.challenge.method=S256'; then
+    echo "Client 'dishify-ios' created."
+  else
+    echo "ERROR: failed to create client 'dishify-ios'." >&2
+  fi
 
   IOS_UUID=$(get_client_uuid "dishify-ios")
 
-  $KCADM create clients/$IOS_UUID/protocol-mappers/models -r $REALM \
+  if [ -n "$IOS_UUID" ]; then
+    $KCADM create clients/$IOS_UUID/protocol-mappers/models -r $REALM \
     -s name=exclusion_restrictions \
     -s protocol=openid-connect \
     -s protocolMapper=oidc-usermodel-attribute-mapper \
@@ -99,9 +105,12 @@ if ! client_exists "dishify-ios"; then
     -s 'config.multivalued=true' \
     -s 'config."access.token.claim"=true' \
     -s 'config."id.token.claim"=true' \
-    -s 'config."userinfo.token.claim"=true'
+      -s 'config."userinfo.token.claim"=true'
 
-  echo "Protocol mappers added."
+    echo "Protocol mappers added."
+  else
+    echo "WARN: skipping iOS protocol mappers; client UUID not found." >&2
+  fi
 else
   echo "Client 'dishify-ios' already exists."
 fi

@@ -4,17 +4,25 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("DISHIFY_API_BASE_URL", "http://localhost:8000")
 
 
-def _request(method: str, path: str, body: dict | None = None) -> tuple[int, dict | str]:
+def _request(
+	method: str,
+	path: str,
+	body: dict | None = None,
+	token: str | None = None,
+) -> tuple[int, dict | str]:
 	url = f"{BASE_URL}{path}"
 	data = None
 	headers = {"Content-Type": "application/json"}
+	if token:
+		headers["Authorization"] = f"Bearer {token}"
 	if body is not None:
 		data = json.dumps(body).encode("utf-8")
 	req = urllib.request.Request(url, data=data, headers=headers, method=method)
@@ -28,6 +36,57 @@ def _request(method: str, path: str, body: dict | None = None) -> tuple[int, dic
 			return exc.code, json.loads(payload)
 		except json.JSONDecodeError:
 			return exc.code, payload
+
+
+def _run_optional_auth_smoke() -> int:
+	print("GET /auth/config")
+	status, payload = _request("GET", "/auth/config")
+	if status != 200:
+		print(f"FAIL: auth/config returned {status}: {payload}", file=sys.stderr)
+		return 1
+	if not isinstance(payload, dict):
+		print(f"FAIL: auth/config payload is not a JSON object: {payload}", file=sys.stderr)
+		return 1
+	if "authorization_endpoint" not in payload or "token_endpoint" not in payload:
+		print(f"FAIL: auth/config missing required OIDC endpoints: {payload}", file=sys.stderr)
+		return 1
+	print("OK")
+
+	username = os.getenv("DISHIFY_SMOKE_USERNAME")
+	password = os.getenv("DISHIFY_SMOKE_PASSWORD")
+	if not username or not password:
+		print(
+			"SKIP: auth login + /me checks disabled. "
+			"Set DISHIFY_SMOKE_USERNAME and DISHIFY_SMOKE_PASSWORD to enable.",
+			file=sys.stderr,
+		)
+		return 0
+
+	print("POST /auth/login")
+	status, payload = _request(
+		"POST",
+		"/auth/login",
+		{"username": username, "password": password},
+	)
+	if status != 200 or not isinstance(payload, dict):
+		print(f"FAIL: auth/login returned {status}: {payload}", file=sys.stderr)
+		return 1
+	access_token = payload.get("access_token")
+	if not access_token:
+		print(f"FAIL: auth/login missing access_token: {payload}", file=sys.stderr)
+		return 1
+	print("OK")
+
+	print("GET /me")
+	status, payload = _request("GET", "/me", token=access_token)
+	if status != 200 or not isinstance(payload, dict):
+		print(f"FAIL: /me returned {status}: {payload}", file=sys.stderr)
+		return 1
+	if payload.get("username") != username:
+		print(f"FAIL: /me username mismatch: expected={username} got={payload}", file=sys.stderr)
+		return 1
+	print("OK")
+	return 0
 
 
 def main() -> int:
@@ -79,6 +138,11 @@ def main() -> int:
 		return 1
 
 	print(f"OK ({len(results)} results, stages={[s.get('name') for s in stages]})")
+
+	auth_exit = _run_optional_auth_smoke()
+	if auth_exit != 0:
+		return auth_exit
+
 	return 0
 
 

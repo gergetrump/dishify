@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 	recommendation_url: str = "http://localhost:8001"
 	user_url: str = "http://localhost:8004"
 	keycloak_url: str = "http://localhost:9001"
+	keycloak_public_url: str | None = None
 	keycloak_realm: str = "dishify"
 	request_timeout_seconds: int = 60
 

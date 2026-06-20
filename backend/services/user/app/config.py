@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 	app_name: str = "dishify-user"
 	database_url: str = "postgresql+psycopg://dishify:dishify@localhost:5432/dishify"
 	keycloak_url: str = "http://localhost:9001"
+	keycloak_public_url: str | None = None
 	keycloak_realm: str = "dishify"
 	keycloak_client_id: str = "dishify-backend"
 	keycloak_login_client_id: str = "dishify-web"
