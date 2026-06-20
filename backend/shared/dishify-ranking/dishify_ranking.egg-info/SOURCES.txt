@@ -1,0 +1,9 @@
+pyproject.toml
+dishify_ranking/__init__.py
+dishify_ranking/ranking.py
+dishify_ranking.egg-info/PKG-INFO
+dishify_ranking.egg-info/SOURCES.txt
+dishify_ranking.egg-info/dependency_links.txt
+dishify_ranking.egg-info/requires.txt
+dishify_ranking.egg-info/top_level.txt
+tests/test_ranking.py
