@@ -1,169 +1,90 @@
 # Dishify
 
-## VERY IMPORTANT!!! 
-1, After clonning the repo, execute start.sh to create virtual environment
-2, If you want to work for further steps, use data/dataset_normalized_10000.csv, this data has sampled 10000 entries for testing purposes. The final dataset are going to be in the same format as this dataset.
+Dishify is an AI-powered cooking assistant: given ingredients you already have plus diet and allergy constraints, it recommends recipes, explains why they fit, and suggests substitutions.
 
-Dishify is an AI-powered cooking assistant that helps users decide what to cook based on ingredients they already have.
+## Current repo state
 
-It addresses a common problem: people have food at home but do not know what they can cook without additional shopping. Beyond recommendations, the system explains why recipes are suggested, highlights available and missing ingredients, and proposes substitutions when helpful.
+The old backend was removed (June 2026). Git history still has everything if we need to recover a file. What works today:
 
-## Documentation
+- **Data cleaning pipeline** — `notebooks/data_cleaning/` and `data/restriction_rules.json`
+- **Infra** — Postgres, Keycloak, and Qdrant via Docker Compose
+- **Backend** — scaffold in `backend/`; to be rebuilt (see `agent/architecture-plan.md`, gitignored locally)
+- **iOS app** — scaffold in `ios/`; not started
 
-Long-form docs live in [`docs/`](./docs/README.md):
+## Repo layout
 
-- [`docs/architecture.md`](./docs/architecture.md) — system diagram, components, env vars, observability, Gemini client.
-- [`docs/pipeline.md`](./docs/pipeline.md) — the 6-stage pipeline, one section per stage.
-- [`docs/setup.md`](./docs/setup.md) — running locally, dataset loading, tests, CI.
-- [`docs/troubleshooting.md`](./docs/troubleshooting.md) — common failure modes and fixes.
-- [`docs/roadmap.md`](./docs/roadmap.md) — what's done, what's next, what's nice-to-have.
-
-## Runtime steps
-
-### 1) User enters ingredients and profile constraints
-
-Example input:
-
-```json
-{
-	"ingredients": ["tomatoes", "pasta", "mozzarella"],
-	"profile": {
-		"diet": "vegetarian",
-		"allergies": ["peanuts"]
-	}
-}
+```
+dishify/
+├── backend/       # FastAPI app (to build)
+├── ios/           # SwiftUI app (not started)
+├── keycloak/      # Shared auth infra — realm + clients (NOT inside backend)
+├── data/          # Recipe datasets + restriction rules
+├── notebooks/     # Data cleaning pipeline
+└── docker-compose.yml
 ```
 
-### 2) Ingredient normalization
+| Folder | Role |
+|--------|------|
+| `keycloak/` | Standalone identity provider config — used by both backend and iOS |
+| `backend/app/auth/` | JWT validation only; does not run or configure Keycloak |
+| `ios/` | OIDC login flow + API client |
 
-Input ingredients are normalized via LLM and/or dictionary rules.
-
-Examples:
-
-```text
-tomatoes -> tomato
-mozzarella cheese -> mozzarella
-```
-
-### 3) Hard filtering (non-LLM)
-
-PostgreSQL removes recipes that violate hard constraints:
-
-```text
-remove recipes containing peanuts
-remove non-vegetarian recipes
-```
-
-This stage must be deterministic and should not be done by the LLM.
-
-### 4) Vector retrieval
-
-Qdrant retrieves top-k semantically similar candidates:
-
-```text
-top 50 candidate recipes
-```
-
-### 5) Rule-based scoring
-
-Candidates are scored using:
-
-- ingredient overlap
-- missing ingredients
-- diet match
-- allergen safety
-
-Example score:
-
-```text
-score =
-0.5 * ingredient_match
-+ 0.3 * vector_similarity
-- 0.2 * missing_ingredient_penalty
-```
-
-### 6) LLM final reasoning
-
-The LLM sees only the top 5-10 candidates and returns structured JSON recommendations:
-
-```json
-{
-	"recommendations": [
-		{
-			"recipe_id": 123,
-			"rank": 1,
-			"reason": "Best match because most ingredients are available.",
-			"missing_ingredients": ["garlic"],
-			"substitutions": ["onion can replace garlic"]
-		}
-	]
-}
-```
-
-## Running the API
-
-The backend is a FastAPI app at `backend/app/main.py`.
+## Quick start
 
 ```bash
 bash start.sh
 source .venv/bin/activate
-export GEMINI_API_KEY='your_real_key_here'   # required for Gemini-backed endpoints
-cd backend
-uvicorn app.main:app --reload --port 8000
 ```
 
-Endpoints:
+Copy `.env.example` to `.env` and fill in API keys when you need them. Never commit `.env`.
 
-- `GET /health` - service liveness.
-- `GET /gemini/health` - verifies `GEMINI_API_KEY` is set and Gemini is reachable.
-- `POST /normalize` - runs only stage 2 (ingredient normalization).
-- `POST /recommend` - runs the full pipeline. Stages 3-6 currently return `pending` placeholders.
-- `POST /gemini/generate` - debug passthrough to Gemini (`{"prompt": "...", "json_mode": false}`).
+## Data
 
-Example:
+| File | Purpose |
+|------|---------|
+| `data/dataset.csv` | Full raw corpus (~2.2M recipes, 2.1 GB, gitignored) |
+| `data/dataset_10000_normalized.csv` | 10k-row dev sample, normalized ingredients |
+| `data/dataset_10000_annotated.csv` | 10k-row dev sample with restriction tags |
+| `data/restriction_rules.json` | Keyword rules for allergen/diet annotation |
+
+Use `data/dataset_10000_annotated.csv` for backend development and indexing experiments.
+
+### Data cleaning pipeline
+
+Notebooks in `notebooks/data_cleaning/`:
+
+1. `0_eda.ipynb` — exploratory analysis
+2. `1_clean_data.ipynb` — cleaning
+3. `2_normalize_data.ipynb` — ingredient normalization (`ingredient-parser-nlp`)
+4. `3_annotate_restrictions.ipynb` — restriction tagging
+
+Batch script equivalents: `2_normalize_data_full.py`, `3_annotate_restrictions_full.py`.
+
+## Infrastructure
+
+Start Postgres, Keycloak, and Qdrant:
 
 ```bash
-curl -s http://localhost:8000/recommend \
-	-H 'Content-Type: application/json' \
-	-d '{"ingredients":["tomatoes","pasta","mozzarella"],"profile":{"diet":"vegetarian","allergies":["peanuts"]}}'
+docker compose up -d
 ```
 
-Interactive docs: http://localhost:8000/docs
+| Service | URL |
+|---------|-----|
+| Postgres | `localhost:5432` (user/pass/db: `dishify`) |
+| Keycloak | `http://localhost:9001` |
+| Qdrant | `http://localhost:6333` |
 
-## Gemini API key setup
+Keycloak realm provisioning runs automatically via `keycloak/create-realm.sh`. Clients: `dishify-ios` (PKCE) and `dishify-backend` (confidential).
 
-The normalization service reads `GEMINI_API_KEY` from environment variables.
+## Notebooks (reference only)
 
-### Local development
+`notebooks/end_to_end_pipeline.ipynb` and `notebooks/scoring_inspection.ipynb` reference the old `backend/` layout. Kept for reference — not runnable without recovering code from git history.
 
-1. Copy `.env.example` to `.env`.
-2. Put your real key in `.env`:
+## Recovering old code
 
-	 ```
-	 GEMINI_API_KEY=your_real_key_here
-	 ```
+```bash
+git log --all --full-history -- <path>
+git show <commit>:<path>
+```
 
-3. Load it into your shell when needed:
-
-	 ```bash
-	 export GEMINI_API_KEY='your_real_key_here'
-	 ```
-
-`.env` is gitignored, so your key is not committed.
-
-## CI/CD (GitHub Actions)
-
-This repo has a workflow at `.github/workflows/ci.yml` that runs a backend normalization smoke test.
-
-### What you must do on GitHub
-
-1. Push this branch to GitHub.
-2. Open your repository on GitHub.
-3. Go to **Settings -> Secrets and variables -> Actions**.
-4. Click **New repository secret**.
-5. Name: `GEMINI_API_KEY`
-6. Value: your real Gemini API key
-7. Save.
-
-After that, every push/PR will run the smoke test. The key is injected at runtime only and is never stored in the repository.
-
+Example: `git show HEAD~1:services/archive-app/vector_db/recipe_vector_store.py`
