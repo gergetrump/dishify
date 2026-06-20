@@ -1,0 +1,11 @@
+#include "Base.xcconfig"
+
+// Copy to Staging.local.xcconfig (gitignored) and set real staging hosts.
+// In Xcode: Staging build configuration → baseConfigurationReference → Staging.local.xcconfig
+//
+// Example:
+// DISHIFY_API_BASE_URL = https:/$()/api.staging.yourteam.com
+// DISHIFY_KEYCLOAK_BASE_URL = https:/$()/auth.staging.yourteam.com
+
+DISHIFY_API_BASE_URL = https:/$()/api.staging.example.com
+DISHIFY_KEYCLOAK_BASE_URL = https:/$()/auth.staging.example.com

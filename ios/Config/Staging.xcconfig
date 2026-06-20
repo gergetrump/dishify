@@ -1,0 +1,6 @@
+#include "Base.xcconfig"
+
+// Replace these hosts with your deployed staging gateway and Keycloak URLs
+// before running on a physical device or uploading to TestFlight.
+DISHIFY_API_BASE_URL = https:/$()/api.staging.example.com
+DISHIFY_KEYCLOAK_BASE_URL = https:/$()/auth.staging.example.com
