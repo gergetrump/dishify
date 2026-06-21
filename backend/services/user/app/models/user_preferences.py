@@ -7,6 +7,6 @@ from uuid import UUID
 
 @dataclass(frozen=True, slots=True)
 class UserPreferencesRow:
-	user_id: UUID
-	exclusion_restrictions: list[str]
-	updated_at: datetime
+    user_id: UUID
+    exclusion_restrictions: list[str]
+    updated_at: datetime

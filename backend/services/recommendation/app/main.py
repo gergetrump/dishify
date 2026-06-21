@@ -11,7 +11,7 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-	yield
+    yield
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)

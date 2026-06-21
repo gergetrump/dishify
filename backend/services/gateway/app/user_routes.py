@@ -14,112 +14,114 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def _optional_bearer(
-	credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> str | None:
-	if credentials is None or credentials.scheme.lower() != "bearer":
-		return None
-	return credentials.credentials
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        return None
+    return credentials.credentials
 
 
 def _require_bearer(
-	credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> str:
-	if settings.disable_auth:
-		if credentials is None or credentials.scheme.lower() != "bearer":
-			raise HTTPException(
-				status_code=status.HTTP_401_UNAUTHORIZED,
-				detail="Missing bearer token",
-			)
-		return credentials.credentials
+    if settings.disable_auth:
+        if credentials is None or credentials.scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing bearer token",
+            )
+        return credentials.credentials
 
-	if credentials is None or credentials.scheme.lower() != "bearer":
-		raise HTTPException(
-			status_code=status.HTTP_401_UNAUTHORIZED,
-			detail="Missing bearer token",
-		)
-	try:
-		validate_token(credentials.credentials)
-	except Exception as exc:
-		raise HTTPException(
-			status_code=status.HTTP_401_UNAUTHORIZED,
-			detail="Invalid bearer token",
-		) from exc
-	return credentials.credentials
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token",
+        )
+    try:
+        validate_token(credentials.credentials)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid bearer token",
+        ) from exc
+    return credentials.credentials
 
 
 async def _proxy(request: Request, path: str, *, token: str | None = None) -> Response:
-	url = f"{settings.user_url.rstrip('/')}{path}"
-	headers: dict[str, str] = {}
-	content_type = request.headers.get("content-type")
-	if content_type:
-		headers["Content-Type"] = content_type
-	if token:
-		headers["Authorization"] = f"Bearer {token}"
+    url = f"{settings.user_url.rstrip('/')}{path}"
+    headers: dict[str, str] = {}
+    content_type = request.headers.get("content-type")
+    if content_type:
+        headers["Content-Type"] = content_type
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
 
-	body = await request.body()
-	try:
-		async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
-			response = await client.request(
-				request.method,
-				url,
-				content=body if body else None,
-				headers=headers,
-			)
-	except httpx.RequestError as exc:
-		raise HTTPException(
-			status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-			detail=f"User service unavailable: {exc}",
-		) from exc
+    body = await request.body()
+    try:
+        async with httpx.AsyncClient(
+            timeout=settings.request_timeout_seconds
+        ) as client:
+            response = await client.request(
+                request.method,
+                url,
+                content=body if body else None,
+                headers=headers,
+            )
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"User service unavailable: {exc}",
+        ) from exc
 
-	return Response(
-		content=response.content,
-		status_code=response.status_code,
-		media_type=response.headers.get("content-type"),
-	)
+    return Response(
+        content=response.content,
+        status_code=response.status_code,
+        media_type=response.headers.get("content-type"),
+    )
 
 
 @router.get("/auth/config")
 async def auth_config(request: Request) -> Response:
-	return await _proxy(request, "/auth/config")
+    return await _proxy(request, "/auth/config")
 
 
 @router.post("/auth/register")
 @limiter.limit("10/minute")
 async def auth_register(request: Request) -> Response:
-	return await _proxy(request, "/auth/register")
+    return await _proxy(request, "/auth/register")
 
 
 @router.post("/auth/login")
 @limiter.limit("15/minute")
 async def auth_login(request: Request) -> Response:
-	return await _proxy(request, "/auth/login")
+    return await _proxy(request, "/auth/login")
 
 
 @router.post("/auth/refresh")
 @limiter.limit("30/minute")
 async def auth_refresh(request: Request) -> Response:
-	return await _proxy(request, "/auth/refresh")
+    return await _proxy(request, "/auth/refresh")
 
 
 @router.post("/auth/logout")
 async def auth_logout(request: Request) -> Response:
-	return await _proxy(request, "/auth/logout")
+    return await _proxy(request, "/auth/logout")
 
 
 @router.get("/me")
 async def get_me(request: Request, token: str = Depends(_require_bearer)) -> Response:
-	return await _proxy(request, "/me", token=token)
+    return await _proxy(request, "/me", token=token)
 
 
 @router.get("/me/preferences")
 async def get_preferences(
-	request: Request, token: str = Depends(_require_bearer)
+    request: Request, token: str = Depends(_require_bearer)
 ) -> Response:
-	return await _proxy(request, "/me/preferences", token=token)
+    return await _proxy(request, "/me/preferences", token=token)
 
 
 @router.put("/me/preferences")
 async def update_preferences(
-	request: Request, token: str = Depends(_require_bearer)
+    request: Request, token: str = Depends(_require_bearer)
 ) -> Response:
-	return await _proxy(request, "/me/preferences", token=token)
+    return await _proxy(request, "/me/preferences", token=token)

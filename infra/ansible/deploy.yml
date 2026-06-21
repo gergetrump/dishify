@@ -1,0 +1,83 @@
+---
+- name: Deploy Dishify
+  hosts: dishify
+  vars:
+    app_dir: /opt/dishify
+    repo_url: "https://{{ gh_pat }}@github.com/gergetrump/dishify.git"
+    repo_branch: "{{ branch | default('main') }}"
+
+  tasks:
+    - name: Install Docker prerequisites
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: true
+
+    - name: Add Docker GPG key
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+      args:
+        creates: /etc/apt/keyrings/docker.asc
+
+    - name: Add Docker repository
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker is running
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Clone or update repo
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ repo_branch }}"
+        force: true
+
+    - name: Write .env.secret
+      copy:
+        content: "{{ env_secret }}"
+        dest: "{{ app_dir }}/.env.secret"
+        mode: "0600"
+
+    - name: Build and start services
+      shell: docker compose up -d --build --remove-orphans
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Wait for gateway health
+      uri:
+        url: http://localhost:8000/health
+        method: GET
+        status_code: 200
+      register: health
+      retries: 30
+      delay: 10
+      until: health.status == 200
+
+    - name: Run indexing worker (first deploy only)
+      shell: docker compose run --rm indexing-worker --recreate
+      args:
+        chdir: "{{ app_dir }}"
+      register: indexing
+      failed_when: false
+      changed_when: indexing.rc == 0

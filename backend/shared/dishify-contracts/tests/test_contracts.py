@@ -66,7 +66,9 @@ class TestRegisterRequest:
 
     def test_rejects_invalid_email(self):
         with pytest.raises(ValidationError):
-            RegisterRequest(username="testuser", email="not-email", password="securepass")
+            RegisterRequest(
+                username="testuser", email="not-email", password="securepass"
+            )
 
 
 class TestTokenResponse:

@@ -20,3 +20,9 @@ dishify.db
 .pytest_cache/
 node_modules/
 frontend/dist/
+openssh.pri
+openssh.pub
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
