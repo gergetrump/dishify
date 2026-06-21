@@ -60,8 +60,7 @@ services:
       - .env.secret
     environment:
       QDRANT_URL: http://qdrant:6333
-      QDRANT_API_KEY: ""
-      QDRANT_COLLECTION: recipes_10000
+      QDRANT_COLLECTION: recipes_full
       EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
     depends_on:
       qdrant:
@@ -207,15 +206,14 @@ services:
       - .env.secret
     environment:
       QDRANT_URL: http://qdrant:6333
-      QDRANT_API_KEY: ""
-      QDRANT_COLLECTION: recipes_10000
+      QDRANT_COLLECTION: recipes_full
       EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
     volumes:
       - ./data:/data:ro
     depends_on:
       qdrant:
         condition: service_healthy
-    command: ["--csv", "/data/dataset_10000_annotated.csv", "--recreate"]
+    command: ["--csv", "/data/dataset_10000_annotated.csv"]
 
 volumes:
   postgres_data:

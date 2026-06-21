@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     app_name: str = "dishify-retrieval"
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str | None = None
-    qdrant_collection: str = "recipes_10000"
+    qdrant_collection: str = "recipes_full"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
 

@@ -17,15 +17,28 @@ Shared libraries: `shared/dishify-contracts`, `shared/dishify-ranking`, `shared/
 
 ## Run with Docker Compose (from repo root)
 
+**Daily use** — start the stack. Indexing does **not** run automatically; existing vectors in the `qdrant_data` volume are reused.
+
 ```bash
 docker compose up -d
-docker compose run --rm indexing-worker --recreate
 curl http://localhost:8000/health
 ```
 
+**First-time setup** — after `docker compose up`, index recipes once before `/recommend` will work. Place `data/dataset_10000_annotated.csv` in the repo first (see [`services/indexing/README.md`](services/indexing/README.md)).
+
+```bash
+docker compose run --rm indexing-worker --recreate
+```
+
+**Do not re-run indexing on every startup.** The indexing worker is a separate one-off job (not started by `docker compose up`). If Qdrant already has the `recipes_full` collection, skip indexing.
+
+For the full ~2M dataset, use `backend/scripts/index_full_recipes.py`. The Docker `indexing-worker` only loads the 10k CSV into memory — do not run it with `--recreate` against `recipes_full`.
+
+Reindex only when you intentionally need a fresh collection — e.g. first setup, dataset or embedding model changed, or you wiped volumes with `docker compose down -v`. `--recreate` drops the collection before re-indexing; omit it only if you know you are doing a partial upsert (see indexing README).
+
 ## Run locally (without Docker)
 
-Start Qdrant first, index recipes, then run each service in separate terminals:
+Start Qdrant first, then run each service in separate terminals (index once on first setup — see below):
 
 ```bash
 # Terminal 1 — retrieval
@@ -54,13 +67,15 @@ pip install -r requirements.txt ../../shared/dishify-contracts
 PYTHONPATH=. uvicorn app.main:app --reload --port 8000
 ```
 
-Index recipes (see [`services/indexing/README.md`](services/indexing/README.md) for CSV format and options):
+**First-time only** — index into local Qdrant before starting retrieval (same rules as Docker: skip if already indexed):
 
 ```bash
 cd backend/services/indexing
 pip install -r requirements.txt ../../shared/dishify-contracts ../../shared/dishify-vector-store
 PYTHONPATH=. python -m app.main --recreate
 ```
+
+See [`services/indexing/README.md`](services/indexing/README.md) for CSV format and when to use `--recreate`.
 
 ## Endpoints (public)
 

@@ -22,10 +22,8 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_ROOT.parent
 
 load_dotenv(REPO_ROOT / ".env")
-load_dotenv(REPO_ROOT / ".env.secret", override=True)
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY") or None
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL",
     "sentence-transformers/all-MiniLM-L6-v2",
@@ -566,8 +564,6 @@ def main() -> None:
     total_rows = count_csv_rows(csv_path) if args.count_total else None
 
     client_kwargs: dict = {"url": QDRANT_URL, "timeout": args.qdrant_timeout}
-    if QDRANT_API_KEY:
-        client_kwargs["api_key"] = QDRANT_API_KEY
 
     print(f"CSV: {csv_path}")
     print(f"Collection: {args.collection}")
