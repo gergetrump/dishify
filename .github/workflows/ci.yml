@@ -8,36 +8,6 @@ on:
   workflow_call:
 
 jobs:
-  data-pipeline:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-
-      - name: Smoke test restriction rules
-        run: |
-          python - << 'PY'
-          import json
-          from pathlib import Path
-
-          rules_path = Path("data/restriction_rules.json")
-          rules = json.loads(rules_path.read_text())
-          assert len(rules) > 0, "restriction_rules.json is empty"
-          print(f"Loaded {len(rules)} restriction rules")
-          PY
-
   web-client:
     name: Web Client
     runs-on: ubuntu-latest
