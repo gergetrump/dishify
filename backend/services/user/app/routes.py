@@ -9,6 +9,8 @@ from dishify_contracts import (
 	AuthConfigResponse,
 	HealthResponse,
 	LoginRequest,
+	LogoutRequest,
+	RefreshRequest,
 	RegisterRequest,
 	RegisterResponse,
 	TokenResponse,
@@ -53,14 +55,15 @@ def auth_config() -> AuthConfigResponse:
 			status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
 			detail=f"Keycloak unavailable: {exc}",
 		) from exc
+	public_realm_url = settings.keycloak_public_realm_url
 
 	return AuthConfigResponse(
-		issuer=oidc["issuer"],
-		authorization_endpoint=oidc["authorization_endpoint"],
-		token_endpoint=oidc["token_endpoint"],
-		logout_endpoint=oidc["end_session_endpoint"],
-		userinfo_endpoint=oidc["userinfo_endpoint"],
-		jwks_uri=oidc["jwks_uri"],
+		issuer=public_realm_url,
+		authorization_endpoint=f"{public_realm_url}/protocol/openid-connect/auth",
+		token_endpoint=f"{public_realm_url}/protocol/openid-connect/token",
+		logout_endpoint=f"{public_realm_url}/protocol/openid-connect/logout",
+		userinfo_endpoint=f"{public_realm_url}/protocol/openid-connect/userinfo",
+		jwks_uri=f"{public_realm_url}/protocol/openid-connect/certs",
 		realm=settings.keycloak_realm,
 		clients={
 			"ios": settings.keycloak_ios_client_id,
@@ -111,6 +114,32 @@ def login(body: LoginRequest) -> TokenResponse:
 		token_type=payload.get("token_type", "Bearer"),
 		scope=payload.get("scope"),
 	)
+
+
+@router.post("/auth/refresh", response_model=TokenResponse)
+def refresh(body: RefreshRequest) -> TokenResponse:
+	try:
+		payload = _keycloak.refresh(body.refresh_token)
+	except KeycloakError as exc:
+		status_code = exc.status_code or status.HTTP_502_BAD_GATEWAY
+		raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
+	return TokenResponse(
+		access_token=payload["access_token"],
+		expires_in=int(payload.get("expires_in", 0)),
+		refresh_token=payload.get("refresh_token"),
+		token_type=payload.get("token_type", "Bearer"),
+		scope=payload.get("scope"),
+	)
+
+
+@router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(body: LogoutRequest) -> None:
+	try:
+		_keycloak.logout(body.refresh_token)
+	except KeycloakError as exc:
+		status_code = exc.status_code or status.HTTP_502_BAD_GATEWAY
+		raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
 @router.get("/me", response_model=UserProfile)

@@ -35,6 +35,9 @@ enum APIError: Error, LocalizedError {
 struct APIClient {
     var baseURL: URL = Config.apiBaseURL
     var tokenProvider: () -> String? = { AccessTokenStore.load() }
+    var refreshTokenProvider: () -> String? = { RefreshTokenStore.load() }
+    var onTokenRefreshed: ((String, String?) -> Void)?
+    var onRefreshFailed: (() -> Void)?
     var session: URLSession = Config.apiSession
     var decoder = JSONDecoder()
     var encoder = JSONEncoder()
@@ -49,6 +52,14 @@ struct APIClient {
 
     func login(_ body: LoginRequest) async throws -> TokenResponse {
         try await request("/auth/login", method: .post, body: body, skipAuth: true)
+    }
+
+    func refreshToken(_ refreshToken: String) async throws -> TokenResponse {
+        try await rawRequest("/auth/refresh", method: .post, body: RefreshTokenBody(refreshToken: refreshToken), skipAuth: true)
+    }
+
+    func logout(_ refreshToken: String) async throws {
+        _ = try await performRequest("/auth/logout", method: .post, body: RefreshTokenBody(refreshToken: refreshToken), skipAuth: true)
     }
 
     func me() async throws -> UserProfile {
@@ -68,6 +79,37 @@ struct APIClient {
     }
 
     private func request<T: Decodable>(
+        _ path: String,
+        method: HTTPMethod = .get,
+        body: Encodable? = nil,
+        skipAuth: Bool = false
+    ) async throws -> T {
+        do {
+            return try await rawRequest(path, method: method, body: body, skipAuth: skipAuth)
+        } catch APIError.auth where !skipAuth {
+            if await tryRefresh() {
+                return try await rawRequest(path, method: method, body: body, skipAuth: skipAuth)
+            }
+            throw APIError.auth
+        }
+    }
+
+    private func tryRefresh() async -> Bool {
+        guard let rt = refreshTokenProvider() else {
+            onRefreshFailed?()
+            return false
+        }
+        do {
+            let tokens = try await refreshToken(rt)
+            onTokenRefreshed?(tokens.accessToken, tokens.refreshToken)
+            return true
+        } catch {
+            onRefreshFailed?()
+            return false
+        }
+    }
+
+    private func rawRequest<T: Decodable>(
         _ path: String,
         method: HTTPMethod = .get,
         body: Encodable? = nil,
@@ -153,6 +195,14 @@ struct APIClient {
             return messages.isEmpty ? nil : messages.joined(separator: " ")
         }
         return nil
+    }
+}
+
+struct RefreshTokenBody: Codable {
+    let refreshToken: String
+
+    enum CodingKeys: String, CodingKey {
+        case refreshToken = "refresh_token"
     }
 }
 

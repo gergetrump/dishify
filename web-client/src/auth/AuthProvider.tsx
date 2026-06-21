@@ -12,8 +12,11 @@ import { apiClient } from "../api/client";
 import type { LoginRequest, RegisterRequest, TokenResponse, UserProfile } from "../api/types";
 import {
   clearStoredAccessToken,
+  clearStoredRefreshToken,
   getStoredAccessToken,
+  getStoredRefreshToken,
   storeAccessToken,
+  storeRefreshToken,
 } from "./storage";
 
 type AuthContextValue = {
@@ -51,6 +54,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (body: LoginRequest) => {
       const response = await apiClient.login(body);
       storeAccessToken(response.access_token);
+      if (response.refresh_token) {
+        storeRefreshToken(response.refresh_token);
+      }
       setToken(response.access_token);
       await loadUser();
       return response;
@@ -67,7 +73,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   const logout = useCallback(() => {
+    const rt = getStoredRefreshToken();
+    if (rt) {
+      apiClient.logout(rt).catch(() => {});
+    }
     clearStoredAccessToken();
+    clearStoredRefreshToken();
     setToken(null);
     setUser(null);
   }, []);

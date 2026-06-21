@@ -36,18 +36,36 @@ export class ApiError extends Error {
   }
 }
 
+export type RefreshRequest = {
+  refresh_token: string;
+};
+
+export type LogoutRequest = {
+  refresh_token: string;
+};
+
 export type ApiClientOptions = {
   baseUrl?: string;
   getToken?: () => string | null;
+  getRefreshToken?: () => string | null;
+  onTokenRefreshed?: (accessToken: string, refreshToken: string | null) => void;
+  onRefreshFailed?: () => void;
 };
 
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly getToken?: () => string | null;
+  private readonly getRefreshToken?: () => string | null;
+  private readonly onTokenRefreshed?: (accessToken: string, refreshToken: string | null) => void;
+  private readonly onRefreshFailed?: () => void;
+  private refreshPromise: Promise<TokenResponse> | null = null;
 
   constructor(options: ApiClientOptions = {}) {
     this.baseUrl = normalizeBaseUrl(options.baseUrl ?? getConfiguredApiUrl());
     this.getToken = options.getToken;
+    this.getRefreshToken = options.getRefreshToken;
+    this.onTokenRefreshed = options.onTokenRefreshed;
+    this.onRefreshFailed = options.onRefreshFailed;
   }
 
   health() {
@@ -96,7 +114,68 @@ export class ApiClient {
     });
   }
 
+  refreshToken(refreshToken: string) {
+    return this.rawRequest<TokenResponse>("/auth/refresh", {
+      method: "POST",
+      body: { refresh_token: refreshToken },
+    });
+  }
+
+  logout(refreshToken: string) {
+    return this.rawRequest<void>("/auth/logout", {
+      method: "POST",
+      body: { refresh_token: refreshToken },
+    });
+  }
+
   private async request<T>(
+    path: string,
+    options: {
+      method?: "GET" | "POST" | "PUT";
+      body?: unknown;
+      skipAuth?: boolean;
+    } = {},
+  ): Promise<T> {
+    try {
+      return await this.rawRequest<T>(path, options);
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.status === 401 &&
+        !options.skipAuth
+      ) {
+        const refreshed = await this.tryRefresh();
+        if (refreshed) {
+          return this.rawRequest<T>(path, options);
+        }
+      }
+      throw error;
+    }
+  }
+
+  private async tryRefresh(): Promise<boolean> {
+    const rt = this.getRefreshToken?.();
+    if (!rt) {
+      this.onRefreshFailed?.();
+      return false;
+    }
+
+    try {
+      if (!this.refreshPromise) {
+        this.refreshPromise = this.refreshToken(rt);
+      }
+      const tokens = await this.refreshPromise;
+      this.onTokenRefreshed?.(tokens.access_token, tokens.refresh_token ?? null);
+      return true;
+    } catch {
+      this.onRefreshFailed?.();
+      return false;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  private async rawRequest<T>(
     path: string,
     options: {
       method?: "GET" | "POST" | "PUT";
@@ -146,6 +225,17 @@ export class ApiClient {
 
 export const apiClient = new ApiClient({
   getToken: () => window.localStorage.getItem("dishify.access_token"),
+  getRefreshToken: () => window.localStorage.getItem("dishify.refresh_token"),
+  onTokenRefreshed: (accessToken, refreshToken) => {
+    window.localStorage.setItem("dishify.access_token", accessToken);
+    if (refreshToken) {
+      window.localStorage.setItem("dishify.refresh_token", refreshToken);
+    }
+  },
+  onRefreshFailed: () => {
+    window.localStorage.removeItem("dishify.access_token");
+    window.localStorage.removeItem("dishify.refresh_token");
+  },
 });
 
 function getConfiguredApiUrl() {

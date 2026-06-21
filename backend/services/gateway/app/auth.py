@@ -14,8 +14,7 @@ _jwk_client_url: str | None = None
 
 
 def _jwks_url() -> str:
-	base = settings.keycloak_url.rstrip("/")
-	return f"{base}/realms/{settings.keycloak_realm}/protocol/openid-connect/certs"
+	return f"{settings.keycloak_internal_realm_url}/protocol/openid-connect/certs"
 
 
 def _get_jwk_client() -> PyJWKClient:
@@ -30,11 +29,10 @@ def _get_jwk_client() -> PyJWKClient:
 def validate_token(token: str) -> dict[str, Any]:
 	client = _get_jwk_client()
 	signing_key = client.get_signing_key_from_jwt(token)
-	issuer = f"{settings.keycloak_url.rstrip('/')}/realms/{settings.keycloak_realm}"
 	return jwt.decode(
 		token,
 		signing_key.key,
 		algorithms=["RS256"],
-		issuer=issuer,
+		issuer=settings.keycloak_public_realm_url,
 		options={"verify_aud": False},
 	)

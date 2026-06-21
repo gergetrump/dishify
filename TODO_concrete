@@ -13,8 +13,6 @@ Should-do before launch
 
 Recommendation quality (Phase 5) — Enable LLM reasoning with OpenRouter, tune ranking weights, validate restriction filters
 
-Data scaling (Phase 6) — Normalize + annotate + index full corpus (beyond 10k dev sample), benchmark retrieval latency
-
 Documentation (Phase 9) — Update READMEs for frontend/iOS, production runbook, demo script for stakeholders
 
 

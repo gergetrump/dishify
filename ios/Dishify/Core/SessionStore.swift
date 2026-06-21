@@ -26,10 +26,27 @@ final class SessionStore: ObservableObject {
     @Published private(set) var user: UserProfile?
     @Published private(set) var isLoadingUser = false
 
-    private let api = APIClient()
+    private var api: APIClient
 
     init() {
+        self.api = APIClient()
         self.token = AccessTokenStore.load()
+
+        api.onTokenRefreshed = { [weak self] accessToken, refreshToken in
+            Task { @MainActor in
+                AccessTokenStore.save(accessToken)
+                if let refreshToken {
+                    RefreshTokenStore.save(refreshToken)
+                }
+                self?.token = accessToken
+            }
+        }
+        api.onRefreshFailed = { [weak self] in
+            Task { @MainActor in
+                self?.logout()
+            }
+        }
+
         if token != nil {
             Task { await loadUserOrLogout() }
         }
@@ -42,6 +59,9 @@ final class SessionStore: ObservableObject {
     func login(username: String, password: String) async throws {
         let response = try await api.login(LoginRequest(username: username, password: password))
         AccessTokenStore.save(response.accessToken)
+        if let rt = response.refreshToken {
+            RefreshTokenStore.save(rt)
+        }
         token = response.accessToken
         _ = try await loadUser()
     }
@@ -81,7 +101,11 @@ final class SessionStore: ObservableObject {
     }
 
     func logout() {
+        if let rt = RefreshTokenStore.load() {
+            Task { try? await api.logout(rt) }
+        }
         AccessTokenStore.clear()
+        RefreshTokenStore.clear()
         token = nil
         user = nil
     }

@@ -9,8 +9,25 @@ class Settings(BaseSettings):
 	recommendation_url: str = "http://localhost:8001"
 	user_url: str = "http://localhost:8004"
 	keycloak_url: str = "http://localhost:9001"
+	keycloak_public_url: str | None = None
 	keycloak_realm: str = "dishify"
 	request_timeout_seconds: int = 60
+
+	@property
+	def keycloak_internal_base_url(self) -> str:
+		return self.keycloak_url.rstrip("/")
+
+	@property
+	def keycloak_public_base_url(self) -> str:
+		return (self.keycloak_public_url or self.keycloak_url).rstrip("/")
+
+	@property
+	def keycloak_internal_realm_url(self) -> str:
+		return f"{self.keycloak_internal_base_url}/realms/{self.keycloak_realm}"
+
+	@property
+	def keycloak_public_realm_url(self) -> str:
+		return f"{self.keycloak_public_base_url}/realms/{self.keycloak_realm}"
 
 
 settings = Settings()
