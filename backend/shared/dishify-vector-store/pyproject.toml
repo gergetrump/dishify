@@ -1,0 +1,18 @@
+[project]
+name = "dishify-vector-store"
+version = "0.1.0"
+description = "Shared Qdrant vector store for Dishify indexing and retrieval"
+requires-python = ">=3.12"
+dependencies = [
+    "dishify-contracts",
+    "qdrant-client>=1.12",
+    "sentence-transformers>=3.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dishify_vector_store*"]

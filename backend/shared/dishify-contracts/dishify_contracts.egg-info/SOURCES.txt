@@ -3,8 +3,11 @@ dishify_contracts/__init__.py
 dishify_contracts/internal.py
 dishify_contracts/models.py
 dishify_contracts/public.py
+dishify_contracts/restrictions.py
+dishify_contracts/user.py
 dishify_contracts.egg-info/PKG-INFO
 dishify_contracts.egg-info/SOURCES.txt
 dishify_contracts.egg-info/dependency_links.txt
 dishify_contracts.egg-info/requires.txt
 dishify_contracts.egg-info/top_level.txt
+tests/test_contracts.py

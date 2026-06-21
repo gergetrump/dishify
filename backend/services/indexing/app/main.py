@@ -24,7 +24,7 @@ load_dotenv(REPO_ROOT / ".env")
 
 from app.config import settings  # noqa: E402
 from app.parsing import load_recipes_from_csv  # noqa: E402
-from app.vector_store import RecipeVectorStore  # noqa: E402
+from dishify_vector_store import RecipeVectorStore  # noqa: E402
 
 
 def main() -> None:

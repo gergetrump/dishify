@@ -6,7 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 COPY shared/dishify-contracts /shared/dishify-contracts
-RUN pip install --no-cache-dir /shared/dishify-contracts
+COPY shared/dishify-vector-store /shared/dishify-vector-store
+RUN pip install --no-cache-dir /shared/dishify-contracts /shared/dishify-vector-store
 
 COPY services/retrieval/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
