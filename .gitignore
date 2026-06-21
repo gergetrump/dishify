@@ -12,6 +12,7 @@ data/dataset.csv
 data/dataset_full*.csv
 data/.recipes_full_index_checkpoint.json
 data/backup/*
+data/qdrant_volume.tar.gz
 venv
 .claude/*
 .vscode/*

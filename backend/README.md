@@ -11,34 +11,159 @@ FastAPI microservice stack aligned with `notebooks/end_to_end_pipeline.ipynb`.
 | `retrieval` | 8002 | Embeddings + Qdrant search |
 | `reasoning` | 8003 | Optional LLM reasoning (OpenRouter) |
 | `user` | 8004 | Registration, login, profile & preferences (Keycloak) |
-| `indexing-worker` | — | Offline batch indexing into Qdrant |
+| `indexing-worker` | — | Offline batch indexing into Qdrant (10k CSV only; see below) |
 
 Shared libraries: `shared/dishify-contracts`, `shared/dishify-ranking`, `shared/dishify-vector-store`.
 
-## Run with Docker Compose (from repo root)
+## Teammate quick start
 
-**Daily use** — start the stack. Indexing does **not** run automatically; existing vectors in the `qdrant_data` volume are reused.
+Most devs should **restore the shared Qdrant volume** (about 7 GB) instead of indexing 2.2M recipes locally.
+
+### 1. Env files (repo root)
+
+```bash
+cp .env.example .env
+cp .env.example .env.secret   # or create .env.secret for API keys only
+```
+
+- **`.env` / `.env.example`** — tracked template; safe to commit.
+- **`.env.secret`** — real keys (OpenRouter, etc.); **never commit** (gitignored).
+- Copy [`../.env.example`](../.env.example) values as needed. Docker Compose overrides `QDRANT_URL` to `http://qdrant:6333` inside containers.
+
+Production Compose sets `DISABLE_AUTH=false` on the gateway. For local testing without JWTs, set `DISABLE_AUTH=true` on the `gateway` service in `docker-compose.yml` or recreate the gateway with that env var.
+
+### 2. Install the shared vector store (`data/qdrant_volume.tar.gz`)
+
+The team shares a pre-built Qdrant Docker volume as **`data/qdrant_volume.tar.gz`** (about 7 GB). It contains collection **`recipes_full`** (2.2M recipe vectors). **Do not commit this file** — use Drive, S3, or similar.
+
+**Teammates — from the repo root:**
+
+1. Put the archive at **`data/qdrant_volume.tar.gz`** (exact path and name).
+2. Restore into Docker (Qdrant must be stopped while restoring):
+
+```bash
+docker compose up -d qdrant
+docker compose stop qdrant
+
+docker volume ls | grep qdrant   # expect dishify_qdrant_data (adjust -v if different)
+
+docker run --rm \
+  -v dishify_qdrant_data:/data \
+  -v "$PWD/data":/backup \
+  alpine sh -c "rm -rf /data/* && tar xzf /backup/qdrant_volume.tar.gz -C /data"
+
+docker compose up -d
+```
+
+3. Verify before using the API:
+
+```bash
+curl -s http://localhost:6333/collections/recipes_full | python3 -m json.tool
+curl -s http://localhost:8002/ready
+```
+
+You should see about 2,230,125 points on `recipes_full` and retrieval `/ready` OK. No indexing or `dataset_full_annotated.csv` required for search.
+
+**Whoever creates the archive** (already indexed locally):
+
+```bash
+docker compose stop qdrant
+docker run --rm \
+  -v dishify_qdrant_data:/data \
+  -v "$PWD/data":/backup \
+  alpine tar czf /backup/qdrant_volume.tar.gz -C /data .
+docker compose start qdrant
+```
+
+Share **`data/qdrant_volume.tar.gz`** out of band. Run `docker compose stop qdrant` — not `git docker compose`.
+
+### 3. Run the stack
 
 ```bash
 docker compose up -d
 curl http://localhost:8000/health
 ```
 
-**First-time setup** — after `docker compose up`, index recipes once before `/recommend` will work. Place `data/dataset_10000_annotated.csv` in the repo first (see [`services/indexing/README.md`](services/indexing/README.md)).
+| URL | Purpose |
+|-----|---------|
+| `http://localhost:8000` | API (gateway) |
+| `http://localhost` | Web UI + API via Caddy |
+| `http://localhost:6333` | Qdrant (local only) |
+
+First `/recommend` after startup can be slow while retrieval loads `sentence-transformers/all-MiniLM-L6-v2` (about 1–2 min). Later requests are faster; search over 2M vectors is typically sub-second to a few seconds once warm.
+
+### 4. Test endpoints
+
+**Health:**
 
 ```bash
-docker compose run --rm indexing-worker --recreate
+curl -s http://localhost:8000/health
+curl -s http://localhost:8002/ready
 ```
 
-**Do not re-run indexing on every startup.** The indexing worker is a separate one-off job (not started by `docker compose up`). If Qdrant already has the `recipes_full` collection, skip indexing.
+**Recommend (no auth)** — set `DISABLE_AUTH=true` on gateway first, or use login below:
 
-For the full ~2M dataset, use `backend/scripts/index_full_recipes.py`. The Docker `indexing-worker` only loads the 10k CSV into memory — do not run it with `--recreate` against `recipes_full`.
+```bash
+curl -s -X POST http://localhost:8000/recommend \
+  -H "Content-Type: application/json" \
+  -d '{"query": "creamy tomato pasta", "top_k": 5}'
+```
 
-Reindex only when you intentionally need a fresh collection — e.g. first setup, dataset or embedding model changed, or you wiped volumes with `docker compose down -v`. `--recreate` drops the collection before re-indexing; omit it only if you know you are doing a partial upsert (see indexing README).
+**With auth** (default Compose: `DISABLE_AUTH=false`):
+
+```bash
+curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "test-secret"}'
+
+TOKEN="<access_token from response>"
+
+curl -s -X POST http://localhost:8000/recommend \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"query": "chicken rice bowl", "top_k": 5}'
+```
+
+Smoke script (gateway must be up; auth disabled or add token support):
+
+```bash
+source .venv/bin/activate
+python backend/scripts/smoke_test_api.py
+```
+
+Check `stages` in the `/recommend` response — `retrieve` vs `explain` latency. LLM explain requires `OPENROUTER_API_KEY` in `.env.secret`; without it, explain is skipped.
+
+## Vector search config
+
+| Variable | Docker default | Notes |
+|----------|----------------|-------|
+| `QDRANT_URL` | `http://qdrant:6333` (in Compose) | `http://localhost:6333` on host |
+| `QDRANT_COLLECTION` | `recipes_full` | 2.2M recipes |
+| `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Must match indexed vectors |
+
+You do **not** need `dataset_full_annotated.csv` for search if Qdrant is restored. You still need `data/restriction_rules.json` for restriction tagging in the API.
+
+## Indexing (only if you are rebuilding the index)
+
+**Do not re-run indexing on every startup.** `docker compose up` reuses the `qdrant_data` volume.
+
+- **Full dataset (2.2M rows):** streaming script on the host (not the Docker indexing-worker):
+
+  ```bash
+  docker compose up -d qdrant
+  source .venv/bin/activate
+  python backend/scripts/index_full_recipes.py --recreate --count-total --device mps
+  ```
+
+  See [`scripts/index_full_recipes.py`](scripts/index_full_recipes.py) for `--resume`, checkpoints, and flags.
+
+- **10k dev sample:** Docker worker loads the whole CSV into memory — **do not** run with `--recreate` against `recipes_full` (it would wipe 2M points). See [`services/indexing/README.md`](services/indexing/README.md).
+
+Reindex only when the dataset or embedding model changes, or after `docker compose down -v` wipes volumes.
 
 ## Run locally (without Docker)
 
-Start Qdrant first, then run each service in separate terminals (index once on first setup — see below):
+Start Qdrant first, then run each service in separate terminals:
 
 ```bash
 # Terminal 1 — retrieval
@@ -67,15 +192,7 @@ pip install -r requirements.txt ../../shared/dishify-contracts
 PYTHONPATH=. uvicorn app.main:app --reload --port 8000
 ```
 
-**First-time only** — index into local Qdrant before starting retrieval (same rules as Docker: skip if already indexed):
-
-```bash
-cd backend/services/indexing
-pip install -r requirements.txt ../../shared/dishify-contracts ../../shared/dishify-vector-store
-PYTHONPATH=. python -m app.main --recreate
-```
-
-See [`services/indexing/README.md`](services/indexing/README.md) for CSV format and when to use `--recreate`.
+Set `QDRANT_COLLECTION=recipes_full` in `.env` and ensure local Qdrant has that collection before starting retrieval.
 
 ## Endpoints (public)
 
@@ -104,7 +221,7 @@ Env vars (see `.env.example`): `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`.
 
 ## Auth
 
-Set `DISABLE_AUTH=true` on the gateway for Day 1 dev. When enabled, the gateway validates Keycloak JWTs via JWKS.
+Set `DISABLE_AUTH=true` on the gateway to skip JWT checks on `/recommend` (local dev). When `DISABLE_AUTH=false`, the gateway validates Keycloak JWTs via JWKS.
 
 ## Optional LLM reasoning
 
@@ -114,7 +231,3 @@ Set on `reasoning` and `recommendation` services:
 ENABLE_LLM_REASONING=true
 OPENROUTER_API_KEY=...
 ```
-
-## Legacy monolith
-
-The original single-process app remains under `backend/app/` for reference during migration.
