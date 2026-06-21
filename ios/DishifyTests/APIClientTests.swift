@@ -113,12 +113,12 @@ final class APIClientTests: XCTestCase {
                 headerFields: nil
             )!
             let body = """
-            {"status":"ok","service":"dishify-backend"}
+            {"exclusion_restrictions":["vegetarian"]}
             """.data(using: .utf8)!
             return (response, body)
         }
 
-        _ = try await client.health()
+        _ = try await client.preferences()
     }
 
     func testMeUsesBearerToken() async throws {
@@ -142,16 +142,106 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(profile.username, "test")
     }
 
+    func testRetriesWithRefreshedTokenOn401() async throws {
+        var callCount = 0
+        let client = makeClient(
+            tokenProvider: { "old-token" },
+            refreshTokenProvider: { "old-rt" },
+            onTokenRefreshed: { _, _ in },
+            handler: { request in
+                callCount += 1
+                if callCount == 1 {
+                    // First call: 401
+                    let response = HTTPURLResponse(url: request.url!, statusCode: 401, httpVersion: nil, headerFields: nil)!
+                    return (response, Data())
+                } else if request.url?.path == "/auth/refresh" {
+                    // Refresh call
+                    let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                    let body = """
+                    {"access_token":"new-at","expires_in":300,"refresh_token":"new-rt","token_type":"Bearer"}
+                    """.data(using: .utf8)!
+                    return (response, body)
+                } else {
+                    // Retry with new token
+                    let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                    let body = """
+                    {"id":"u1","username":"test","email":"t@e.com","email_verified":true,"first_name":"test","last_name":"User"}
+                    """.data(using: .utf8)!
+                    return (response, body)
+                }
+            }
+        )
+
+        let profile = try await client.me()
+        XCTAssertEqual(profile.username, "test")
+        XCTAssertEqual(callCount, 3)
+    }
+
+    func testCallsOnRefreshFailedWhenRefreshFails() async {
+        var refreshFailed = false
+        var callCount = 0
+        let client = makeClient(
+            tokenProvider: { "bad-token" },
+            refreshTokenProvider: { "bad-rt" },
+            onRefreshFailed: { refreshFailed = true },
+            handler: { request in
+                callCount += 1
+                let response = HTTPURLResponse(url: request.url!, statusCode: 401, httpVersion: nil, headerFields: nil)!
+                return (response, Data())
+            }
+        )
+
+        do {
+            _ = try await client.me() as UserProfile
+            XCTFail("Expected auth error")
+        } catch let error as APIError {
+            XCTAssertEqual(error.errorDescription, APIError.auth.errorDescription)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        XCTAssertTrue(refreshFailed)
+    }
+
+    func testCallsOnRefreshFailedWhenNoRefreshToken() async {
+        var refreshFailed = false
+        let client = makeClient(
+            tokenProvider: { "bad-token" },
+            refreshTokenProvider: { nil },
+            onRefreshFailed: { refreshFailed = true },
+            handler: { request in
+                let response = HTTPURLResponse(url: request.url!, statusCode: 401, httpVersion: nil, headerFields: nil)!
+                return (response, Data())
+            }
+        )
+
+        do {
+            _ = try await client.me() as UserProfile
+            XCTFail("Expected auth error")
+        } catch let error as APIError {
+            XCTAssertEqual(error.errorDescription, APIError.auth.errorDescription)
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        XCTAssertTrue(refreshFailed)
+    }
+
     private func makeClient(
         tokenProvider: (() -> String?)? = nil,
+        refreshTokenProvider: (() -> String?)? = nil,
+        onTokenRefreshed: ((String, String?) -> Void)? = nil,
+        onRefreshFailed: (() -> Void)? = nil,
         handler: @escaping (URLRequest) throws -> (HTTPURLResponse, Data)
     ) -> APIClient {
         MockURLProtocol.requestHandler = handler
-        return APIClient(
+        var client = APIClient(
             baseURL: URL(string: "http://localhost:8000")!,
             tokenProvider: tokenProvider ?? { nil },
+            refreshTokenProvider: refreshTokenProvider ?? { nil },
             session: makeSession()
         )
+        client.onTokenRefreshed = onTokenRefreshed
+        client.onRefreshFailed = onRefreshFailed
+        return client
     }
 
     private func makeSession() -> URLSession {
