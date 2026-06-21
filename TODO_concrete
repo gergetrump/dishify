@@ -6,19 +6,9 @@ Testing & CI (Phase 7) — Write e2e_api_audit.py, wire tests into GitHub Action
 
 Deployment (Phase 7/10) — Staging environment, production deployment (hosting, TLS, domain), secrets management (.env to a vault)
 
-Security lockdown (Phase 10) — CORS restricted to prod origins, rate limits enabled, auth enforced everywhere
-
 
 Should-do before launch
 
 Recommendation quality (Phase 5) — Enable LLM reasoning with OpenRouter, tune ranking weights, validate restriction filters
 
 Documentation (Phase 9) — Update READMEs for frontend/iOS, production runbook, demo script for stakeholders
-
-
-Nice-to-have / post-launch
-
-API gaps (Phase 8) — GET /recipes/{id} endpoint, search history, saved recipes, user feedback on recommendations
-
-App Store (Phase 10) — Privacy policy, terms of service, URL scheme config, App Store submission
-Monitoring — Logs, health alerts, uptime monitoring for Qdrant/Postgres/Keycloak

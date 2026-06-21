@@ -142,12 +142,48 @@ def main() -> int:
 		f"top='{top.get('title')}' score={top.get('score')} stages={[s.get('name') for s in stages]}",
 	)
 
-	if code == 200 and results:
+	if code != 200:
+		return 1
+
+	if results:
 		print("\n--- Top recipe ---")
 		print(json.dumps(results[0], indent=2))
 
+	# 8. Refresh token
+	refresh_token = tokens.get("refresh_token") if isinstance(tokens, dict) else None
+	if refresh_token:
+		code, refreshed = req("POST", "/auth/refresh", {"refresh_token": refresh_token})
+		new_token = refreshed.get("access_token") if isinstance(refreshed, dict) else None
+		new_refresh = refreshed.get("refresh_token") if isinstance(refreshed, dict) else None
+		step(
+			"POST /auth/refresh",
+			code == 200 and bool(new_token),
+			f"new_expires_in={refreshed.get('expires_in')}" if new_token else str(refreshed),
+		)
+		if new_token:
+			token = new_token
+		if new_refresh:
+			refresh_token = new_refresh
+
+		# Verify refreshed token works
+		code, profile2 = req("GET", "/me", token=token)
+		step(
+			"GET /me (refreshed token)",
+			code == 200 and profile2.get("username") == new_user["username"],
+			f"username={profile2.get('username')}",
+		)
+	else:
+		step("POST /auth/refresh", False, "no refresh_token in login response")
+
+	# 9. Logout
+	if refresh_token:
+		code, _ = req("POST", "/auth/logout", {"refresh_token": refresh_token})
+		step("POST /auth/logout", code == 204, f"status={code}")
+	else:
+		step("POST /auth/logout", False, "no refresh_token available")
+
 	print("\n=== Workflow complete ===")
-	return 0 if code == 200 else 1
+	return 0
 
 
 if __name__ == "__main__":

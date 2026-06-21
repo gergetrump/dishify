@@ -70,7 +70,7 @@ final class ModelDecodingTests: XCTestCase {
         let profile = try decoder.decode(UserProfile.self, from: Data(json.utf8))
 
         XCTAssertEqual(profile.username, "demo_user")
-        XCTAssertTrue(profile.emailVerified)
+        XCTAssertEqual(profile.emailVerified, true)
         XCTAssertEqual(profile.lastName, "User")
     }
 
