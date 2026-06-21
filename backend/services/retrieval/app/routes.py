@@ -11,15 +11,15 @@ class CollectionUnavailableError(RuntimeError):
     pass
 
 
-@router.get("/health", response_model=HealthResponse)
-def health() -> HealthResponse:
-    return HealthResponse(status="ok", service=settings.app_name)
-
-
-@router.get("/ready", response_model=HealthResponse)
-def ready() -> HealthResponse:
-    store = get_recipe_store()
-    if not store.collection_exists():
+def _check_collection() -> None:
+    try:
+        exists = get_recipe_store().collection_exists()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Qdrant unreachable ({settings.qdrant_url}): {exc}",
+        )
+    if not exists:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
@@ -27,6 +27,16 @@ def ready() -> HealthResponse:
                 "Run: docker compose run --rm indexing-worker --recreate"
             ),
         )
+
+
+@router.get("/health", response_model=HealthResponse)
+def health() -> HealthResponse:
+    return HealthResponse(status="ok", service=settings.app_name)
+
+
+@router.get("/ready", response_model=HealthResponse)
+def ready() -> HealthResponse:
+    _check_collection()
     return HealthResponse(status="ok", service=settings.app_name)
 
 
@@ -35,15 +45,8 @@ def retrieve(body: RetrieveRequest) -> RetrieveResponse:
     import time
 
     retrieve_start = time.perf_counter()
+    _check_collection()
     store = get_recipe_store()
-    if not store.collection_exists():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                f"Qdrant collection '{settings.qdrant_collection}' not found. "
-                "Run: docker compose run --rm indexing-worker --recreate"
-            ),
-        )
 
     recipes = store.retrieve_recipes(
         query=body.query,

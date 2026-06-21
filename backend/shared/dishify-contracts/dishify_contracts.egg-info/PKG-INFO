@@ -4,3 +4,4 @@ Version: 0.1.0
 Summary: Shared Pydantic contracts for Dishify microservices
 Requires-Python: >=3.12
 Requires-Dist: pydantic>=2
+Requires-Dist: email-validator>=2.0

@@ -4,7 +4,7 @@ import ast
 import csv
 from pathlib import Path
 
-from app.models.recipe import ParsedIngredient, RecipeDataPoint
+from dishify_vector_store import ParsedIngredient, RecipeDataPoint
 
 
 def parse_list(value: str) -> list[str]:

@@ -6,7 +6,7 @@ from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
 
 from app.config import settings
-from app.vector_store import RecipeVectorStore
+from dishify_vector_store import RecipeVectorStore
 
 _lock = threading.Lock()
 _store: RecipeVectorStore | None = None

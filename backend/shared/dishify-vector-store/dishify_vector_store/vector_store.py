@@ -11,8 +11,16 @@ from qdrant_client.models import (
 )
 from sentence_transformers import SentenceTransformer
 
-from app.models.recipe import RecipeDataPoint
 from dishify_contracts import ParsedIngredientModel, RetrievedRecipe
+from dishify_vector_store.models import RecipeDataPoint
+
+
+def recipe_embedding_text(recipe: RecipeDataPoint) -> str:
+    return f"""
+            Title: {recipe.title}
+            Title: {recipe.title}
+            Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
+            """
 
 
 class RecipeVectorStore:
@@ -65,13 +73,9 @@ class RecipeVectorStore:
         points: list[PointStruct] = []
 
         for idx, recipe in enumerate(recipes):
-            text_for_embedding = f"""
-            Title: {recipe.title}
-            Title: {recipe.title}
-            Raw ingredients: {", ".join(str(item) for item in recipe.raw_ingredients)}
-            """
-
-            vector = self.embedding_model.encode(text_for_embedding).tolist()
+            vector = self.embedding_model.encode(
+                recipe_embedding_text(recipe)
+            ).tolist()
 
             point = PointStruct(
                 id=idx,
@@ -203,8 +207,5 @@ class RecipeVectorStore:
         return recipes
 
     def collection_exists(self) -> bool:
-        try:
-            collections = self.client.get_collections().collections
-            return any(c.name == self.collection_name for c in collections)
-        except Exception:
-            return False
+        collections = self.client.get_collections().collections
+        return any(c.name == self.collection_name for c in collections)

@@ -13,7 +13,7 @@ FastAPI microservice stack aligned with `notebooks/end_to_end_pipeline.ipynb`.
 | `user` | 8004 | Registration, login, profile & preferences (Keycloak) |
 | `indexing-worker` | — | Offline batch indexing into Qdrant |
 
-Shared libraries: `shared/dishify-contracts`, `shared/dishify-ranking`.
+Shared libraries: `shared/dishify-contracts`, `shared/dishify-ranking`, `shared/dishify-vector-store`.
 
 ## Run with Docker Compose (from repo root)
 
@@ -30,7 +30,7 @@ Start Qdrant first, index recipes, then run each service in separate terminals:
 ```bash
 # Terminal 1 — retrieval
 cd backend/services/retrieval
-pip install -r requirements.txt ../../shared/dishify-contracts
+pip install -r requirements.txt ../../shared/dishify-contracts ../../shared/dishify-vector-store
 PYTHONPATH=. uvicorn app.main:app --reload --port 8002
 
 # Terminal 2 — reasoning
@@ -54,11 +54,11 @@ pip install -r requirements.txt ../../shared/dishify-contracts
 PYTHONPATH=. uvicorn app.main:app --reload --port 8000
 ```
 
-Index recipes:
+Index recipes (see [`services/indexing/README.md`](services/indexing/README.md) for CSV format and options):
 
 ```bash
 cd backend/services/indexing
-pip install -r requirements.txt
+pip install -r requirements.txt ../../shared/dishify-contracts ../../shared/dishify-vector-store
 PYTHONPATH=. python -m app.main --recreate
 ```
 
