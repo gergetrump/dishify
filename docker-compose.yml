@@ -6,8 +6,6 @@ services:
       POSTGRES_USER: dishify
       POSTGRES_PASSWORD: dishify
       POSTGRES_DB: dishify
-    ports:
-      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -36,8 +34,6 @@ services:
       KEYCLOAK_TEST_EMAIL: ${KEYCLOAK_TEST_EMAIL:-test@dishify.com}
       KEYCLOAK_TEST_PASSWORD: ${KEYCLOAK_TEST_PASSWORD:-test-secret}
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:9001}
-    ports:
-      - "9001:9001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,9 +41,6 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.12.4
     container_name: dishify-qdrant
-    ports:
-      - "6333:6333"
-      - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
@@ -61,8 +54,6 @@ services:
       context: ./backend
       dockerfile: services/retrieval/Dockerfile
     container_name: dishify-retrieval
-    ports:
-      - "8002:8002"
     env_file:
       - .env.secret
     environment:
@@ -79,8 +70,6 @@ services:
       context: ./backend
       dockerfile: services/reasoning/Dockerfile
     container_name: dishify-reasoning
-    ports:
-      - "8003:8003"
     env_file:
       - .env.secret
     environment:
@@ -100,8 +89,6 @@ services:
       context: ./backend
       dockerfile: services/recommendation/Dockerfile
     container_name: dishify-recommendation
-    ports:
-      - "8001:8001"
     environment:
       RETRIEVAL_URL: http://retrieval:8002
       REASONING_URL: http://reasoning:8003
@@ -132,7 +119,7 @@ services:
       KEYCLOAK_URL: http://keycloak:9001
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:9001}
       KEYCLOAK_REALM: dishify
-      DISABLE_AUTH: "true"
+      DISABLE_AUTH: "false"
       RESTRICTION_RULES_PATH: /data/restriction_rules.json
       REQUEST_TIMEOUT_SECONDS: "180"
     volumes:
@@ -147,14 +134,28 @@ services:
       timeout: 5s
       retries: 5
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: dishify-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN:-http://localhost}
+    depends_on:
+      - gateway
+      - web-client
+
   web-client:
     build:
       context: ./web-client
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
     container_name: dishify-web-client
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: http://localhost:8000
     depends_on:
       - gateway
 
@@ -163,10 +164,8 @@ services:
       context: ./backend
       dockerfile: services/user/Dockerfile
     container_name: dishify-user
-    ports:
-      - "8004:8004"
     environment:
-      DATABASE_URL: postgresql+psycopg://dishify:dishify@postgres:5432/dishify
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-dishify}:${POSTGRES_PASSWORD:-dishify}@postgres:5432/dishify
       KEYCLOAK_URL: http://keycloak:9001
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:9001}
       KEYCLOAK_REALM: dishify
@@ -208,3 +207,5 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
+  caddy_data:
+  caddy_config:

@@ -1,9 +1,13 @@
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.auth import validate_token
 from app.config import settings
+
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(tags=["user"])
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -80,13 +84,26 @@ async def auth_config(request: Request) -> Response:
 
 
 @router.post("/auth/register")
+@limiter.limit("10/minute")
 async def auth_register(request: Request) -> Response:
 	return await _proxy(request, "/auth/register")
 
 
 @router.post("/auth/login")
+@limiter.limit("15/minute")
 async def auth_login(request: Request) -> Response:
 	return await _proxy(request, "/auth/login")
+
+
+@router.post("/auth/refresh")
+@limiter.limit("30/minute")
+async def auth_refresh(request: Request) -> Response:
+	return await _proxy(request, "/auth/refresh")
+
+
+@router.post("/auth/logout")
+async def auth_logout(request: Request) -> Response:
+	return await _proxy(request, "/auth/logout")
 
 
 @router.get("/me")

@@ -90,6 +90,39 @@ class KeycloakClient:
 				)
 			return response.json()
 
+	def refresh(self, refresh_token: str) -> dict[str, Any]:
+		data = {
+			"grant_type": "refresh_token",
+			"client_id": settings.keycloak_login_client_id,
+			"refresh_token": refresh_token,
+		}
+		if settings.keycloak_login_client_secret:
+			data["client_secret"] = settings.keycloak_login_client_secret
+		with httpx.Client(timeout=self.timeout) as client:
+			response = client.post(self._token_url(), data=data)
+			if not response.is_success:
+				raise KeycloakError(
+					"Refresh token invalid or expired",
+					status_code=response.status_code,
+				)
+			return response.json()
+
+	def logout(self, refresh_token: str) -> None:
+		data = {
+			"client_id": settings.keycloak_login_client_id,
+			"refresh_token": refresh_token,
+		}
+		if settings.keycloak_login_client_secret:
+			data["client_secret"] = settings.keycloak_login_client_secret
+		url = f"{self.realm_base}/protocol/openid-connect/logout"
+		with httpx.Client(timeout=self.timeout) as client:
+			response = client.post(url, data=data)
+			if not response.is_success:
+				raise KeycloakError(
+					"Logout failed",
+					status_code=response.status_code,
+				)
+
 	def register_user(
 		self,
 		*,

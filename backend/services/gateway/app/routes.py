@@ -1,10 +1,14 @@
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.auth import validate_token
 from app.config import settings
 from dishify_contracts import HealthResponse, RecommendRequest, RecommendResponse
+
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -80,7 +84,9 @@ def health() -> HealthResponse:
 
 
 @router.post("/recommend", response_model=RecommendResponse)
+@limiter.limit("20/minute")
 def recommend(
+	request: Request,
 	body: RecommendRequest,
 	token: str | None = Depends(require_token),
 ) -> RecommendResponse:
