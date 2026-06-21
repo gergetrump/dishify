@@ -351,7 +351,9 @@ def save_checkpoint(path: Path, checkpoint: Checkpoint) -> None:
     tmp_path.replace(path)
 
 
-def append_skipped_uploads(path: Path, skipped_uploads: list[dict[str, object]]) -> None:
+def append_skipped_uploads(
+    path: Path, skipped_uploads: list[dict[str, object]]
+) -> None:
     if not skipped_uploads:
         return
 

@@ -1,0 +1,166 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    branches: [main]
+
+jobs:
+  tests:
+    name: Run Tests
+    uses: ./.github/workflows/ci.yml
+
+  provision:
+    name: Provision Infrastructure
+    needs: tests
+    runs-on: ubuntu-latest
+    outputs:
+      server_ip: ${{ steps.ip.outputs.server_ip }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get or create server
+        id: ip
+        run: |
+          # Check if server already exists
+          EXISTING=$(curl -s -H "Authorization: Bearer $HCLOUD_TOKEN" \
+            "https://api.hetzner.cloud/v1/servers?name=dishify" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          servers = data.get('servers', [])
+          print(servers[0]['public_net']['ipv4']['ip'] if servers else '')
+          ")
+
+          if [ -n "$EXISTING" ]; then
+            echo "Server exists at $EXISTING"
+            echo "server_ip=$EXISTING" >> "$GITHUB_OUTPUT"
+          else
+            echo "Creating new server..."
+
+            # Ensure SSH key exists
+            KEY_ID=$(curl -s -H "Authorization: Bearer $HCLOUD_TOKEN" \
+              "https://api.hetzner.cloud/v1/ssh_keys?name=dishify-deploy" | python3 -c "
+            import sys, json
+            keys = json.load(sys.stdin).get('ssh_keys', [])
+            print(keys[0]['id'] if keys else '')
+            ")
+
+            if [ -z "$KEY_ID" ]; then
+              KEY_ID=$(curl -s -X POST -H "Authorization: Bearer $HCLOUD_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{"name":"dishify-deploy","public_key":"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPPc4bcYmZcZJ49BQZ0M4J1ciMz/qPFMNBM2sAU99wF+ dishify-deploy"}' \
+                "https://api.hetzner.cloud/v1/ssh_keys" | python3 -c "
+              import sys, json
+              print(json.load(sys.stdin)['ssh_key']['id'])
+              ")
+            fi
+
+            # Create firewall
+            FW_ID=$(curl -s -H "Authorization: Bearer $HCLOUD_TOKEN" \
+              "https://api.hetzner.cloud/v1/firewalls?name=dishify-fw" | python3 -c "
+            import sys, json
+            fws = json.load(sys.stdin).get('firewalls', [])
+            print(fws[0]['id'] if fws else '')
+            ")
+
+            if [ -z "$FW_ID" ]; then
+              FW_ID=$(curl -s -X POST -H "Authorization: Bearer $HCLOUD_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "name":"dishify-fw",
+                  "rules":[
+                    {"direction":"in","protocol":"tcp","port":"22","source_ips":["0.0.0.0/0","::/0"]},
+                    {"direction":"in","protocol":"tcp","port":"80","source_ips":["0.0.0.0/0","::/0"]},
+                    {"direction":"in","protocol":"tcp","port":"443","source_ips":["0.0.0.0/0","::/0"]}
+                  ]
+                }' \
+                "https://api.hetzner.cloud/v1/firewalls" | python3 -c "
+              import sys, json
+              print(json.load(sys.stdin)['firewall']['id'])
+              ")
+            fi
+
+            # Create server
+            IP=$(curl -s -X POST -H "Authorization: Bearer $HCLOUD_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"name\":\"dishify\",
+                \"image\":\"ubuntu-24.04\",
+                \"server_type\":\"cx22\",
+                \"location\":\"nbg1\",
+                \"ssh_keys\":[\"$KEY_ID\"],
+                \"firewalls\":[{\"firewall\":$FW_ID}]
+              }" \
+              "https://api.hetzner.cloud/v1/servers" | python3 -c "
+            import sys, json
+            print(json.load(sys.stdin)['server']['public_net']['ipv4']['ip'])
+            ")
+
+            echo "Server created at $IP"
+            echo "server_ip=$IP" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    needs: provision
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Write SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Wait for SSH
+        run: |
+          for i in $(seq 1 30); do
+            if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i ~/.ssh/deploy_key root@${{ needs.provision.outputs.server_ip }} echo ok 2>/dev/null; then
+              break
+            fi
+            echo "Waiting for SSH... ($i/30)"
+            sleep 10
+          done
+
+      - name: Prepare deploy vars
+        run: |
+          cat <<EOF > /tmp/env_secret
+          DOMAIN=http://${{ needs.provision.outputs.server_ip }}
+          DISABLE_AUTH=false
+          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+          POSTGRES_USER=dishify
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          QDRANT_URL=${{ secrets.QDRANT_URL }}
+          QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}
+          KEYCLOAK_ADMIN=admin
+          KEYCLOAK_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+          KEYCLOAK_BACKEND_SECRET=${{ secrets.KEYCLOAK_BACKEND_SECRET }}
+          KEYCLOAK_PUBLIC_URL=http://${{ needs.provision.outputs.server_ip }}
+          EOF
+          python3 -c "
+          import json
+          env = open('/tmp/env_secret').read()
+          json.dump({'env_secret': env}, open('/tmp/ansible_vars.json', 'w'))
+          "
+
+      - name: Run Ansible
+        run: |
+          ansible-playbook infra/ansible/deploy.yml \
+            -i infra/ansible/inventory.yml \
+            -e "server_ip=${{ needs.provision.outputs.server_ip }}" \
+            -e "gh_pat=${{ secrets.GH_PAT }}" \
+            -e "branch=main" \
+            -e "@/tmp/ansible_vars.json" \
+            --private-key ~/.ssh/deploy_key
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "false"
+
+      - name: Smoke test
+        run: |
+          sleep 10
+          curl -sf http://${{ needs.provision.outputs.server_ip }}/health | python3 -m json.tool

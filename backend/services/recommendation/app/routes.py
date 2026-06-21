@@ -9,15 +9,15 @@ router = APIRouter(tags=["recommendation"])
 
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-	return HealthResponse(status="ok", service=settings.app_name)
+    return HealthResponse(status="ok", service=settings.app_name)
 
 
 @router.post("/internal/recommend", response_model=RecommendResponse)
 def recommend(body: RecommendRequest) -> RecommendResponse:
-	try:
-		return run_recommend_pipeline(body)
-	except PipelineUnavailableError as exc:
-		raise HTTPException(
-			status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-			detail=str(exc),
-		) from exc
+    try:
+        return run_recommend_pipeline(body)
+    except PipelineUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc

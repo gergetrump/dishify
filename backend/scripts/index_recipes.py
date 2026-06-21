@@ -57,7 +57,9 @@ def main() -> None:
         collection_name=settings.qdrant_collection,
     )
 
-    print(f"Creating collection '{settings.qdrant_collection}' (recreate={args.recreate})...")
+    print(
+        f"Creating collection '{settings.qdrant_collection}' (recreate={args.recreate})..."
+    )
     store.create_collection(recreate=args.recreate)
 
     print("Indexing recipes...")

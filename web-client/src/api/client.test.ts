@@ -31,7 +31,8 @@ describe("ApiClient", () => {
     await client.health();
 
     expect(fetch).toHaveBeenCalledOnce();
-    const [, init] = fetch.mock.calls[0];
+    const call = fetch.mock.calls[0] as unknown[];
+    const init = call[1] as RequestInit;
     expect((init.headers as Headers).get("Authorization")).toBe("Bearer my-token");
   });
 
@@ -48,7 +49,8 @@ describe("ApiClient", () => {
     });
     await client.login({ username: "user", password: "pass" });
 
-    const [, init] = fetch.mock.calls[0];
+    const call = fetch.mock.calls[0] as unknown[];
+    const init = call[1] as RequestInit;
     expect((init.headers as Headers).get("Authorization")).toBeNull();
   });
 
@@ -170,8 +172,8 @@ describe("ApiClient", () => {
     const client = new ApiClient({ baseUrl: "http://localhost:8000" });
     await client.logout("my-refresh-token");
 
-    const [url, init] = fetch.mock.calls[0];
-    expect(url).toBe("http://localhost:8000/auth/logout");
-    expect(JSON.parse(init.body)).toEqual({ refresh_token: "my-refresh-token" });
+    const call = fetch.mock.calls[0] as unknown[];
+    expect(call[0]).toBe("http://localhost:8000/auth/logout");
+    expect(JSON.parse((call[1] as RequestInit).body as string)).toEqual({ refresh_token: "my-refresh-token" });
   });
 });
