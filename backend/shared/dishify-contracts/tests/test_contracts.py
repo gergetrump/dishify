@@ -8,8 +8,11 @@ from dishify_contracts import (
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
+    TranscribeRequest,
     UpdatePreferencesRequest,
     UserPreferences,
+    VisionIngredientsRequest,
+    VisionIngredientsResponse,
 )
 
 
@@ -109,3 +112,29 @@ class TestRecommendRequest:
             exclusion_restrictions=["vegetarian"],
         )
         assert req.top_k == 5
+
+
+class TestTranscribeRequest:
+    def test_defaults(self):
+        req = TranscribeRequest(audio_base64="QUJD")
+        assert req.mime_type == "audio/webm"
+        assert req.language is None
+
+    def test_rejects_empty_audio(self):
+        with pytest.raises(ValidationError):
+            TranscribeRequest(audio_base64="")
+
+
+class TestVisionIngredients:
+    def test_request_defaults(self):
+        req = VisionIngredientsRequest(image_base64="QUJD")
+        assert req.mime_type == "image/jpeg"
+
+    def test_rejects_empty_image(self):
+        with pytest.raises(ValidationError):
+            VisionIngredientsRequest(image_base64="")
+
+    def test_response_defaults_to_empty_ingredients(self):
+        resp = VisionIngredientsResponse(latency_ms=12)
+        assert resp.ingredients == []
+        assert resp.raw_text is None

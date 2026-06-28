@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, apiClient } from "../api/client";
+import type { DetectedIngredient } from "../api/types";
 import { Button } from "../components/Button";
+import { IngredientCapture } from "../components/IngredientCapture";
 import { Input } from "../components/Input";
+import { blobToBase64 } from "../media/encode";
+import { prefetchAugmentAll } from "../recommendations/augmentCache";
 import {
   createPantryItem,
   loadPantryItems,
@@ -24,6 +28,14 @@ export function AppPage() {
   const [topK, setTopK] = useState(5);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [showCapture, setShowCapture] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [mediaNotice, setMediaNotice] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const pantryIngredients = useMemo(() => pantryItemsToIngredients(items), [items]);
 
@@ -94,6 +106,10 @@ export function AppPage() {
         available_ingredients: pantryIngredients,
       };
 
+      // Start enhancing every result's directions in the background now, so
+      // opening any recipe shows the enhanced steps instantly.
+      prefetchAugmentAll(response.results);
+
       saveRecommendationSession({ request, response });
 
       navigate("/results", {
@@ -109,8 +125,122 @@ export function AppPage() {
     }
   }
 
+  async function startRecording() {
+    setMediaError(null);
+    setMediaNotice(null);
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setMediaError("Voice input is not supported in this browser.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        void transcribeRecording(recorder.mimeType);
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      setMediaError("Microphone access was denied.");
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setIsRecording(false);
+  }
+
+  async function transcribeRecording(mimeType: string) {
+    const blob = new Blob(audioChunksRef.current, { type: mimeType || "audio/webm" });
+    audioChunksRef.current = [];
+    if (blob.size === 0) {
+      return;
+    }
+
+    setIsTranscribing(true);
+    setMediaError(null);
+    setMediaNotice(null);
+    try {
+      const { base64, mimeType: blobMime } = await blobToBase64(blob, "audio/webm");
+      const { ingredients, query: spokenQuery, transcript } = await apiClient.voice({
+        audio_base64: base64,
+        mime_type: blobMime,
+      });
+
+      const detected = ingredients
+        .map((ingredient) =>
+          createPantryItem({
+            name: ingredient.name || ingredient.raw_text,
+            quantity: ingredient.quantity ?? null,
+            unit: ingredient.unit ?? null,
+          }),
+        )
+        .filter((item) => item.name);
+      const added = dedupeByName(items, detected);
+      if (added.length) {
+        setItems((current) => [...current, ...dedupeByName(current, detected)]);
+      }
+
+      const vibe = spokenQuery?.trim();
+      if (vibe) {
+        setQuery((current) => (current.trim() ? `${current.trim()} ${vibe}` : vibe));
+      }
+
+      if (added.length || vibe) {
+        const parts: string[] = [];
+        if (added.length) parts.push(`added ${added.length} ingredient(s)`);
+        if (vibe) parts.push("set your vibe");
+        setMediaNotice(`Heard you — ${parts.join(" and ")}.`);
+      } else if (!transcript.trim()) {
+        setMediaError("Could not hear anything in that recording.");
+      } else {
+        setMediaError("Didn't catch any ingredients — try naming what you have.");
+      }
+    } catch (err) {
+      setMediaError(err instanceof ApiError ? err.message : "Could not process audio.");
+    } finally {
+      setIsTranscribing(false);
+    }
+  }
+
+  function addDetectedIngredients(ingredients: DetectedIngredient[]) {
+    setMediaError(null);
+    const detected = ingredients
+      .map((ingredient) =>
+        createPantryItem({
+          name: ingredient.name || ingredient.raw_text,
+          quantity: ingredient.quantity ?? null,
+          unit: ingredient.unit ?? null,
+        }),
+      )
+      .filter((item) => item.name);
+
+    if (!detected.length) {
+      return;
+    }
+    const added = dedupeByName(items, detected);
+    setItems((current) => [...current, ...dedupeByName(current, detected)]);
+    setMediaNotice(`Added ${added.length} ingredient(s) from your photo.`);
+  }
+
   return (
     <section className="cook-layout">
+      {showCapture ? (
+        <IngredientCapture
+          onConfirm={addDetectedIngredients}
+          onClose={() => setShowCapture(false)}
+        />
+      ) : null}
       <div className="hero-panel">
         <p className="eyebrow">What is available today?</p>
         <h1>Your next meal is already in your kitchen.</h1>
@@ -137,6 +267,22 @@ export function AppPage() {
               </button>
             ) : null}
           </div>
+
+          <div className="button-row">
+            <Button type="button" variant="secondary" onClick={() => setShowCapture(true)}>
+              📷 Scan ingredients
+            </Button>
+            <Button
+              type="button"
+              variant={isRecording ? "ghost" : "secondary"}
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isTranscribing}
+            >
+              {isRecording ? "■ Stop & add" : isTranscribing ? "Listening..." : "🎤 Say what you have"}
+            </Button>
+          </div>
+          {mediaError ? <p className="alert alert-error">{mediaError}</p> : null}
+          {mediaNotice ? <p className="alert alert-success">{mediaNotice}</p> : null}
 
           <Input
             label="Ingredient"
@@ -235,6 +381,19 @@ export function AppPage() {
       </div>
     </section>
   );
+}
+
+function dedupeByName(existing: PantryItem[], candidates: PantryItem[]) {
+  const seen = new Set(existing.map((item) => item.name.trim().toLowerCase()));
+  const added: PantryItem[] = [];
+  for (const candidate of candidates) {
+    const key = candidate.name.trim().toLowerCase();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      added.push(candidate);
+    }
+  }
+  return added;
 }
 
 function defaultQueryFromPantry(items: PantryItem[]) {

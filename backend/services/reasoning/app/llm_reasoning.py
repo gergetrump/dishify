@@ -19,15 +19,14 @@ def _build_prompt(
     *,
     response_format: str = "tags",
 ) -> str:
+    # Explanations only need the ingredient picture, not the full step-by-step.
+    # Dropping directions/link/source cuts prompt tokens → faster + cheaper.
     recipe_payloads = [
         {
             "id": getattr(recipe, "id", None),
             "title": recipe.title,
             "ingredients": recipe.ingredients,
             "ner": recipe.ner,
-            "directions": recipe.directions,
-            "link": recipe.link,
-            "source": recipe.source,
         }
         for recipe in recipes
     ]
@@ -80,6 +79,8 @@ def _build_prompt(
     if response_format == "json":
         prompt_lines.extend(
             [
+                "Be concise: at most 2 short bullets for positive and at most 2 for "
+                "negative, each under 15 words. No preamble.",
                 "Return a single JSON object only (no markdown, no extra text).",
                 "Use this exact schema:",
                 "{",
@@ -171,6 +172,87 @@ def _call_llm(
         return result["choices"][0]["message"]["content"].strip()
 
     raise ValueError(f"Unsupported provider: {provider}")
+
+
+def _build_augment_prompt(
+    *,
+    title: str | None,
+    ingredients: list[str],
+    directions: list[str],
+    query: str | None,
+    servings: int | None,
+) -> str:
+    lines = [
+        "You are a professional chef writing clear, beginner-friendly cooking instructions.",
+        "",
+        "Given a recipe with terse or incomplete directions, rewrite them as clear,",
+        "numbered steps a novice can follow. Use at most 6 steps; each step is 1-2",
+        "sentences covering the key technique, timing, and a doneness cue. Add a tip",
+        "only when genuinely useful (otherwise null), max one short sentence. Do NOT",
+        "invent ingredients not implied by the recipe; common staples (salt, water,",
+        "oil) are fine.",
+        "",
+        f"Recipe title: {title or 'Untitled'}",
+    ]
+    if servings:
+        lines.append(f"Servings: {servings}")
+    lines.append(
+        f"Ingredients: {', '.join(ingredients) if ingredients else 'Not provided'}"
+    )
+    if query:
+        lines.append(f"User context / preference: {query}")
+    lines.append("")
+    lines.append("Original directions:")
+    if directions:
+        lines.extend(f"- {step}" for step in directions)
+    else:
+        lines.append("- (none provided; infer reasonable steps from the ingredients)")
+    lines.extend(
+        [
+            "",
+            "Return a single JSON object only (no markdown, no extra text), schema:",
+            "{",
+            '  "steps": [',
+            '    {"text": "detailed step", "tip": "optional tip or null", '
+            '"duration_minutes": number | null}',
+            "  ],",
+            '  "tips": ["overall tips, optional"],',
+            '  "estimated_time_minutes": number | null',
+            "}",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def augment_directions_payload(
+    *,
+    title: str | None,
+    ingredients: list[str],
+    directions: list[str],
+    query: str | None = None,
+    servings: int | None = None,
+    provider: str = "openrouter",
+    model: str | None = None,
+    api_key: str | None = None,
+    base_url: str | None = None,
+    timeout: int = 30,
+) -> dict:
+    prompt = _build_augment_prompt(
+        title=title,
+        ingredients=ingredients,
+        directions=directions,
+        query=query,
+        servings=servings,
+    )
+    raw = _call_llm(
+        prompt,
+        provider=provider,
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+        timeout=timeout,
+    )
+    return json.loads(_extract_json_payload(raw))
 
 
 def generate_reasoning_payload(

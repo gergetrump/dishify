@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     ingredient_weight: float = 0.3
     enable_llm_reasoning: bool = False
     request_timeout_seconds: int = 60
+    # Only send the top N ranked recipes to the (slow) LLM explain stage; the rest
+    # fall back to fast inventory-based reasoning.
+    explain_max_recipes: int = 2
 
 
 settings = Settings()

@@ -11,6 +11,7 @@ FastAPI microservice stack aligned with `notebooks/end_to_end_pipeline.ipynb`.
 | `retrieval` | 8002 | Embeddings + Qdrant search |
 | `reasoning` | 8003 | Optional LLM reasoning (OpenRouter) |
 | `user` | 8004 | Registration, login, profile & preferences (Keycloak) |
+| `ingest` | 8005 | Voice transcription + image→ingredient detection (Gemini) |
 | `indexing-worker` | — | Offline batch indexing into Qdrant |
 
 Shared libraries: `shared/dishify-contracts`, `shared/dishify-ranking`, `shared/dishify-vector-store`.
@@ -48,7 +49,12 @@ cd backend/services/user
 pip install -r requirements.txt ../../shared/dishify-contracts
 PYTHONPATH=. uvicorn app.main:app --reload --port 8004
 
-# Terminal 5 — gateway
+# Terminal 5 — ingest (voice + image; needs GEMINI_API_KEY)
+cd backend/services/ingest
+pip install -r requirements.txt ../../shared/dishify-contracts
+GEMINI_API_KEY=... PYTHONPATH=. uvicorn app.main:app --reload --port 8005
+
+# Terminal 6 — gateway
 cd backend/services/gateway
 pip install -r requirements.txt ../../shared/dishify-contracts
 PYTHONPATH=. uvicorn app.main:app --reload --port 8000
@@ -66,6 +72,8 @@ PYTHONPATH=. python -m app.main --recreate
 
 - `GET /health` — on gateway (`:8000`)
 - `POST /recommend` — on gateway (`:8000`)
+- `POST /transcribe` — voice → text (proxied to `ingest`)
+- `POST /vision/ingredients` — image → ingredients (proxied to `ingest`)
 - `GET /auth/config` — OIDC discovery + client IDs
 - `POST /auth/register` — create account (Keycloak admin API via `dishify-backend` service account)
 - `POST /auth/login` — username/password token (password grant on `dishify-backend`)
@@ -98,6 +106,18 @@ Set on `reasoning` and `recommendation` services:
 ```
 ENABLE_LLM_REASONING=true
 OPENROUTER_API_KEY=...
+```
+
+## Media ingestion (voice & image)
+
+The `ingest` service turns voice/image input into the existing `query` / `available_ingredients`
+fields. It needs a Gemini key; without it, `/transcribe` and `/vision/ingredients` return `503`.
+
+```
+GEMINI_API_KEY=...
+# optional model overrides
+GEMINI_TRANSCRIBE_MODEL=gemini-2.5-flash
+GEMINI_VISION_MODEL=gemini-2.5-flash
 ```
 
 ## Legacy monolith

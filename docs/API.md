@@ -7,6 +7,8 @@
 > **v1.2 (June 2026):** Single hard-filter field `exclusion_restrictions` for allergies and diets. Removed `dietary_preferences` and `cuisine_preferences`. Soft preferences belong in the NL `query` only.
 >
 > **v1.3 (June 2026):** User preferences stored in Postgres (`user_preferences` table, keyed by JWT `sub`). Keycloak is auth-only. Authenticated `/recommend` calls default to stored prefs when `exclusion_restrictions` is omitted.
+>
+> **v1.4 (June 2026):** Added multimodal input (additive, does not change `/recommend`). New `ingest` microservice (port `8005`, Gemini-backed) exposes two-step helpers proxied by the gateway: `POST /transcribe` (voice → text) and `POST /vision/ingredients` (image → ingredients). Clients use them to fill the existing `query` / `available_ingredients` fields, then call `/recommend` as before.
 
 - **Base URL (local):** `http://localhost:8000`
 - **OpenAPI docs:** `http://localhost:8000/docs`
@@ -341,6 +343,93 @@ When a Bearer token is present, the gateway loads stored preferences from `GET /
 - `401` — missing or invalid token (when auth enabled)
 - `422` — validation error (unknown restriction tags)
 - `503` — Qdrant collection not indexed, user service unavailable, or preferences load failed
+
+---
+
+## Multimodal input (voice & image)
+
+Two-step helpers backed by the `ingest` service (Gemini). They do **not** run recommendation — they return text / ingredients the client reviews and then sends to `POST /recommend`. Same auth rules as `/recommend` (required in production, optional when `DISABLE_AUTH=true`). Rate limited to `20/minute`.
+
+Both accept **base64-encoded** media in a JSON body (no multipart). Decoded payloads above `MAX_UPLOAD_BYTES` (default 15 MB) are rejected with `413`.
+
+### `POST /transcribe`
+
+Voice → natural-language text. Clients typically drop the result into the `query` field.
+
+**Request:**
+```json
+{
+  "audio_base64": "<base64 audio>",
+  "mime_type": "audio/webm",
+  "language": null
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `audio_base64` | `string` | yes | Base64-encoded audio (no data-URL prefix) |
+| `mime_type` | `string` | no | Default `audio/webm`. e.g. `audio/mp4`, `audio/wav` |
+| `language` | `string \| null` | no | Optional BCP-47 hint (e.g. `en`) |
+
+**Response `200`:**
+```json
+{ "text": "creamy tomato pasta with spinach", "latency_ms": 1430 }
+```
+
+**Errors:** `413` payload too large · `422` invalid base64 · `502` transcription failed · `503` ingestion disabled (`GEMINI_API_KEY` unset)
+
+### `POST /voice`
+
+Voice → **structured pantry ingredients + residual intent**, in one call. Clients add `ingredients` to the pantry and put `query` (if any) into the recipe vibe. Same request shape as `/transcribe`.
+
+**Request:** identical to `/transcribe` (`audio_base64`, `mime_type`, `language`).
+
+**Response `200`:** `ingredients` are `ParsedIngredient` objects.
+```json
+{
+  "transcript": "I have three eggs, a cup of milk, some spinach and two cloves of garlic. Something quick and spicy.",
+  "ingredients": [
+    { "name": "egg", "quantity": 3, "unit": null, "raw_text": "three eggs" },
+    { "name": "milk", "quantity": 1, "unit": "cup", "raw_text": "a cup of milk" },
+    { "name": "garlic", "quantity": 2, "unit": "clove", "raw_text": "two cloves of garlic" }
+  ],
+  "query": "quick and spicy",
+  "latency_ms": 4500
+}
+```
+
+**Errors:** same as `/transcribe`.
+
+### `POST /vision/ingredients`
+
+Image (pantry/fridge photo) → detected ingredients. Clients typically merge these into `available_ingredients`.
+
+**Request:**
+```json
+{
+  "image_base64": "<base64 image>",
+  "mime_type": "image/jpeg"
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `image_base64` | `string` | yes | Base64-encoded image (no data-URL prefix) |
+| `mime_type` | `string` | no | Default `image/jpeg`. e.g. `image/png`, `image/heic` |
+
+**Response `200`:** `ingredients` are `ParsedIngredient` objects (same shape as `/recommend`'s `available_ingredients`).
+```json
+{
+  "ingredients": [
+    { "name": "tomato", "quantity": 3, "unit": null, "raw_text": "3 ripe tomatoes" },
+    { "name": "milk", "quantity": 1, "unit": "cup", "raw_text": "1 cup milk" }
+  ],
+  "raw_text": "{ ...raw model output... }",
+  "latency_ms": 2100
+}
+```
+
+**Errors:** `413` payload too large · `422` invalid base64 · `502` detection failed · `503` ingestion disabled
 
 ---
 

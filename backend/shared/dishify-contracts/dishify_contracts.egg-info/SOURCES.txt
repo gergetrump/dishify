@@ -1,6 +1,8 @@
 pyproject.toml
 dishify_contracts/__init__.py
+dishify_contracts/augment.py
 dishify_contracts/internal.py
+dishify_contracts/media.py
 dishify_contracts/models.py
 dishify_contracts/public.py
 dishify_contracts/restrictions.py

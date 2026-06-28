@@ -101,6 +101,61 @@ export type RecommendResponse = {
   stages: PipelineStage[];
 };
 
+export type TranscribeRequest = {
+  audio_base64: string;
+  mime_type?: string;
+  language?: string | null;
+};
+
+export type TranscribeResponse = {
+  text: string;
+  latency_ms: number;
+};
+
+export type VoiceResponse = {
+  transcript: string;
+  ingredients: ParsedIngredient[];
+  query?: string | null;
+  latency_ms: number;
+};
+
+export type VisionIngredientsRequest = {
+  image_base64: string;
+  mime_type?: string;
+};
+
+export type DetectedIngredient = ParsedIngredient & {
+  // [x_min, y_min, x_max, y_max] normalized 0..1; null when not localized.
+  box?: number[] | null;
+};
+
+export type VisionIngredientsResponse = {
+  ingredients: DetectedIngredient[];
+  raw_text?: string | null;
+  latency_ms: number;
+};
+
+export type AugmentRequest = {
+  title?: string | null;
+  ingredients?: string[];
+  directions?: string[];
+  query?: string | null;
+  servings?: number | null;
+};
+
+export type AugmentedStep = {
+  text: string;
+  tip?: string | null;
+  duration_minutes?: number | null;
+};
+
+export type AugmentResponse = {
+  steps: AugmentedStep[];
+  tips: string[];
+  estimated_time_minutes?: number | null;
+  latency_ms: number;
+};
+
 export type ApiErrorPayload = {
   detail?: unknown;
 };

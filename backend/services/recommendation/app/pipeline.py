@@ -124,6 +124,7 @@ def run_recommend_pipeline(request: RecommendRequest) -> RecommendResponse:
     reasoning_results: dict[str, ReasoningDetail] = {}
     explain_status = "skipped"
 
+    explain_limit = min(top_k, settings.explain_max_recipes)
     if settings.enable_llm_reasoning:
         try:
             with httpx.Client(timeout=timeout) as client:
@@ -134,7 +135,7 @@ def run_recommend_pipeline(request: RecommendRequest) -> RecommendResponse:
                         top_k=top_k,
                         available_ingredients=request.available_ingredients,
                         exclusion_restrictions=request.exclusion_restrictions,
-                        recipes=ranked[:top_k],
+                        recipes=ranked[:explain_limit],
                     ).model_dump(mode="json"),
                 )
                 if explain_response.is_success:

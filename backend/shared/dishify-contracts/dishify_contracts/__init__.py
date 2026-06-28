@@ -5,6 +5,19 @@ from dishify_contracts.internal import (
     RetrieveRequest,
     RetrieveResponse,
 )
+from dishify_contracts.augment import (
+    AugmentedStep,
+    AugmentRequest,
+    AugmentResponse,
+)
+from dishify_contracts.media import (
+    DetectedIngredient,
+    TranscribeRequest,
+    TranscribeResponse,
+    VisionIngredientsRequest,
+    VisionIngredientsResponse,
+    VoiceResponse,
+)
 from dishify_contracts.models import (
     ParsedIngredientModel,
     RetrievedRecipe,
@@ -36,7 +49,11 @@ from dishify_contracts.user import (
 )
 
 __all__ = [
+    "AugmentRequest",
+    "AugmentResponse",
+    "AugmentedStep",
     "AuthConfigResponse",
+    "DetectedIngredient",
     "ExplainRequest",
     "ExplainResponse",
     "ExplainResultItem",
@@ -58,6 +75,11 @@ __all__ = [
     "RetrievedRecipe",
     "RetrievalRequest",
     "TokenResponse",
+    "TranscribeRequest",
+    "TranscribeResponse",
+    "VisionIngredientsRequest",
+    "VisionIngredientsResponse",
+    "VoiceResponse",
     "UpdatePreferencesRequest",
     "UserPreferences",
     "UserProfile",

@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { ApiError, apiClient } from "../api/client";
 import type { RecommendRequest, RecommendResponse } from "../api/types";
 import { Button } from "../components/Button";
 import { RecipeCard } from "../components/RecipeCard";
+import { prefetchAugmentAll } from "../recommendations/augmentCache";
 import {
   loadRecommendationSession,
   saveRecommendationSession,
@@ -25,6 +26,13 @@ export function ResultsPage() {
   const [response, setResponse] = useState<RecommendResponse | null>(initialResponse);
   const [error, setError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+
+  // Ensure enhancements are prefetched even if we arrived here via reload/session.
+  useEffect(() => {
+    if (response?.results?.length) {
+      prefetchAugmentAll(response.results);
+    }
+  }, [response]);
 
   async function retryRecommendation() {
     if (!request) {

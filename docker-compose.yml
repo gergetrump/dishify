@@ -84,10 +84,30 @@ services:
       ENABLE_LLM_REASONING: "true"
       RESTRICTION_RULES_PATH: /data/restriction_rules.json
       LLM_TIMEOUT_SECONDS: "120"
+      # Fast model for explain/augment. openrouter/free is slow & queued; override
+      # in .env. Examples: openai/gpt-4o-mini, google/gemini-2.0-flash-001.
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
     volumes:
       - ./data:/data:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ingest:
+    build:
+      context: ./backend
+      dockerfile: services/ingest/Dockerfile
+    container_name: dishify-ingest
+    env_file:
+      - .env.secret
+    environment:
+      GEMINI_TRANSCRIBE_MODEL: gemini-2.5-flash
+      GEMINI_VISION_MODEL: gemini-2.5-flash
+      REQUEST_TIMEOUT_SECONDS: "60"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8005/health')\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -124,6 +144,8 @@ services:
     environment:
       RECOMMENDATION_URL: http://recommendation:8001
       USER_URL: http://user:8004
+      INGEST_URL: http://ingest:8005
+      REASONING_URL: http://reasoning:8003
       KEYCLOAK_URL: http://keycloak:9001
       KEYCLOAK_PUBLIC_URL: ${KEYCLOAK_PUBLIC_URL:-http://localhost:9001}
       KEYCLOAK_REALM: dishify
@@ -136,6 +158,8 @@ services:
       - recommendation
       - user
       - keycloak
+      - ingest
+      - reasoning
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 10s
