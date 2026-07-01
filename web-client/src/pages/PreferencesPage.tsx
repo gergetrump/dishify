@@ -1,9 +1,21 @@
 import { useEffect, useState } from "react";
 
 import { ApiError, apiClient } from "../api/client";
-import { Button } from "../components/Button";
-import { Chip } from "../components/Chip";
 import { formatRestrictionLabel, restrictionSections } from "../data/restrictions";
+import {
+  Center,
+  Stack,
+  Text,
+  Title,
+  Button,
+  Group,
+  Alert,
+  Chip,
+  Box,
+  Loader,
+  Divider,
+  Paper,
+} from "@mantine/core";
 
 export function PreferencesPage() {
   const [selected, setSelected] = useState<string[]>([]);
@@ -67,50 +79,80 @@ export function PreferencesPage() {
   }
 
   return (
-    <section className="page-section">
-      <p className="eyebrow">Hard filters</p>
-      <h1>Food preferences</h1>
-      <p className="muted">Choose allergies, diets, and restrictions Dishify should always avoid.</p>
+    <Center mt={60} mb={60}>
+      <Paper>
+        <Stack gap="xl">
+          
+          <Box>
+            <Text size="sm" c="dimmed" fw={500}>Hard filters</Text>
+            <Title order={2} mb="xs">Food preferences</Title>
+            <Text c="dimmed" size="sm">Choose allergies, diets, and restrictions Dishify should always avoid.</Text>
+          </Box>
 
-      {error ? <p className="alert alert-error">{error}</p> : null}
-      {status ? <p className="alert alert-success">{status}</p> : null}
+          {error && (
+            <Alert variant="light" color="red" title="Error">
+              {error}
+            </Alert>
+          )}
+          
+          {status && (
+            <Alert variant="light" color="green" title="Success">
+              {status}
+            </Alert>
+          )}
 
-      <div className="toolbar">
-        <p className="muted">{selected.length} selected</p>
-        <div className="toolbar-actions">
-          <Button type="button" variant="ghost" onClick={() => setSelected([])}>
-            Clear all
-          </Button>
-          <Button type="button" onClick={savePreferences} disabled={isLoading || isSaving}>
-            {isSaving ? "Saving..." : "Save preferences"}
-          </Button>
-        </div>
-      </div>
+          <Group justify="space-between" align="center" py="sm">
+            <Text size="sm" c="dimmed" fw={500}>{selected.length} selected</Text>
+            <Group gap="sm">
+              <Button type="button" variant="subtle" color="red" onClick={() => setSelected([])}>
+                Clear all
+              </Button>
+              <Button 
+                type="button" 
+                onClick={savePreferences} 
+                loading={isSaving}
+                disabled={isLoading}
+              >
+                Save preferences
+              </Button>
+            </Group>
+          </Group>
 
-      {isLoading ? <p className="muted">Loading preferences...</p> : null}
+          <Divider />
 
-      <div className="preference-sections">
-        {restrictionSections.map((section) => (
-          <section className="preference-section" key={section.id}>
-            <div>
-              <h2>{section.title}</h2>
-              <p className="muted">{section.description}</p>
-            </div>
-            <div className="chip-grid">
-              {section.tags.map((tag) => (
-                <Chip
-                  key={tag}
-                  selected={selected.includes(tag)}
-                  onClick={() => toggleRestriction(tag)}
-                  disabled={isLoading}
-                >
-                  {formatRestrictionLabel(tag)}
-                </Chip>
+          {isLoading ? (
+            <Group justify="center" py="xl">
+              <Loader size="md" />
+              <Text size="sm" c="dimmed">Loading preferences...</Text>
+            </Group>
+          ) : (
+            <Stack gap="xl">
+              {restrictionSections.map((section) => (
+                <Box key={section.id}>
+                  <Box mb="md">
+                    <Title order={3}>{section.title}</Title>
+                    <Text c="dimmed" size="xs">{section.description}</Text>
+                  </Box>
+                  
+                  <Group gap="xs">
+                    {section.tags.map((tag) => (
+                      <Chip
+                        key={tag}
+                        checked={selected.includes(tag)}
+                        onChange={() => toggleRestriction(tag)}
+                        disabled={isLoading}
+                      >
+                        {formatRestrictionLabel(tag)}
+                      </Chip>
+                    ))}
+                  </Group>
+                </Box>
               ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    </section>
+            </Stack>
+          )}
+
+        </Stack>
+      </Paper>
+    </Center>
   );
 }

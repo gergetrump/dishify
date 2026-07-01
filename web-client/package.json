@@ -11,6 +11,7 @@
     "test:integration": "node scripts/integration-smoke.mjs"
   },
   "dependencies": {
+    "@fontsource/dm-serif-display": "^5.2.8",
     "@mantine/core": "^9.4.0",
     "@mantine/hooks": "^9.4.0",
     "react": "^19.2.7",

@@ -3,8 +3,20 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { Button } from "../components/Button";
-import { Input } from "../components/Input";
+import { 
+  Center, 
+  Paper, 
+  Box, 
+  Stack, 
+  Text, 
+  Title, 
+  TextInput, 
+  PasswordInput, 
+  Group, 
+  Button, 
+  Alert, 
+  Anchor 
+} from "@mantine/core";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -33,36 +45,60 @@ export function LoginPage() {
   }
 
   return (
-    <section className="narrow-page">
-      <p className="eyebrow">Welcome back</p>
-      <h1>Log in to Dishify</h1>
-      <form className="stack" onSubmit={handleSubmit}>
-        {error ? <p className="alert alert-error">{error}</p> : null}
-        <Input
-          label="Username"
-          name="username"
-          autoComplete="username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          required
-        />
-        <Input
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-        />
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Logging in..." : "Log in"}
-        </Button>
-      </form>
-      <p className="muted">
-        New here? <Link to="/register">Create an account</Link>
-      </p>
-    </section>
+    <Center mt={60} mb={60}>
+      <Paper w={480}>
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack gap="xl">
+            <Stack gap="xs" ta="center">
+              <Title order={2}>Log in</Title>
+            </Stack>
+
+            {error && (
+              <Alert variant="light" color="red" title="Login Failed">
+                {error}
+              </Alert>
+            )}
+            
+            <Stack gap="md">
+              <TextInput 
+                label="Username" 
+                placeholder="Your username" 
+                autoComplete="username"
+                value={username} 
+                onChange={(event) => setUsername(event.currentTarget.value)} 
+                required
+              /> 
+              <PasswordInput 
+                label="Password" 
+                placeholder="Your password" 
+                autoComplete="current-password"
+                value={password} 
+                onChange={(event) => setPassword(event.currentTarget.value)} 
+                required
+              />
+            </Stack>
+
+            <Stack gap="sm">
+              <Button 
+                type="submit" 
+                loading={isSubmitting} 
+                fullWidth
+              >
+                Log in
+              </Button>
+              
+              <Group justify="center" gap={4}>
+                <Text size="sm" c="dimmed">New here?</Text>
+                <Anchor component={Link} to="/register" size="sm" fw={500}>
+                  Create an account
+                </Anchor>
+              </Group>
+            </Stack>
+
+          </Stack>
+        </Box>
+      </Paper>
+    </Center>
   );
 }
 
