@@ -145,12 +145,27 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Prepare Xcode simulators
+        run: |
+          sudo xcodebuild -runFirstLaunch
+          xcodebuild -downloadPlatform iOS
+
       - name: Unit tests
         run: |
+          DEVICE_ID="$(xcrun simctl list devices available | grep -E '^\s+iPhone ' | head -1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')"
+          if [ -z "$DEVICE_ID" ]; then
+            echo "No iPhone simulator found after platform download."
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using simulator id: $DEVICE_ID"
           xcodebuild test \
             -project Dishify.xcodeproj \
             -scheme Dishify \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${DEVICE_ID}" \
+            -configuration Debug \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
             -only-testing:DishifyTests
 
   data-pipeline:
