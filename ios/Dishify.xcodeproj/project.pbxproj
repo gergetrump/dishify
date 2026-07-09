@@ -24,7 +24,9 @@
 		A1000000000000000000003B /* AuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003A /* AuthServiceTests.swift */; };
 		A1000000000000000000003D /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003C /* SessionStore.swift */; };
 		A1000000000000000000003F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003E /* RootView.swift */; };
-		A10000000000000000000041 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* MainTabView.swift */; };
+		A10000000000000000000041 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* ProfileView.swift */; };
+		A10000000000000000000093 /* VoiceInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000092 /* VoiceInputService.swift */; };
+		A10000000000000000000095 /* IngredientCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000094 /* IngredientCaptureView.swift */; };
 		A10000000000000000000043 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000042 /* AuthView.swift */; };
 		A10000000000000000000048 /* RestrictionTags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000047 /* RestrictionTags.swift */; };
 		A1000000000000000000004A /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000049 /* PreferencesView.swift */; };
@@ -79,7 +81,9 @@
 		A1000000000000000000003A /* AuthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceTests.swift; sourceTree = "<group>"; };
 		A1000000000000000000003C /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		A1000000000000000000003E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		A10000000000000000000040 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		A10000000000000000000040 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A10000000000000000000092 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
+		A10000000000000000000094 /* IngredientCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientCaptureView.swift; sourceTree = "<group>"; };
 		A10000000000000000000042 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		A10000000000000000000047 /* RestrictionTags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestrictionTags.swift; sourceTree = "<group>"; };
 		A10000000000000000000049 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
@@ -178,6 +182,7 @@
 				A10000000000000000000060 /* AsyncStateViews.swift */,
 				A10000000000000000000062 /* ThemeComponents.swift */,
 				A10000000000000000000080 /* InputValidation.swift */,
+				A10000000000000000000092 /* VoiceInputService.swift */,
 				A1000000000000000000002E /* Theme.swift */,
 			);
 			path = Core;
@@ -213,6 +218,7 @@
 				A10000000000000000000058 /* RecommendViewModel.swift */,
 				A10000000000000000000059 /* ResultRow.swift */,
 				A1000000000000000000005C /* ResultDetailView.swift */,
+				A10000000000000000000094 /* IngredientCaptureView.swift */,
 			);
 			path = Recommend;
 			sourceTree = "<group>";
@@ -221,7 +227,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000000000000000000003E /* RootView.swift */,
-				A10000000000000000000040 /* MainTabView.swift */,
+				A10000000000000000000040 /* ProfileView.swift */,
 			);
 			path = Root;
 			sourceTree = "<group>";
@@ -375,7 +381,7 @@
 				A10000000000000000000038 /* AuthService.swift in Sources */,
 				A1000000000000000000003D /* SessionStore.swift in Sources */,
 				A1000000000000000000003F /* RootView.swift in Sources */,
-				A10000000000000000000041 /* MainTabView.swift in Sources */,
+				A10000000000000000000041 /* ProfileView.swift in Sources */,
 				A10000000000000000000043 /* AuthView.swift in Sources */,
 				A10000000000000000000048 /* RestrictionTags.swift in Sources */,
 				A1000000000000000000004A /* PreferencesView.swift in Sources */,
@@ -387,6 +393,8 @@
 				A10000000000000000000057 /* RecommendViewModel.swift in Sources */,
 				A1000000000000000000005B /* ResultRow.swift in Sources */,
 				A1000000000000000000005D /* ResultDetailView.swift in Sources */,
+				A10000000000000000000093 /* VoiceInputService.swift in Sources */,
+				A10000000000000000000095 /* IngredientCaptureView.swift in Sources */,
 				A1000000000000000000005F /* AsyncState.swift in Sources */,
 				A10000000000000000000061 /* AsyncStateViews.swift in Sources */,
 				A10000000000000000000063 /* ThemeComponents.swift in Sources */,

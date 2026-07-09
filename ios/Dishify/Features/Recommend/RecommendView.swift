@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct CookPage: View {
+struct PantryPage: View {
     @EnvironmentObject private var router: AppRouter
 
     @State private var items = PantryStore.load()
@@ -8,181 +8,117 @@ struct CookPage: View {
     @State private var name = ""
     @State private var quantity = ""
     @State private var unit = ""
-    @State private var query = ""
-    @State private var topK = 5
+    @State private var nameFocused = false
     @State private var error: String?
-    @State private var isSubmitting = false
-
-    private let api = APIClient()
 
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(alignment: .leading, spacing: 16) {
-                Eyebrow(text: "What is available today?")
-                Text("Your next meal is already in your kitchen.")
-                    .font(.system(size: 48, weight: .black))
-                    .foregroundStyle(Theme.Colors.text)
-                Text("Add pantry items, describe what sounds good, and Dishify will recommend recipes that fit.")
-                    .font(.system(size: 17))
-                    .lineSpacing(6)
-                    .foregroundStyle(Theme.Colors.muted)
-                FlowLayout(["quick high-protein dinner", "cozy vegetarian pasta", "spicy lunch with eggs"], spacing: 10) { prompt in
-                    Text(prompt)
-                        .font(.system(size: 14, weight: .heavy))
-                        .foregroundStyle(Theme.Colors.primaryDark)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
-                        .background(Color(red: 1, green: 0.945, blue: 0.918))
-                        .clipShape(Capsule())
-                }
-            }
-            .surfacePanel()
+        VStack(spacing: 0) {
+            header
 
-            VStack(alignment: .leading, spacing: 22) {
-                pantryForm
-                pantryList
-                vibeForm
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    HStack {
+                        Text("Add all the ingredients you have.")
+                            .font(Theme.Fonts.body(15))
+                            .foregroundStyle(Theme.Colors.muted)
+                        Spacer()
+                        if !items.isEmpty {
+                            Button("Clear all") {
+                                items = []
+                                resetForm()
+                            }
+                            .font(Theme.Fonts.label(15, weight: .semibold))
+                            .foregroundStyle(Theme.Colors.missing)
+                        }
+                    }
+
+                    if items.isEmpty {
+                        BrandedEmptyState(text: "No ingredients yet. Add what you have in your kitchen.")
+                    } else {
+                        ForEach(items) { item in
+                            IngredientCard(
+                                name: item.name,
+                                detail: item.rawText,
+                                onEdit: { edit(item) },
+                                onDelete: { delete(item) }
+                            )
+                        }
+                    }
+
+                    if let error {
+                        AlertBanner(text: error)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.screenPadding)
+                .padding(.bottom, Theme.Spacing.lg)
             }
-            .surfacePanel()
+
+            inputArea
         }
+        .screenBackground()
+        .navigationBarHidden(true)
         .onChange(of: items) { updatedItems in
             PantryStore.save(updatedItems)
         }
     }
 
-    private var pantryForm: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Eyebrow(text: "Pantry")
-                    Text("Add ingredients")
-                        .font(.system(size: 20, weight: .black))
-                }
-                Spacer()
-                if !items.isEmpty {
-                    Button("Clear all") {
-                        items = []
-                        resetForm()
-                    }
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Color(red: 0.812, green: 0.180, blue: 0.094))
-                }
-            }
+    private var header: some View {
+        HStack {
+            DishifyLogo(size: .icon)
+            Spacer()
+            Text("What's available today?")
+                .font(Theme.Fonts.display(18, weight: .bold))
+                .foregroundStyle(Theme.Colors.text)
+                .multilineTextAlignment(.center)
+            Spacer()
+            ProfileToolbarButton { router.push(.profile) }
+        }
+        .padding(.horizontal, Theme.Spacing.screenPadding)
+        .padding(.vertical, Theme.Spacing.md)
+    }
 
-            FieldLabel("Ingredient") {
-                TextField("Eggs", text: $name)
-                    .textFieldStyle(WebTextFieldStyle())
-            }
-            HStack(spacing: 12) {
-                FieldLabel("Quantity") {
-                    TextField("2", text: $quantity)
-                        .keyboardType(.decimalPad)
-                        .textFieldStyle(WebTextFieldStyle())
-                }
-                FieldLabel("Unit") {
-                    TextField("pieces", text: $unit)
-                        .textFieldStyle(WebTextFieldStyle())
-                }
-            }
-            HStack(spacing: 10) {
-                Button(editingID == nil ? "Add ingredient" : "Save ingredient") {
+    private var inputArea: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            TextField("Ingredient name", text: $name)
+                .font(Theme.Fonts.body(16))
+                .padding(.horizontal, 14)
+                .frame(minHeight: 48)
+                .background(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.input)
+                        .stroke(nameFocused ? Theme.Colors.primary : Theme.Colors.border, lineWidth: nameFocused ? 2 : 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.input))
+                .onTapGesture { nameFocused = true }
+
+            HStack(spacing: Theme.Spacing.md) {
+                TextField("Quantity", text: $quantity)
+                    .keyboardType(.decimalPad)
+                    .textFieldStyle(DishifyTextFieldStyle())
+                TextField("Unit", text: $unit)
+                    .textFieldStyle(DishifyTextFieldStyle())
+
+                Button {
                     saveIngredient()
-                }
-                .buttonStyle(PrimaryButtonStyle(variant: .secondary))
-                if editingID != nil {
-                    Button("Cancel") { resetForm() }
-                        .buttonStyle(PrimaryButtonStyle(variant: .ghost))
-                }
-            }
-        }
-    }
-
-    private var pantryList: some View {
-        VStack(spacing: 10) {
-            if items.isEmpty {
-                Text("No pantry ingredients yet.")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Theme.Colors.muted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(Color(red: 0.980, green: 0.969, blue: 0.949))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Theme.Colors.border, style: StrokeStyle(lineWidth: 1, dash: [5]))
-                    )
-            } else {
-                ForEach(items) { item in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.name)
-                                .font(.system(size: 16, weight: .black))
-                                .foregroundStyle(Theme.Colors.green)
-                            Text(item.rawText)
-                                .font(.system(size: 14))
-                                .foregroundStyle(Theme.Colors.muted)
-                        }
-                        Spacer()
-                        Button("Edit") { edit(item) }
-                            .font(.system(size: 14, weight: .heavy))
-                            .foregroundStyle(Theme.Colors.primaryDark)
-                        Button("Delete") { delete(item) }
-                            .font(.system(size: 14, weight: .heavy))
-                            .foregroundStyle(Theme.Colors.primaryDark)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(Color(red: 0.980, green: 0.969, blue: 0.949))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Theme.Colors.border, lineWidth: 1)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Color("PrimaryActionText"))
+                        .frame(width: 48, height: 48)
+                        .background(Theme.Colors.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.button))
                 }
             }
-        }
-    }
 
-    private var vibeForm: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Divider()
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Eyebrow(text: "Vibe check")
-                    Text("What sounds good?")
-                        .font(.system(size: 20, weight: .black))
-                }
-                Spacer()
-                Picker("Results", selection: $topK) {
-                    Text("3").tag(3)
-                    Text("5").tag(5)
-                    Text("10").tag(10)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 150)
-            }
-
-            if let error {
-                AlertBanner(text: error)
-            }
-
-            FieldLabel("Eating vibe", hint: "optional") {
-                TextEditor(text: $query)
-                    .frame(minHeight: 150)
-                    .padding(10)
-                    .background(.white)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Theme.Colors.border, lineWidth: 1)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-
-            Button(isSubmitting ? "Finding recipes..." : "Show recipes") {
-                Task { await recommend() }
+            Button("Set your vibe") {
+                router.push(.vibe)
             }
             .buttonStyle(PrimaryButtonStyle())
-            .disabled(isSubmitting)
+            .disabled(items.isEmpty)
+            .opacity(items.isEmpty ? 0.5 : 1)
         }
+        .padding(Theme.Spacing.screenPadding)
+        .background(Theme.Colors.background)
     }
 
     private func saveIngredient() {
@@ -192,15 +128,21 @@ struct CookPage: View {
             error = InputValidation.message(for: failure)
             return
         }
+        error = nil
         let parsedQuantity = Double(quantity.trimmingCharacters(in: .whitespacesAndNewlines))
         let next = PantryStore.make(name: trimmed, quantity: parsedQuantity, unit: unit)
 
         if let editingID {
-            items = items.map { $0.id == editingID ? ParsedIngredient(id: editingID, name: next.name, quantity: next.quantity, unit: next.unit, rawText: next.rawText) : $0 }
+            items = items.map {
+                $0.id == editingID
+                    ? ParsedIngredient(id: editingID, name: next.name, quantity: next.quantity, unit: next.unit, rawText: next.rawText)
+                    : $0
+            }
         } else {
             items.append(next)
         }
         resetForm()
+        nameFocused = false
     }
 
     private func edit(_ item: ParsedIngredient) {
@@ -208,6 +150,7 @@ struct CookPage: View {
         name = item.name
         quantity = item.quantity.map { String(format: "%g", $0) } ?? ""
         unit = item.unit ?? ""
+        nameFocused = true
     }
 
     private func delete(_ item: ParsedIngredient) {
@@ -221,12 +164,221 @@ struct CookPage: View {
         quantity = ""
         unit = ""
     }
+}
+
+// Legacy alias
+typealias CookPage = PantryPage
+
+struct VibePage: View {
+    @EnvironmentObject private var router: AppRouter
+
+    @State private var items = PantryStore.load()
+    @State private var query = ""
+    @State private var topK = 5
+    @State private var error: String?
+    @State private var isSubmitting = false
+    @State private var showCapture = false
+    @State private var isRecording = false
+    @State private var isTranscribing = false
+    @State private var mediaNotice: String?
+
+    private let api = APIClient()
+    private let voiceService = VoiceInputService()
+    private let examplePrompts = [
+        "quick high-protein dinner",
+        "cozy vegetarian pasta",
+        "spicy lunch with eggs",
+    ]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                    DishifyLogo(size: .compact)
+                        .frame(maxWidth: .infinity)
+
+                    Text("Describe what sounds good, or leave blank and Dishify will use your pantry.")
+                        .font(Theme.Fonts.body(15))
+                        .foregroundStyle(Theme.Colors.muted)
+
+                    if let error {
+                        AlertBanner(text: error)
+                    }
+                    if let mediaNotice {
+                        AlertBanner(text: mediaNotice, kind: .success)
+                    }
+
+                    LabeledField("Eating vibe", hint: "optional") {
+                        TextEditor(text: $query)
+                            .font(Theme.Fonts.body(16))
+                            .frame(minHeight: 120)
+                            .padding(10)
+                            .background(Color.white)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Theme.Radius.input)
+                                    .stroke(Theme.Colors.border, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.input))
+                            .onChange(of: query) { newValue in
+                                if newValue.count > 512 {
+                                    query = String(newValue.prefix(512))
+                                }
+                            }
+                    }
+
+                    FlowLayout(examplePrompts, spacing: 10) { prompt in
+                        Button {
+                            query = prompt
+                        } label: {
+                            Text(prompt)
+                                .font(Theme.Fonts.label(14, weight: .semibold))
+                                .foregroundStyle(Theme.Colors.primaryDark)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 9)
+                                .background(Color(red: 1, green: 0.945, blue: 0.918))
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                        Text("Number of results")
+                            .font(Theme.Fonts.label(14, weight: .semibold))
+                        Picker("Results", selection: $topK) {
+                            Text("3").tag(3)
+                            Text("5").tag(5)
+                            Text("10").tag(10)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    HStack(spacing: Theme.Spacing.md) {
+                        Button {
+                            showCapture = true
+                        } label: {
+                            Label("Scan ingredients", systemImage: "camera")
+                                .font(Theme.Fonts.label(14, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PrimaryButtonStyle(variant: .secondary))
+
+                        Button {
+                            Task { await toggleVoice() }
+                        } label: {
+                            Label(
+                                isTranscribing ? "Listening..." : (isRecording ? "Stop" : "Say what you have"),
+                                systemImage: isRecording ? "stop.circle" : "mic"
+                            )
+                            .font(Theme.Fonts.label(14, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PrimaryButtonStyle(variant: .secondary))
+                        .disabled(isTranscribing)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.screenPadding)
+                .padding(.bottom, 100)
+            }
+
+            VStack {
+                Button(isSubmitting ? "Finding recipes..." : "Show recipes") {
+                    Task { await recommend() }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(isSubmitting)
+            }
+            .padding(Theme.Spacing.screenPadding)
+            .background(Theme.Colors.background)
+        }
+        .screenBackground()
+        .navigationBarHidden(true)
+        .sheet(isPresented: $showCapture) {
+            IngredientCaptureView { detected in
+                addDetectedIngredients(detected)
+            }
+        }
+        .onAppear {
+            items = PantryStore.load()
+        }
+    }
+
+    private var header: some View {
+        HStack {
+            Button {
+                router.pop()
+            } label: {
+                Text("Back")
+                    .font(Theme.Fonts.label(16, weight: .semibold))
+                    .foregroundStyle(Theme.Colors.primary)
+            }
+            Spacer()
+            Text("Set your vibe")
+                .font(Theme.Fonts.display(18, weight: .bold))
+                .foregroundStyle(Theme.Colors.text)
+            Spacer()
+            ProfileToolbarButton { router.push(.profile) }
+        }
+        .padding(.horizontal, Theme.Spacing.screenPadding)
+        .padding(.vertical, Theme.Spacing.md)
+    }
+
+    private func addDetectedIngredients(_ detected: [DetectedIngredient]) {
+        var current = PantryStore.load()
+        for item in detected {
+            let next = PantryStore.make(name: item.name, quantity: item.quantity, unit: item.unit ?? "")
+            current.append(next)
+        }
+        PantryStore.save(current)
+        items = current
+        mediaNotice = "Added \(detected.count) ingredient\(detected.count == 1 ? "" : "s") from photo."
+    }
+
+    private func toggleVoice() async {
+        error = nil
+        mediaNotice = nil
+        if isRecording {
+            isRecording = false
+            isTranscribing = true
+            defer { isTranscribing = false }
+            do {
+                let result = try await voiceService.stopAndTranscribe(api: api)
+                applyVoiceResult(result)
+            } catch {
+                self.error = error.localizedDescription
+            }
+        } else {
+            do {
+                try await voiceService.startRecording()
+                isRecording = true
+            } catch {
+                self.error = error.localizedDescription
+            }
+        }
+    }
+
+    private func applyVoiceResult(_ result: VoiceResponse) {
+        var current = PantryStore.load()
+        for item in result.ingredients {
+            let next = PantryStore.make(name: item.name, quantity: item.quantity, unit: item.unit ?? "")
+            current.append(next)
+        }
+        PantryStore.save(current)
+        items = current
+        if let spokenQuery = result.query, !spokenQuery.isEmpty {
+            query = spokenQuery
+        }
+        mediaNotice = result.ingredients.isEmpty
+            ? "Heard: \"\(result.transcript)\""
+            : "Added \(result.ingredients.count) ingredient\(result.ingredients.count == 1 ? "" : "s") from voice."
+    }
 
     private func recommend() async {
         error = nil
         isSubmitting = true
         defer { isSubmitting = false }
 
+        items = PantryStore.load()
         let resolvedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? defaultQueryFromPantry()
             : query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -243,7 +395,9 @@ struct CookPage: View {
         let request = RecommendRequest(
             query: resolvedQuery,
             topK: topK,
-            availableIngredients: items.map { ParsedIngredient(id: nil, name: $0.name, quantity: $0.quantity, unit: $0.unit, rawText: $0.rawText) },
+            availableIngredients: items.map {
+                ParsedIngredient(id: nil, name: $0.name, quantity: $0.quantity, unit: $0.unit, rawText: $0.rawText)
+            },
             exclusionRestrictions: nil
         )
 
@@ -252,14 +406,15 @@ struct CookPage: View {
             AugmentCache.clear()
             RecommendationStore.save(RecommendationSession(request: request, response: response))
             AugmentCache.prefetchAll(response.results)
-            router.go(.results)
+            router.push(.results)
         } catch {
             self.error = error.localizedDescription
         }
     }
 
     private func defaultQueryFromPantry() -> String {
-        if items.isEmpty { return "easy dinner" }
-        return "recipe using " + items.map(\.name).joined(separator: ", ")
+        if items.isEmpty { return "recipe recommendation" }
+        let names = items.prefix(8).map(\.name).joined(separator: ", ")
+        return "recipe using \(names)"
     }
 }

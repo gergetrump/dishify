@@ -2,3 +2,6 @@
 
 DISHIFY_API_BASE_URL = http:/$()/localhost:8000
 DISHIFY_KEYCLOAK_BASE_URL = http:/$()/localhost:9001
+
+// Simulator builds do not require a paid developer team.
+CODE_SIGN_IDENTITY[sdk=iphonesimulator*] = -

@@ -150,7 +150,7 @@ jobs:
           xcodebuild test \
             -project Dishify.xcodeproj \
             -scheme Dishify \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
             -only-testing:DishifyTests
 
   data-pipeline:

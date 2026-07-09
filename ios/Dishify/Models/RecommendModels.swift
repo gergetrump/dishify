@@ -140,3 +140,68 @@ struct AugmentResponse: Codable, Equatable {
         case latencyMs = "latency_ms"
     }
 }
+
+struct VoiceRequest: Codable {
+    let audioBase64: String
+    let mimeType: String?
+    let language: String?
+
+    enum CodingKeys: String, CodingKey {
+        case audioBase64 = "audio_base64"
+        case mimeType = "mime_type"
+        case language
+    }
+}
+
+struct VoiceResponse: Codable {
+    let transcript: String
+    let ingredients: [ParsedIngredient]
+    let query: String?
+    let latencyMs: Int
+
+    enum CodingKeys: String, CodingKey {
+        case transcript
+        case ingredients
+        case query
+        case latencyMs = "latency_ms"
+    }
+}
+
+struct VisionIngredientsRequest: Codable {
+    let imageBase64: String
+    let mimeType: String?
+
+    enum CodingKeys: String, CodingKey {
+        case imageBase64 = "image_base64"
+        case mimeType = "mime_type"
+    }
+}
+
+struct DetectedIngredient: Codable, Equatable, Identifiable {
+    var id: String { name + (rawText) }
+    let name: String
+    let quantity: Double?
+    let unit: String?
+    let rawText: String
+    let box: [Double]?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case quantity
+        case unit
+        case rawText = "raw_text"
+        case box
+    }
+}
+
+struct VisionIngredientsResponse: Codable {
+    let ingredients: [DetectedIngredient]
+    let rawText: String?
+    let latencyMs: Int
+
+    enum CodingKeys: String, CodingKey {
+        case ingredients
+        case rawText = "raw_text"
+        case latencyMs = "latency_ms"
+    }
+}

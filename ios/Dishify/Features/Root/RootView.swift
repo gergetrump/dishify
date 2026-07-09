@@ -5,25 +5,22 @@ struct RootView: View {
     @EnvironmentObject private var router: AppRouter
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                AppHeader()
-                pageView
-                    .padding(24)
-                    .frame(maxWidth: 1120)
-                    .frame(maxWidth: .infinity)
-            }
+        NavigationStack(path: $router.path) {
+            rootContent
+                .navigationDestination(for: AppRouter.Page.self, destination: destinationView)
         }
-        .background(Theme.Colors.background.ignoresSafeArea())
+        .screenBackground()
         .onChange(of: session.isAuthenticated) { isAuthenticated in
             if !isAuthenticated {
-                router.go(.welcome)
+                router.resetToWelcome()
+            } else if router.page == .welcome || router.page == .login || router.page == .register {
+                router.resetToCook()
             }
         }
     }
 
     @ViewBuilder
-    private var pageView: some View {
+    private var rootContent: some View {
         switch router.page {
         case .welcome:
             WelcomePage()
@@ -32,15 +29,27 @@ struct RootView: View {
         case .register:
             RegisterPage()
         case .cook:
-            CookPage()
-        case .preferences:
-            RequireAuthView { PreferencesPage() }
+            RequireAuthView { PantryPage() }
+        case .vibe, .results, .recipe, .profile, .preferences:
+            RequireAuthView { PantryPage() }
+        }
+    }
+
+    @ViewBuilder
+    private func destinationView(for page: AppRouter.Page) -> some View {
+        switch page {
+        case .vibe:
+            RequireAuthView { VibePage() }
         case .results:
             RequireAuthView { ResultsPage() }
         case .recipe(let id):
             RequireAuthView { RecipeDetailPage(recipeID: id) }
         case .profile:
             RequireAuthView { ProfilePage() }
+        case .preferences:
+            RequireAuthView { PreferencesPage() }
+        default:
+            EmptyView()
         }
     }
 }
@@ -61,71 +70,5 @@ private struct RequireAuthView<Content: View>: View {
                     }
             }
         }
-    }
-}
-
-private struct AppHeader: View {
-    @EnvironmentObject private var session: SessionStore
-    @EnvironmentObject private var router: AppRouter
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 24) {
-            Button {
-                router.go(.cook)
-            } label: {
-                HStack(spacing: 10) {
-                    Text("D")
-                        .font(.system(size: 17, weight: .black))
-                        .foregroundStyle(.white)
-                        .frame(width: 34, height: 34)
-                        .background(Theme.Colors.green)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    Text("Dishify")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Theme.Colors.text)
-                }
-            }
-
-            Spacer()
-
-            HStack(spacing: 16) {
-                HeaderLink("Cook", page: .cook)
-                if session.isAuthenticated {
-                    HeaderLink("Preferences", page: .preferences)
-                    HeaderLink("Profile", page: .profile)
-                    Button("Log out") {
-                        session.logout()
-                        router.go(.welcome)
-                    }
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.Colors.primaryDark)
-                } else {
-                    HeaderLink("Log in", page: .login)
-                    HeaderLink("Sign up", page: .register)
-                }
-            }
-        }
-        .padding(24)
-        .frame(maxWidth: 1120)
-        .frame(maxWidth: .infinity)
-    }
-}
-
-private struct HeaderLink: View {
-    @EnvironmentObject private var router: AppRouter
-    let title: String
-    let page: AppRouter.Page
-
-    init(_ title: String, page: AppRouter.Page) {
-        self.title = title
-        self.page = page
-    }
-
-    var body: some View {
-        Button(title) {
-            router.go(page)
-        }
-        .font(.system(size: 15, weight: .bold))
-        .foregroundStyle(Theme.Colors.primaryDark)
     }
 }
