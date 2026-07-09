@@ -2,24 +2,11 @@
 
 Offline CLI batch job that reads an annotated recipe CSV, embeds each row with SentenceTransformers, and upserts vectors plus metadata into Qdrant. There is no HTTP API.
 
-## Shared team embeddings
-
-Everyone should query the **same Qdrant Cloud collection** so search results match across dev machines and deploy:
-
-| Variable | Team value |
-|----------|------------|
-| `QDRANT_URL` | Shared cloud cluster URL (in `.env.secret`) |
-| `QDRANT_API_KEY` | Shared API key (in `.env.secret`) |
-| `QDRANT_COLLECTION` | `recipes_10000` |
-| `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` |
-
-**Index once, connect read-only.** One person reindexes the shared cluster when the dataset changes. Everyone else only runs retrieval/recommend — do not `--recreate` on your own.
-
-**Do not run the 2M full-dataset index on the shared dev cluster.** That caused OOM/disk alerts. Use a separate experimental cluster or local Docker Qdrant for large indexing experiments.
+Vectors are stored in **local Docker Qdrant** (`docker compose` service `qdrant`, volume `qdrant_data`). Use `QDRANT_URL=http://localhost:6333` when running scripts on the host, or `http://qdrant:6333` inside Compose.
 
 ## Run with Docker (recommended)
 
-From the repo root (uses `QDRANT_URL` / `QDRANT_API_KEY` from `.env.secret`):
+From the repo root:
 
 ```bash
 docker compose run --rm indexing-worker --recreate
@@ -31,12 +18,6 @@ To index a different file:
 
 ```bash
 docker compose run --rm indexing-worker --csv /data/my_recipes.csv --recreate
-```
-
-For **solo offline dev** only, override to local Qdrant:
-
-```bash
-QDRANT_URL=http://qdrant:6333 QDRANT_API_KEY= docker compose run --rm indexing-worker --recreate
 ```
 
 ## Run locally
@@ -107,9 +88,8 @@ Keyword payload indexes exist on `raw_ingredients` and `exclusion_restrictions` 
 
 | Env var | Default | Notes |
 |---------|---------|-------|
-| `QDRANT_URL` | `http://localhost:6333` | Qdrant endpoint |
-| `QDRANT_API_KEY` | unset | Optional auth |
-| `QDRANT_COLLECTION` | `recipes_10000` | Must match the retrieval service |
+| `QDRANT_URL` | `http://localhost:6333` | Local Qdrant endpoint |
+| `QDRANT_COLLECTION` | `recipes_full` | Must match the retrieval service |
 | `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Shared with retrieval |
 
 The retrieval service reads from the same collection; collection name and embedding model must align or search will fail or return wrong results.
@@ -126,4 +106,4 @@ The retrieval service reads from the same collection; collection name and embedd
 Older standalone scripts outside this service (not the current path):
 
 - [`backend/scripts/index_recipes.py`](../../scripts/index_recipes.py)
-- [`backend/scripts/index_full_recipes.py`](../../scripts/index_full_recipes.py)
+- [`backend/scripts/index_full_recipes.py`](../../scripts/index_full_recipes.py) — streaming indexer for the full ~2M-row dataset; use local Qdrant only
