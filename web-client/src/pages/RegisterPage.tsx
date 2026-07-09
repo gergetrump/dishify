@@ -5,6 +5,7 @@ import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { Button } from "../components/Button";
 import { Chip } from "../components/Chip";
+import { DishifyBrandMark } from "../components/DishifyLogo";
 import { Input } from "../components/Input";
 import { formatRestrictionLabel, restrictionSections } from "../data/restrictions";
 
@@ -46,6 +47,7 @@ export function RegisterPage() {
 
   return (
     <section className="narrow-page">
+      <DishifyBrandMark logoSize="compact" showWordmark={false} />
       <p className="eyebrow">Start cooking smarter</p>
       <h1>Create your account</h1>
       <form className="stack" onSubmit={handleSubmit}>

@@ -1,5 +1,13 @@
 import Foundation
 
+enum IngredientFormatting {
+    static func displayName(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let first = trimmed.first else { return trimmed }
+        return String(first).uppercased() + trimmed.dropFirst()
+    }
+}
+
 enum PantryStore {
     private static let key = "dishify.pantry"
 
@@ -17,7 +25,7 @@ enum PantryStore {
     }
 
     static func make(name: String, quantity: Double?, unit: String?) -> ParsedIngredient {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedName = IngredientFormatting.displayName(name)
         let normalizedUnit = unit?.trimmingCharacters(in: .whitespacesAndNewlines)
         let amount = quantity.map { String(format: "%g", $0) } ?? ""
         let rawText = [amount, normalizedUnit ?? "", trimmedName]
@@ -48,5 +56,23 @@ enum RecommendationStore {
 
     static func findRecipe(id: Int) -> RecipeResult? {
         load()?.response.results.first { $0.id == id }
+    }
+}
+
+enum VibeDraftStore {
+    private static let key = "dishify.pending_vibe_query"
+
+    static func load() -> String {
+        UserDefaults.standard.string(forKey: key) ?? ""
+    }
+
+    static func save(_ query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        UserDefaults.standard.set(trimmed, forKey: key)
+    }
+
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }

@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 
 import { RecipeCard } from "./RecipeCard";
 import type { RecipeResult } from "../api/types";
+import { formatIngredientName } from "../utils/ingredientFormatting";
 
 const recipe: RecipeResult = {
   rank: 1,
@@ -36,7 +37,7 @@ describe("RecipeCard", () => {
     expect(container.textContent).toContain("Pasta With Spinach Sauce");
     expect(container.textContent).toContain("Score 87");
     expect(container.textContent).toContain("Uses spinach from your pantry.");
-    expect(container.textContent).toContain("Need cream");
+    expect(container.textContent).toContain(`Need ${formatIngredientName("cream")}`);
     expect(container.querySelector("a")?.getAttribute("href")).toBe("/recipes/3136");
 
     act(() => {

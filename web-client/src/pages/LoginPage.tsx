@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { Button } from "../components/Button";
+import { DishifyBrandMark } from "../components/DishifyLogo";
 import { Input } from "../components/Input";
 
 export function LoginPage() {
@@ -34,6 +35,7 @@ export function LoginPage() {
 
   return (
     <section className="narrow-page">
+      <DishifyBrandMark logoSize="compact" showWordmark={false} />
       <p className="eyebrow">Welcome back</p>
       <h1>Log in to Dishify</h1>
       <form className="stack" onSubmit={handleSubmit}>

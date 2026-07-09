@@ -2,19 +2,21 @@ import SwiftUI
 
 enum Theme {
     enum Colors {
-        static let background = Color(red: 0.965, green: 0.949, blue: 0.925)
-        static let surface = Color(red: 1.0, green: 0.992, blue: 0.976)
+        static let background = Color("Background")
+        static let surface = Color("Surface")
         static let surfaceMuted = Color(red: 0.945, green: 0.925, blue: 0.902)
-        static let text = Color(red: 0.141, green: 0.137, blue: 0.129)
-        static let muted = Color(red: 0.408, green: 0.384, blue: 0.357)
-        static let primary = Color(red: 0.957, green: 0.353, blue: 0.176)
+        static let text = Color("TextPrimary")
+        static let muted = Color("TextSecondary")
+        static let primary = Color("PrimaryAction")
         static let primaryDark = Color(red: 0.847, green: 0.263, blue: 0.110)
         static let green = Color(red: 0.184, green: 0.420, blue: 0.278)
-        static let border = Color(red: 0.894, green: 0.867, blue: 0.831)
-        static let errorBackground = Color(red: 1.0, green: 0.898, blue: 0.875)
+        static let border = Color("Border")
+        static let errorBackground = Color("Error").opacity(0.15)
         static let errorText = Color(red: 0.616, green: 0.165, blue: 0.067)
-        static let successBackground = Color(red: 0.898, green: 0.957, blue: 0.914)
+        static let successBackground = Color("Success").opacity(0.15)
         static let successText = Color(red: 0.137, green: 0.345, blue: 0.227)
+        static let missing = Color(red: 0.812, green: 0.180, blue: 0.094)
+        static let cardBackground = Color(red: 0.961, green: 0.957, blue: 0.949)
     }
 
     enum Spacing {
@@ -22,33 +24,60 @@ enum Theme {
         static let sm: CGFloat = 8
         static let md: CGFloat = 12
         static let lg: CGFloat = 16
-        static let xl: CGFloat = 24
-        static let xxl: CGFloat = 28
+        static let xl: CGFloat = 20
+        static let xxl: CGFloat = 24
+        static let screenPadding: CGFloat = 20
+    }
+
+    enum Radius {
+        static let card: CGFloat = 12
+        static let button: CGFloat = 12
+        static let input: CGFloat = 12
+    }
+
+    enum Fonts {
+        static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
+            .system(size: size, weight: weight, design: .serif)
+        }
+
+        static func body(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+            .system(size: size, weight: weight, design: .default)
+        }
+
+        static func label(_ size: CGFloat = 14, weight: Font.Weight = .semibold) -> Font {
+            .system(size: size, weight: weight, design: .default)
+        }
     }
 }
 
 struct SurfaceModifier: ViewModifier {
+    var padded = true
+
     func body(content: Content) -> some View {
         content
-            .padding(28)
+            .padding(padded ? Theme.Spacing.xxl : 0)
             .background(Theme.Colors.surface)
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
                     .stroke(Theme.Colors.border, lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .shadow(color: Color.black.opacity(0.08), radius: 24, x: 0, y: 12)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 }
 
 extension View {
-    func surfacePanel() -> some View {
-        modifier(SurfaceModifier())
+    func surfacePanel(padded: Bool = true) -> some View {
+        modifier(SurfaceModifier(padded: padded))
+    }
+
+    func screenBackground() -> some View {
+        background(Theme.Colors.background.ignoresSafeArea())
     }
 }
 
 struct PrimaryButtonStyle: ButtonStyle {
     var variant: Variant = .primary
+    var compact = false
 
     enum Variant {
         case primary
@@ -58,12 +87,12 @@ struct PrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 16, weight: .black))
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .padding(.horizontal, 18)
+            .font(Theme.Fonts.label(compact ? 15 : 16, weight: .bold))
+            .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 44 : 52)
+            .padding(.horizontal, compact ? 14 : 18)
             .background(background(configuration: configuration))
             .foregroundStyle(foreground)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.button))
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 
@@ -81,11 +110,11 @@ struct PrimaryButtonStyle: ButtonStyle {
     private var foreground: Color {
         switch variant {
         case .primary:
-            return .white
+            return Color("PrimaryActionText")
         case .secondary:
             return Theme.Colors.text
         case .ghost:
-            return Theme.Colors.primaryDark
+            return Theme.Colors.primary
         }
     }
 }

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import unicodedata
-
 from pydantic import BaseModel, Field, field_validator
 
 from dishify_contracts.restrictions import validate_restriction_tags
+from dishify_contracts.text_validation import MAX_QUERY_LENGTH, reject_control_characters
 
 
 class ParsedIngredientModel(BaseModel):
@@ -16,9 +15,7 @@ class ParsedIngredientModel(BaseModel):
     @field_validator("name", "raw_text")
     @classmethod
     def _reject_control_characters(cls, value: str) -> str:
-        if any(unicodedata.category(character) == "Cc" for character in value):
-            raise ValueError("ingredient text must not contain control characters")
-        return value
+        return reject_control_characters(value, field_name="ingredient text")
 
 
 class RetrievedRecipe(BaseModel):
@@ -40,10 +37,15 @@ class RetrievedRecipe(BaseModel):
 
 
 class RetrievalRequest(BaseModel):
-    query: str = Field(..., min_length=1)
+    query: str = Field(..., min_length=1, max_length=MAX_QUERY_LENGTH)
     top_k: int = Field(default=5, ge=1, le=100)
     available_ingredients: list[ParsedIngredientModel] | None = None
     exclusion_restrictions: list[str] | None = None
+
+    @field_validator("query")
+    @classmethod
+    def _validate_query(cls, value: str) -> str:
+        return reject_control_characters(value, field_name="query")
 
     @field_validator("exclusion_restrictions")
     @classmethod

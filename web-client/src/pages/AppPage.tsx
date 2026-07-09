@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ApiError, apiClient } from "../api/client";
 import type { DetectedIngredient } from "../api/types";
 import { Button } from "../components/Button";
+import { BrandedEmptyState } from "../components/BrandedEmptyState";
+import { DishifyLogo } from "../components/DishifyLogo";
 import { IngredientCapture } from "../components/IngredientCapture";
 import { Input } from "../components/Input";
 import { blobToBase64 } from "../media/encode";
@@ -242,6 +244,7 @@ export function AppPage() {
         />
       ) : null}
       <div className="hero-panel">
+        <DishifyLogo size="compact" className="hero-panel-logo" />
         <p className="eyebrow">What is available today?</p>
         <h1>Your next meal is already in your kitchen.</h1>
         <p className="muted">
@@ -343,7 +346,9 @@ export function AppPage() {
               </article>
             ))
           ) : (
-            <p className="empty-state">No pantry ingredients yet.</p>
+            <BrandedEmptyState>
+              <p className="empty-state">No pantry ingredients yet.</p>
+            </BrandedEmptyState>
           )}
         </div>
 
@@ -372,6 +377,7 @@ export function AppPage() {
               className="textarea"
               placeholder="Optional, e.g. quick spicy dinner with eggs"
               value={query}
+              maxLength={512}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>

@@ -45,11 +45,25 @@
 	<string>$(DISHIFY_REDIRECT_URI)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Dishify connects to your development backend on the same Wi‑Fi network while you test the app.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_http._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Dishify uses the camera to scan ingredients in your kitchen.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dishify uses the microphone to capture what ingredients you have.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Dishify uses your photo library to scan ingredients from pictures.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

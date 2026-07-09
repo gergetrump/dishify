@@ -1,6 +1,7 @@
 import { Link, Navigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthProvider";
+import { DishifyLogo } from "../components/DishifyLogo";
 
 export function WelcomePage() {
   const { isAuthenticated } = useAuth();
@@ -26,10 +27,8 @@ export function WelcomePage() {
           </Link>
         </div>
       </div>
-      <div className="mascot-card" aria-hidden="true">
-        <span className="food-shape food-shape-orange" />
-        <span className="food-shape food-shape-red" />
-        <span className="food-shape food-shape-green" />
+      <div className="welcome-logo-card" aria-hidden="true">
+        <DishifyLogo size="hero" />
       </div>
     </section>
   );

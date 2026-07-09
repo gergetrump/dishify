@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PreferencesPage: View {
+    @EnvironmentObject private var router: AppRouter
+
     @State private var selected: Set<String> = []
     @State private var error: String?
     @State private var status: String?
@@ -10,70 +12,94 @@ struct PreferencesPage: View {
     private let api = APIClient()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
-                Eyebrow(text: "Hard filters")
-                Text("Food preferences")
-                    .font(.system(size: 40, weight: .black))
-                Text("Choose allergies, diets, and restrictions Dishify should always avoid.")
-                    .foregroundStyle(Theme.Colors.muted)
-            }
+        VStack(spacing: 0) {
+            header
 
-            if let error { AlertBanner(text: error) }
-            if let status { AlertBanner(text: status, kind: .success) }
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                    DishifyLogo(size: .compact)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, Theme.Spacing.sm)
 
-            HStack {
-                Text("\(selected.count) selected")
-                    .foregroundStyle(Theme.Colors.muted)
-                Spacer()
-                Button("Clear all") {
-                    status = nil
-                    selected = []
-                }
-                .buttonStyle(PrimaryButtonStyle(variant: .ghost))
-                .frame(width: 120)
-                Button(isSaving ? "Saving..." : "Save preferences") {
-                    Task { await save() }
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .frame(width: 190)
-                .disabled(isLoading || isSaving)
-            }
-            .padding(.vertical, 16)
-            .overlay(Divider(), alignment: .top)
-            .overlay(Divider(), alignment: .bottom)
+                    Text("Choose allergies, diets, and restrictions Dishify should always avoid.")
+                        .font(Theme.Fonts.body(15))
+                        .foregroundStyle(Theme.Colors.muted)
 
-            if isLoading {
-                Text("Loading preferences...")
-                    .foregroundStyle(Theme.Colors.muted)
-            }
+                    if let error { AlertBanner(text: error) }
+                    if let status { AlertBanner(text: status, kind: .success) }
 
-            VStack(alignment: .leading, spacing: 28) {
-                ForEach(restrictionSections) { section in
-                    VStack(alignment: .leading, spacing: 14) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(section.title)
-                                .font(.system(size: 18, weight: .black))
-                            Text(section.description)
-                                .foregroundStyle(Theme.Colors.muted)
+                    HStack {
+                        Text("\(selected.count) selected")
+                            .foregroundStyle(Theme.Colors.muted)
+                        Spacer()
+                        TextLinkButton(title: "Clear all") {
+                            status = nil
+                            selected = []
                         }
-                        FlowLayout(section.tags, spacing: 10) { tag in
-                            ChipButton(
-                                title: formatRestrictionLabel(tag),
-                                selected: selected.contains(tag),
-                                disabled: isLoading
-                            ) {
-                                toggle(tag)
+                    }
+
+                    if isLoading {
+                        LoadingState(message: "Loading preferences...", branded: true)
+                    }
+
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xxl) {
+                        ForEach(restrictionSections) { section in
+                            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                                Text(section.title)
+                                    .font(Theme.Fonts.display(18, weight: .bold))
+                                Text(section.description)
+                                    .font(Theme.Fonts.body(14))
+                                    .foregroundStyle(Theme.Colors.muted)
+                                FlowLayout(section.tags, spacing: 10) { tag in
+                                    Chip(
+                                        title: formatRestrictionLabel(tag),
+                                        selected: selected.contains(tag),
+                                        disabled: isLoading
+                                    ) {
+                                        toggle(tag)
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                .padding(.horizontal, Theme.Spacing.screenPadding)
+                .padding(.bottom, 100)
             }
+
+            Button(isSaving ? "Saving..." : "Save preferences") {
+                Task { await save() }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(isLoading || isSaving)
+            .padding(Theme.Spacing.screenPadding)
+            .background(Theme.Colors.background)
         }
-        .surfacePanel()
+        .screenBackground()
+        .navigationBarHidden(true)
         .task {
             await load()
         }
+    }
+
+    private var header: some View {
+        HStack {
+            Button {
+                router.pop()
+            } label: {
+                Text("Back")
+                    .font(Theme.Fonts.label(16, weight: .semibold))
+                    .foregroundStyle(Theme.Colors.primary)
+            }
+            Spacer()
+            Text("Food preferences")
+                .font(Theme.Fonts.display(18, weight: .bold))
+                .foregroundStyle(Theme.Colors.text)
+            Spacer()
+            Color.clear.frame(width: 36, height: 36)
+        }
+        .padding(.horizontal, Theme.Spacing.screenPadding)
+        .padding(.vertical, Theme.Spacing.md)
     }
 
     private func toggle(_ tag: String) {

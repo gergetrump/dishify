@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ApiError, apiClient } from "../api/client";
 import { Button } from "../components/Button";
 import { Chip } from "../components/Chip";
+import { DishifyLogo } from "../components/DishifyLogo";
 import { formatRestrictionLabel, restrictionSections } from "../data/restrictions";
 
 export function PreferencesPage() {
@@ -68,6 +69,9 @@ export function PreferencesPage() {
 
   return (
     <section className="page-section">
+      <div className="page-brand-row">
+        <DishifyLogo size="compact" />
+      </div>
       <p className="eyebrow">Hard filters</p>
       <h1>Food preferences</h1>
       <p className="muted">Choose allergies, diets, and restrictions Dishify should always avoid.</p>
