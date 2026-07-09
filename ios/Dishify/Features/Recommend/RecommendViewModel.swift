@@ -65,6 +65,9 @@ struct ResultsPage: View {
                 .font(.system(size: 16, weight: .heavy))
             }
             .surfacePanel()
+            .onAppear {
+                AugmentCache.prefetchAll(session.response.results)
+            }
         } else {
             VStack(alignment: .leading, spacing: 16) {
                 Eyebrow(text: "Recipe suggestions")
@@ -88,8 +91,10 @@ struct ResultsPage: View {
         defer { isRetrying = false }
         do {
             let response = try await api.recommend(session.request)
+            AugmentCache.clear()
             let next = RecommendationSession(request: session.request, response: response)
             RecommendationStore.save(next)
+            AugmentCache.prefetchAll(response.results)
             self.session = next
         } catch {
             self.error = error.localizedDescription

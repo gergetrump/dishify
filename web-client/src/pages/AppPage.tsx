@@ -372,6 +372,7 @@ export function AppPage() {
               className="textarea"
               placeholder="Optional, e.g. quick spicy dinner with eggs"
               value={query}
+              maxLength={512}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>

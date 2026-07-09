@@ -4,6 +4,8 @@ struct RecipeDetailPage: View {
     @EnvironmentObject private var router: AppRouter
     let recipeID: Int
 
+    @State private var augmented: AugmentResponse?
+
     private var recipe: RecipeResult? {
         RecommendationStore.findRecipe(id: recipeID)
     }
@@ -11,6 +13,9 @@ struct RecipeDetailPage: View {
     var body: some View {
         if let recipe {
             detail(recipe)
+                .task(id: recipe.id) {
+                    await loadAugment(for: recipe)
+                }
         } else {
             VStack(alignment: .leading, spacing: 16) {
                 Eyebrow(text: "Recipe")
@@ -68,22 +73,86 @@ struct RecipeDetailPage: View {
             }
 
             DetailPanel(title: "Directions") {
-                if let directions = recipe.directions, !directions.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(Array(directions.enumerated()), id: \.offset) { index, step in
-                            HStack(alignment: .top, spacing: 10) {
-                                Text("\(index + 1).")
-                                    .font(.system(size: 15, weight: .black))
-                                Text(step)
-                            }
-                        }
-                    }
+                if let augmented {
+                    augmentedDirections(augmented)
+                } else if let directions = recipe.directions, !directions.isEmpty {
+                    corpusDirections(directions)
                 } else {
                     EmptyState(text: "No directions were returned for this recipe.")
                 }
             }
         }
         .surfacePanel()
+    }
+
+    private func loadAugment(for recipe: RecipeResult) async {
+        augmented = nil
+        let pending = AugmentCache.get(recipeId: recipe.id) ?? AugmentCache.prefetch(recipe)
+        guard let pending else { return }
+        do {
+            augmented = try await pending.value
+        } catch {
+            AugmentCache.remove(recipeId: recipe.id)
+        }
+    }
+
+    @ViewBuilder
+    private func augmentedDirections(_ augmented: AugmentResponse) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let minutes = augmented.estimatedTimeMinutes {
+                Text("Estimated total: \(minutes) min")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.Colors.muted)
+            }
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(Array(augmented.steps.enumerated()), id: \.offset) { index, step in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .top, spacing: 10) {
+                            Text("\(index + 1).")
+                                .font(.system(size: 15, weight: .black))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(step.text)
+                                if let duration = step.durationMinutes {
+                                    Text("~\(duration) min")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(Theme.Colors.muted)
+                                        .italic()
+                                }
+                                if let tip = step.tip, !tip.isEmpty {
+                                    Text("Tip: \(tip)")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(Theme.Colors.muted)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if !augmented.tips.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Tips")
+                        .font(.system(size: 16, weight: .black))
+                    ForEach(augmented.tips, id: \.self) { tip in
+                        Text("• \(tip)")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Theme.Colors.muted)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func corpusDirections(_ directions: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(directions.enumerated()), id: \.offset) { index, step in
+                HStack(alignment: .top, spacing: 10) {
+                    Text("\(index + 1).")
+                        .font(.system(size: 15, weight: .black))
+                    Text(step)
+                }
+            }
+        }
     }
 }
 

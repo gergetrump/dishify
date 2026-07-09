@@ -6,6 +6,7 @@ dishify_contracts/media.py
 dishify_contracts/models.py
 dishify_contracts/public.py
 dishify_contracts/restrictions.py
+dishify_contracts/text_validation.py
 dishify_contracts/user.py
 dishify_contracts.egg-info/PKG-INFO
 dishify_contracts.egg-info/SOURCES.txt

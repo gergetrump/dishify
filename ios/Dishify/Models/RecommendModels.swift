@@ -83,3 +83,60 @@ struct RecommendationSession: Codable, Equatable {
     let request: RecommendRequest
     let response: RecommendResponse
 }
+
+struct AugmentRequest: Codable, Equatable {
+    let title: String?
+    let ingredients: [String]
+    let directions: [String]
+    let query: String?
+    let servings: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case ingredients
+        case directions
+        case query
+        case servings
+    }
+
+    init(
+        title: String? = nil,
+        ingredients: [String] = [],
+        directions: [String] = [],
+        query: String? = nil,
+        servings: Int? = nil
+    ) {
+        self.title = title
+        self.ingredients = ingredients
+        self.directions = directions
+        self.query = query
+        self.servings = servings
+    }
+}
+
+struct AugmentedStep: Codable, Equatable, Identifiable {
+    var id: String { text }
+    let text: String
+    let tip: String?
+    let durationMinutes: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case text
+        case tip
+        case durationMinutes = "duration_minutes"
+    }
+}
+
+struct AugmentResponse: Codable, Equatable {
+    let steps: [AugmentedStep]
+    let tips: [String]
+    let estimatedTimeMinutes: Int?
+    let latencyMs: Int
+
+    enum CodingKeys: String, CodingKey {
+        case steps
+        case tips
+        case estimatedTimeMinutes = "estimated_time_minutes"
+        case latencyMs = "latency_ms"
+    }
+}

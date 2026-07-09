@@ -31,7 +31,7 @@ Retrieval loads the embedding model on first `/recommend`; the first recipe sear
 |------|----------|
 | **Auth** | Register / log in via gateway `POST /auth/register` and `POST /auth/login` (username + password). Tokens in Keychain; refresh via `POST /auth/refresh`. |
 | **Cook** | Pantry ingredients (saved locally), natural-language “vibe” query, `POST /recommend`. |
-| **Results** | Ranked recipes from the last search; tap for detail. |
+| **Results** | Ranked recipes from the last search; tap for detail (LLM-augmented directions prefetched). |
 | **Preferences** | Diet / allergy hard filters via `GET/PUT /me/preferences`. |
 | **Profile** | `GET /me`, log out. |
 

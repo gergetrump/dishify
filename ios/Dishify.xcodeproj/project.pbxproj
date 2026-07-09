@@ -43,6 +43,9 @@
 		A10000000000000000000067 /* AsyncStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000066 /* AsyncStateTests.swift */; };
 		A10000000000000000000069 /* RecipeResultFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000068 /* RecipeResultFormattingTests.swift */; };
 		A1000000000000000000006B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000006A /* ConfigTests.swift */; };
+		A10000000000000000000082 /* InputValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000080 /* InputValidation.swift */; };
+		A10000000000000000000085 /* AugmentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000084 /* AugmentCache.swift */; };
+		A10000000000000000000083 /* InputValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000081 /* InputValidationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +98,9 @@
 		A10000000000000000000066 /* AsyncStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncStateTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000068 /* RecipeResultFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeResultFormattingTests.swift; sourceTree = "<group>"; };
 		A1000000000000000000006A /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000080 /* InputValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputValidation.swift; sourceTree = "<group>"; };
+		A10000000000000000000084 /* AugmentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AugmentCache.swift; sourceTree = "<group>"; };
+		A10000000000000000000081 /* InputValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputValidationTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000070 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		A10000000000000000000071 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		A10000000000000000000072 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
@@ -171,6 +177,7 @@
 				A1000000000000000000005E /* AsyncState.swift */,
 				A10000000000000000000060 /* AsyncStateViews.swift */,
 				A10000000000000000000062 /* ThemeComponents.swift */,
+				A10000000000000000000080 /* InputValidation.swift */,
 				A1000000000000000000002E /* Theme.swift */,
 			);
 			path = Core;
@@ -202,6 +209,7 @@
 				A1000000000000000000004E /* PantryItem.swift */,
 				A10000000000000000000050 /* PantryEditor.swift */,
 				A10000000000000000000056 /* RecommendView.swift */,
+				A10000000000000000000084 /* AugmentCache.swift */,
 				A10000000000000000000058 /* RecommendViewModel.swift */,
 				A10000000000000000000059 /* ResultRow.swift */,
 				A1000000000000000000005C /* ResultDetailView.swift */,
@@ -247,6 +255,7 @@
 				A10000000000000000000052 /* PantryItemTests.swift */,
 				A10000000000000000000068 /* RecipeResultFormattingTests.swift */,
 				A1000000000000000000006A /* ConfigTests.swift */,
+				A10000000000000000000081 /* InputValidationTests.swift */,
 			);
 			path = DishifyTests;
 			sourceTree = "<group>";
@@ -374,12 +383,14 @@
 				A1000000000000000000004F /* PantryItem.swift in Sources */,
 				A10000000000000000000051 /* PantryEditor.swift in Sources */,
 				A10000000000000000000055 /* RecommendView.swift in Sources */,
+				A10000000000000000000085 /* AugmentCache.swift in Sources */,
 				A10000000000000000000057 /* RecommendViewModel.swift in Sources */,
 				A1000000000000000000005B /* ResultRow.swift in Sources */,
 				A1000000000000000000005D /* ResultDetailView.swift in Sources */,
 				A1000000000000000000005F /* AsyncState.swift in Sources */,
 				A10000000000000000000061 /* AsyncStateViews.swift in Sources */,
 				A10000000000000000000063 /* ThemeComponents.swift in Sources */,
+				A10000000000000000000082 /* InputValidation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -395,6 +406,7 @@
 				A10000000000000000000053 /* PantryItemTests.swift in Sources */,
 				A10000000000000000000069 /* RecipeResultFormattingTests.swift in Sources */,
 				A1000000000000000000006B /* ConfigTests.swift in Sources */,
+				A10000000000000000000083 /* InputValidationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -188,6 +188,10 @@ struct CookPage: View {
     private func saveIngredient() {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        if let failure = InputValidation.validate(trimmed) {
+            error = InputValidation.message(for: failure)
+            return
+        }
         let parsedQuantity = Double(quantity.trimmingCharacters(in: .whitespacesAndNewlines))
         let next = PantryStore.make(name: trimmed, quantity: parsedQuantity, unit: unit)
 
@@ -226,6 +230,16 @@ struct CookPage: View {
         let resolvedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? defaultQueryFromPantry()
             : query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let failure = InputValidation.validate(resolvedQuery) {
+            error = InputValidation.message(for: failure)
+            return
+        }
+        for item in items {
+            if let failure = InputValidation.validate(item.name) {
+                error = "Pantry ingredient \"\(item.name)\" is invalid: \(InputValidation.message(for: failure))"
+                return
+            }
+        }
         let request = RecommendRequest(
             query: resolvedQuery,
             topK: topK,
@@ -235,7 +249,9 @@ struct CookPage: View {
 
         do {
             let response = try await api.recommend(request)
+            AugmentCache.clear()
             RecommendationStore.save(RecommendationSession(request: request, response: response))
+            AugmentCache.prefetchAll(response.results)
             router.go(.results)
         } catch {
             self.error = error.localizedDescription

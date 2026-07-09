@@ -278,4 +278,31 @@ final class ModelDecodingTests: XCTestCase {
         XCTAssertEqual(result.timeMinutes, 20)
         XCTAssertNil(result.reasoning)
     }
+
+    func testDecodesAugmentResponse() throws {
+        let json = """
+        {
+          "steps": [
+            {
+              "text": "Boil pasta until al dente.",
+              "tip": "Salt the water.",
+              "duration_minutes": 10
+            }
+          ],
+          "tips": ["Serve immediately."],
+          "estimated_time_minutes": 25,
+          "latency_ms": 1200
+        }
+        """
+
+        let response = try decoder.decode(AugmentResponse.self, from: Data(json.utf8))
+
+        XCTAssertEqual(response.steps.count, 1)
+        XCTAssertEqual(response.steps[0].text, "Boil pasta until al dente.")
+        XCTAssertEqual(response.steps[0].tip, "Salt the water.")
+        XCTAssertEqual(response.steps[0].durationMinutes, 10)
+        XCTAssertEqual(response.tips, ["Serve immediately."])
+        XCTAssertEqual(response.estimatedTimeMinutes, 25)
+        XCTAssertEqual(response.latencyMs, 1200)
+    }
 }
