@@ -37,6 +37,7 @@ class ExplainResultItem(BaseModel):
 class ExplainResponse(BaseModel):
     results: list[ExplainResultItem]
     latency_ms: int
+    guardrail_triggered: bool = False
 
 
 class InternalRecommendRequest(RetrievalRequest):

@@ -79,6 +79,59 @@ jobs:
         env:
           RESTRICTION_RULES_PATH: ${{ github.workspace }}/data/restriction_rules.json
 
+  backend-reasoning:
+    name: Backend Reasoning
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/reasoning
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install -e ../../shared/dishify-contracts
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Unit tests
+        run: pytest tests/ -v
+        env:
+          PYTHONPATH: .
+          RESTRICTION_RULES_PATH: ${{ github.workspace }}/data/restriction_rules.json
+
+  backend-recommendation:
+    name: Backend Recommendation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/recommendation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install -e ../../shared/dishify-contracts
+          pip install -e ../../shared/dishify-ranking
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Unit tests
+        run: pytest tests/ -v
+        env:
+          PYTHONPATH: .
+          RESTRICTION_RULES_PATH: ${{ github.workspace }}/data/restriction_rules.json
+
   ios:
     name: iOS
     runs-on: macos-15

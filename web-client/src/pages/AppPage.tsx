@@ -290,6 +290,7 @@ export function AppPage() {
             placeholder="Eggs"
             value={name}
             onChange={(event) => setName(event.target.value)}
+            maxLength={512}
             required
           />
           <div className="form-grid">
