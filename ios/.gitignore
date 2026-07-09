@@ -15,3 +15,6 @@ build/
 
 # Local staging overrides (copy from Config/Staging.example.xcconfig)
 Config/Staging.local.xcconfig
+
+# Local device overrides (copy from Config/Debug.example.xcconfig)
+Config/Debug.local.xcconfig

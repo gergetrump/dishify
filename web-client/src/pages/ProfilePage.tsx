@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { Button } from "../components/Button";
+import { DishifyBrandMark } from "../components/DishifyLogo";
 
 export function ProfilePage() {
   const { loadUser, logout, user } = useAuth();
@@ -39,6 +40,7 @@ export function ProfilePage() {
 
   return (
     <section className="narrow-page">
+      <DishifyBrandMark />
       <p className="eyebrow">Account</p>
       <h1>Profile</h1>
       {error ? <p className="alert alert-error">{error}</p> : null}

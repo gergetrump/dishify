@@ -4,6 +4,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import type { AugmentResponse, RecipeResult } from "../api/types";
 import { getAugment, prefetchAugment } from "../recommendations/augmentCache";
 import { findRecipeById } from "../recommendations/session";
+import { formatIngredientName } from "../utils/ingredientFormatting";
 
 type DetailLocationState = {
   recipe?: RecipeResult;
@@ -157,7 +158,7 @@ function IngredientList({ title, items, empty }: { title: string; items: string[
         <div className="tag-list">
           {items.map((item) => (
             <span className="tag" key={item}>
-              {item}
+              {formatIngredientName(item)}
             </span>
           ))}
         </div>

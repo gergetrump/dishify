@@ -45,7 +45,7 @@ struct RecipeCard: View {
     private var scoreSummary: String {
         let fit = score >= 80 ? "very good" : (score >= 60 ? "good" : "decent")
         let coverage = matched.count >= missing.count ? "most" : "many"
-        let missingList = missing.prefix(3).joined(separator: ", ")
+        let missingList = missing.prefix(3).map(IngredientFormatting.displayName).joined(separator: ", ")
         if missing.isEmpty {
             return "Score \(score): \(recipe.title ?? "This recipe") is a \(fit) fit with your pantry."
         }

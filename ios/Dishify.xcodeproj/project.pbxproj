@@ -25,8 +25,6 @@
 		A1000000000000000000003D /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003C /* SessionStore.swift */; };
 		A1000000000000000000003F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003E /* RootView.swift */; };
 		A10000000000000000000041 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* ProfileView.swift */; };
-		A10000000000000000000093 /* VoiceInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000092 /* VoiceInputService.swift */; };
-		A10000000000000000000095 /* IngredientCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000094 /* IngredientCaptureView.swift */; };
 		A10000000000000000000043 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000042 /* AuthView.swift */; };
 		A10000000000000000000048 /* RestrictionTags.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000047 /* RestrictionTags.swift */; };
 		A1000000000000000000004A /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000049 /* PreferencesView.swift */; };
@@ -46,8 +44,10 @@
 		A10000000000000000000069 /* RecipeResultFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000068 /* RecipeResultFormattingTests.swift */; };
 		A1000000000000000000006B /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000006A /* ConfigTests.swift */; };
 		A10000000000000000000082 /* InputValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000080 /* InputValidation.swift */; };
-		A10000000000000000000085 /* AugmentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000084 /* AugmentCache.swift */; };
 		A10000000000000000000083 /* InputValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000081 /* InputValidationTests.swift */; };
+		A10000000000000000000085 /* AugmentCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000084 /* AugmentCache.swift */; };
+		A10000000000000000000093 /* VoiceInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000092 /* VoiceInputService.swift */; };
+		A10000000000000000000095 /* IngredientCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000094 /* IngredientCaptureView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,8 +82,6 @@
 		A1000000000000000000003C /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		A1000000000000000000003E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		A10000000000000000000040 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		A10000000000000000000092 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
-		A10000000000000000000094 /* IngredientCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientCaptureView.swift; sourceTree = "<group>"; };
 		A10000000000000000000042 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		A10000000000000000000047 /* RestrictionTags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestrictionTags.swift; sourceTree = "<group>"; };
 		A10000000000000000000049 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
@@ -102,14 +100,16 @@
 		A10000000000000000000066 /* AsyncStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncStateTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000068 /* RecipeResultFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeResultFormattingTests.swift; sourceTree = "<group>"; };
 		A1000000000000000000006A /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
-		A10000000000000000000080 /* InputValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputValidation.swift; sourceTree = "<group>"; };
-		A10000000000000000000084 /* AugmentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AugmentCache.swift; sourceTree = "<group>"; };
-		A10000000000000000000081 /* InputValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputValidationTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000070 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		A10000000000000000000071 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		A10000000000000000000072 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		A10000000000000000000073 /* Staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Staging.xcconfig; sourceTree = "<group>"; };
 		A10000000000000000000074 /* Staging.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Staging.example.xcconfig; sourceTree = "<group>"; };
+		A10000000000000000000080 /* InputValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputValidation.swift; sourceTree = "<group>"; };
+		A10000000000000000000081 /* InputValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputValidationTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000084 /* AugmentCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AugmentCache.swift; sourceTree = "<group>"; };
+		A10000000000000000000092 /* VoiceInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInputService.swift; sourceTree = "<group>"; };
+		A10000000000000000000094 /* IngredientCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientCaptureView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,31 +120,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000027 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A10000000000000000000010 /* Root */ = {
-			isa = PBXGroup;
-			children = (
-				A1000000000000000000006F /* Config */,
-				A1000000000000000000000C /* Dishify */,
-				A10000000000000000000024 /* DishifyTests */,
-				A1000000000000000000000A /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		A1000000000000000000006F /* Config */ = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000070 /* Base.xcconfig */,
-				A10000000000000000000071 /* Debug.xcconfig */,
-				A10000000000000000000072 /* Release.xcconfig */,
-				A10000000000000000000073 /* Staging.xcconfig */,
-				A10000000000000000000074 /* Staging.example.xcconfig */,
-			);
-			path = Config;
-			sourceTree = "<group>";
-		};
 		A1000000000000000000000A /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -168,6 +153,16 @@
 			path = Dishify;
 			sourceTree = "<group>";
 		};
+		A10000000000000000000010 = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000006F /* Config */,
+				A1000000000000000000000C /* Dishify */,
+				A10000000000000000000024 /* DishifyTests */,
+				A1000000000000000000000A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
 		A10000000000000000000019 /* Core */ = {
 			isa = PBXGroup;
 			children = (
@@ -186,58 +181,6 @@
 				A1000000000000000000002E /* Theme.swift */,
 			);
 			path = Core;
-			sourceTree = "<group>";
-		};
-		A10000000000000000000044 /* Features */ = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000045 /* Root */,
-				A10000000000000000000046 /* Auth */,
-				A1000000000000000000004D /* Preferences */,
-				A10000000000000000000054 /* Recommend */,
-			);
-			path = Features;
-			sourceTree = "<group>";
-		};
-		A1000000000000000000004D /* Preferences */ = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000049 /* PreferencesView.swift */,
-				A1000000000000000000004B /* PreferencesViewModel.swift */,
-			);
-			path = Preferences;
-			sourceTree = "<group>";
-		};
-		A10000000000000000000054 /* Recommend */ = {
-			isa = PBXGroup;
-			children = (
-				A1000000000000000000004E /* PantryItem.swift */,
-				A10000000000000000000050 /* PantryEditor.swift */,
-				A10000000000000000000056 /* RecommendView.swift */,
-				A10000000000000000000084 /* AugmentCache.swift */,
-				A10000000000000000000058 /* RecommendViewModel.swift */,
-				A10000000000000000000059 /* ResultRow.swift */,
-				A1000000000000000000005C /* ResultDetailView.swift */,
-				A10000000000000000000094 /* IngredientCaptureView.swift */,
-			);
-			path = Recommend;
-			sourceTree = "<group>";
-		};
-		A10000000000000000000045 /* Root */ = {
-			isa = PBXGroup;
-			children = (
-				A1000000000000000000003E /* RootView.swift */,
-				A10000000000000000000040 /* ProfileView.swift */,
-			);
-			path = Root;
-			sourceTree = "<group>";
-		};
-		A10000000000000000000046 /* Auth */ = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000042 /* AuthView.swift */,
-			);
-			path = Auth;
 			sourceTree = "<group>";
 		};
 		A10000000000000000000020 /* Models */ = {
@@ -264,6 +207,70 @@
 				A10000000000000000000081 /* InputValidationTests.swift */,
 			);
 			path = DishifyTests;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000044 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000045 /* Root */,
+				A10000000000000000000046 /* Auth */,
+				A1000000000000000000004D /* Preferences */,
+				A10000000000000000000054 /* Recommend */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000045 /* Root */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000003E /* RootView.swift */,
+				A10000000000000000000040 /* ProfileView.swift */,
+			);
+			path = Root;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000046 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000042 /* AuthView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000004D /* Preferences */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000049 /* PreferencesView.swift */,
+				A1000000000000000000004B /* PreferencesViewModel.swift */,
+			);
+			path = Preferences;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000054 /* Recommend */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000004E /* PantryItem.swift */,
+				A10000000000000000000050 /* PantryEditor.swift */,
+				A10000000000000000000056 /* RecommendView.swift */,
+				A10000000000000000000084 /* AugmentCache.swift */,
+				A10000000000000000000058 /* RecommendViewModel.swift */,
+				A10000000000000000000059 /* ResultRow.swift */,
+				A1000000000000000000005C /* ResultDetailView.swift */,
+				A10000000000000000000094 /* IngredientCaptureView.swift */,
+			);
+			path = Recommend;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000006F /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000070 /* Base.xcconfig */,
+				A10000000000000000000071 /* Debug.xcconfig */,
+				A10000000000000000000072 /* Release.xcconfig */,
+				A10000000000000000000073 /* Staging.xcconfig */,
+				A10000000000000000000074 /* Staging.example.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -313,6 +320,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
+				ORGANIZATIONNAME = dishify;
 				TargetAttributes = {
 					A10000000000000000000002 = {
 						CreatedOnToolsVersion = 15.0;
@@ -331,7 +339,7 @@
 				en,
 				Base,
 			);
-			mainGroup = A10000000000000000000010 /* Root */;
+			mainGroup = A10000000000000000000010;
 			productRefGroup = A1000000000000000000000A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -343,21 +351,18 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A10000000000000000000028 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXResourcesBuildPhase section */
 		A1000000000000000000000E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000009 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000028 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -427,16 +432,6 @@
 			targetProxy = A1000000000000000000002A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		A10000000000000000000027 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		A10000000000000000000013 /* Debug */ = {
@@ -560,6 +555,104 @@
 			};
 			name = Release;
 		};
+		A10000000000000000000015 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 286T2TYMT7;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Dishify/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A10000000000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 286T2TYMT7;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Dishify/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A1000000000000000000002C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dishify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dishify";
+			};
+			name = Debug;
+		};
+		A1000000000000000000002D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dishify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dishify";
+			};
+			name = Release;
+		};
 		A10000000000000000000075 /* Staging */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A10000000000000000000073 /* Staging.xcconfig */;
@@ -618,66 +711,6 @@
 			};
 			name = Staging;
 		};
-		A10000000000000000000015 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Dishify/Info.plist;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		A10000000000000000000016 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Dishify/Info.plist;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
 		A10000000000000000000076 /* Staging */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -686,6 +719,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 286T2TYMT7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Dishify/Info.plist;
@@ -707,42 +741,6 @@
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Staging;
-		};
-		A1000000000000000000002C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dishify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dishify";
-			};
-			name = Debug;
-		};
-		A1000000000000000000002D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.dishify.app.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Dishify.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Dishify";
-			};
-			name = Release;
 		};
 		A10000000000000000000077 /* Staging */ = {
 			isa = XCBuildConfiguration;

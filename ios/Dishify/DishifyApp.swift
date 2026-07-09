@@ -10,6 +10,7 @@ struct DishifyApp: App {
             RootView()
                 .environmentObject(session)
                 .environmentObject(router)
+                .preferredColorScheme(.light)
         }
     }
 }

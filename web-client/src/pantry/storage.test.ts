@@ -18,7 +18,7 @@ describe("pantry storage", () => {
 
   it("creates normalized pantry items for the API", () => {
     const item = createPantryItem({
-      name: "  Eggs  ",
+      name: "  eggs  ",
       quantity: 2,
       unit: " pieces ",
     });

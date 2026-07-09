@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import type { RecipeResult } from "../api/types";
+import { formatIngredientName } from "../utils/ingredientFormatting";
 
 type RecipeCardProps = {
   recipe: RecipeResult;
@@ -55,12 +56,12 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
       <div className="tag-list">
         {matched.slice(0, 4).map((item) => (
           <span className="tag tag-good" key={`matched-${item}`}>
-            Have {item}
+            Have {formatIngredientName(item)}
           </span>
         ))}
         {missing.slice(0, 4).map((item) => (
           <span className="tag tag-warn" key={`missing-${item}`}>
-            Need {item}
+            Need {formatIngredientName(item)}
           </span>
         ))}
       </div>

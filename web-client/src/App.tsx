@@ -2,6 +2,7 @@ import { Link, Route, Routes } from "react-router-dom";
 
 import { RequireAuth } from "./auth/RequireAuth";
 import { useAuth } from "./auth/AuthProvider";
+import { DishifyLogo } from "./components/DishifyLogo";
 import { AppPage } from "./pages/AppPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PreferencesPage } from "./pages/PreferencesPage";
@@ -18,7 +19,7 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <Link className="brand" to="/app" aria-label="Dishify home">
-          <span className="brand-mark">D</span>
+          <DishifyLogo size="icon" />
           <span>Dishify</span>
         </Link>
         <nav className="nav-links" aria-label="Main navigation">

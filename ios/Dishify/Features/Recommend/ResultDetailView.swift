@@ -111,7 +111,7 @@ struct RecipeDetailPage: View {
                 MissingBadge()
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(text)
+                Text(IngredientFormatting.displayName(text))
                     .font(Theme.Fonts.label(15, weight: .semibold))
                     .foregroundStyle(Theme.Colors.text)
             }

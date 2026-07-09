@@ -10,6 +10,13 @@ struct PantryPage: View {
     @State private var unit = ""
     @State private var nameFocused = false
     @State private var error: String?
+    @State private var showCapture = false
+    @State private var isRecording = false
+    @State private var isTranscribing = false
+    @State private var mediaNotice: String?
+
+    private let api = APIClient()
+    private let voiceService = VoiceInputService()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +37,34 @@ struct PantryPage: View {
                             .font(Theme.Fonts.label(15, weight: .semibold))
                             .foregroundStyle(Theme.Colors.missing)
                         }
+                    }
+
+                    HStack(spacing: Theme.Spacing.md) {
+                        Button {
+                            showCapture = true
+                        } label: {
+                            Label("Scan ingredients", systemImage: "camera")
+                                .font(Theme.Fonts.label(14, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PrimaryButtonStyle(variant: .secondary))
+
+                        Button {
+                            Task { await toggleVoice() }
+                        } label: {
+                            Label(
+                                isTranscribing ? "Listening..." : (isRecording ? "Stop" : "Say what you have"),
+                                systemImage: isRecording ? "stop.circle" : "mic"
+                            )
+                            .font(Theme.Fonts.label(14, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PrimaryButtonStyle(variant: .secondary))
+                        .disabled(isTranscribing)
+                    }
+
+                    if let mediaNotice {
+                        AlertBanner(text: mediaNotice, kind: .success)
                     }
 
                     if items.isEmpty {
@@ -57,6 +92,11 @@ struct PantryPage: View {
         }
         .screenBackground()
         .navigationBarHidden(true)
+        .sheet(isPresented: $showCapture) {
+            IngredientCaptureView { detected in
+                addDetectedIngredients(detected)
+            }
+        }
         .onChange(of: items) { updatedItems in
             PantryStore.save(updatedItems)
         }
@@ -164,6 +204,58 @@ struct PantryPage: View {
         quantity = ""
         unit = ""
     }
+
+    private func addDetectedIngredients(_ detected: [DetectedIngredient]) {
+        for item in detected {
+            let next = PantryStore.make(name: item.name, quantity: item.quantity, unit: item.unit ?? "")
+            items.append(next)
+        }
+        mediaNotice = "Added \(detected.count) ingredient\(detected.count == 1 ? "" : "s") from photo."
+    }
+
+    private func toggleVoice() async {
+        error = nil
+        mediaNotice = nil
+        if isRecording {
+            isRecording = false
+            isTranscribing = true
+            defer { isTranscribing = false }
+            do {
+                let result = try await voiceService.stopAndTranscribe(api: api)
+                applyVoiceResult(result)
+            } catch {
+                self.error = error.localizedDescription
+            }
+        } else {
+            do {
+                try await voiceService.startRecording()
+                isRecording = true
+            } catch {
+                self.error = error.localizedDescription
+            }
+        }
+    }
+
+    private func applyVoiceResult(_ result: VoiceResponse) {
+        for item in result.ingredients {
+            let next = PantryStore.make(name: item.name, quantity: item.quantity, unit: item.unit ?? "")
+            items.append(next)
+        }
+        if let spokenQuery = result.query, !spokenQuery.isEmpty {
+            VibeDraftStore.save(spokenQuery)
+        }
+        if result.ingredients.isEmpty {
+            if let spokenQuery = result.query, !spokenQuery.isEmpty {
+                mediaNotice = "Saved vibe for the next step: \"\(spokenQuery)\""
+            } else {
+                mediaNotice = "Heard: \"\(result.transcript)\""
+            }
+        } else if let spokenQuery = result.query, !spokenQuery.isEmpty {
+            mediaNotice = "Added \(result.ingredients.count) ingredient\(result.ingredients.count == 1 ? "" : "s") and saved your vibe."
+        } else {
+            mediaNotice = "Added \(result.ingredients.count) ingredient\(result.ingredients.count == 1 ? "" : "s") from voice."
+        }
+    }
 }
 
 // Legacy alias
@@ -177,13 +269,8 @@ struct VibePage: View {
     @State private var topK = 5
     @State private var error: String?
     @State private var isSubmitting = false
-    @State private var showCapture = false
-    @State private var isRecording = false
-    @State private var isTranscribing = false
-    @State private var mediaNotice: String?
 
     private let api = APIClient()
-    private let voiceService = VoiceInputService()
     private let examplePrompts = [
         "quick high-protein dinner",
         "cozy vegetarian pasta",
@@ -205,9 +292,6 @@ struct VibePage: View {
 
                     if let error {
                         AlertBanner(text: error)
-                    }
-                    if let mediaNotice {
-                        AlertBanner(text: mediaNotice, kind: .success)
                     }
 
                     LabeledField("Eating vibe", hint: "optional") {
@@ -252,30 +336,6 @@ struct VibePage: View {
                         }
                         .pickerStyle(.segmented)
                     }
-
-                    HStack(spacing: Theme.Spacing.md) {
-                        Button {
-                            showCapture = true
-                        } label: {
-                            Label("Scan ingredients", systemImage: "camera")
-                                .font(Theme.Fonts.label(14, weight: .semibold))
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(PrimaryButtonStyle(variant: .secondary))
-
-                        Button {
-                            Task { await toggleVoice() }
-                        } label: {
-                            Label(
-                                isTranscribing ? "Listening..." : (isRecording ? "Stop" : "Say what you have"),
-                                systemImage: isRecording ? "stop.circle" : "mic"
-                            )
-                            .font(Theme.Fonts.label(14, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(PrimaryButtonStyle(variant: .secondary))
-                        .disabled(isTranscribing)
-                    }
                 }
                 .padding(.horizontal, Theme.Spacing.screenPadding)
                 .padding(.bottom, 100)
@@ -293,13 +353,13 @@ struct VibePage: View {
         }
         .screenBackground()
         .navigationBarHidden(true)
-        .sheet(isPresented: $showCapture) {
-            IngredientCaptureView { detected in
-                addDetectedIngredients(detected)
-            }
-        }
         .onAppear {
             items = PantryStore.load()
+            let draft = VibeDraftStore.load()
+            if !draft.isEmpty {
+                query = draft
+                VibeDraftStore.clear()
+            }
         }
     }
 
@@ -321,56 +381,6 @@ struct VibePage: View {
         }
         .padding(.horizontal, Theme.Spacing.screenPadding)
         .padding(.vertical, Theme.Spacing.md)
-    }
-
-    private func addDetectedIngredients(_ detected: [DetectedIngredient]) {
-        var current = PantryStore.load()
-        for item in detected {
-            let next = PantryStore.make(name: item.name, quantity: item.quantity, unit: item.unit ?? "")
-            current.append(next)
-        }
-        PantryStore.save(current)
-        items = current
-        mediaNotice = "Added \(detected.count) ingredient\(detected.count == 1 ? "" : "s") from photo."
-    }
-
-    private func toggleVoice() async {
-        error = nil
-        mediaNotice = nil
-        if isRecording {
-            isRecording = false
-            isTranscribing = true
-            defer { isTranscribing = false }
-            do {
-                let result = try await voiceService.stopAndTranscribe(api: api)
-                applyVoiceResult(result)
-            } catch {
-                self.error = error.localizedDescription
-            }
-        } else {
-            do {
-                try await voiceService.startRecording()
-                isRecording = true
-            } catch {
-                self.error = error.localizedDescription
-            }
-        }
-    }
-
-    private func applyVoiceResult(_ result: VoiceResponse) {
-        var current = PantryStore.load()
-        for item in result.ingredients {
-            let next = PantryStore.make(name: item.name, quantity: item.quantity, unit: item.unit ?? "")
-            current.append(next)
-        }
-        PantryStore.save(current)
-        items = current
-        if let spokenQuery = result.query, !spokenQuery.isEmpty {
-            query = spokenQuery
-        }
-        mediaNotice = result.ingredients.isEmpty
-            ? "Heard: \"\(result.transcript)\""
-            : "Added \(result.ingredients.count) ingredient\(result.ingredients.count == 1 ? "" : "s") from voice."
     }
 
     private func recommend() async {

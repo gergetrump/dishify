@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ApiError, apiClient } from "../api/client";
 import type { RecommendRequest, RecommendResponse } from "../api/types";
 import { Button } from "../components/Button";
+import { BrandedEmptyState } from "../components/BrandedEmptyState";
 import { RecipeCard } from "../components/RecipeCard";
 import { prefetchAugmentAll } from "../recommendations/augmentCache";
 import {
@@ -58,7 +59,9 @@ export function ResultsPage() {
       <section className="page-section">
         <p className="eyebrow">Recipe suggestions</p>
         <h1>No results yet</h1>
-        <p className="muted">Add pantry ingredients and describe what sounds good first.</p>
+        <BrandedEmptyState>
+          <p className="muted">Add pantry ingredients and describe what sounds good first.</p>
+        </BrandedEmptyState>
         <Link className="button button-primary inline-action" to="/app">
           Start cooking
         </Link>
@@ -87,7 +90,9 @@ export function ResultsPage() {
         {response.results.length ? (
           response.results.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} />)
         ) : (
-          <p className="empty-state">Dishify did not return any recipes for this search.</p>
+          <BrandedEmptyState>
+            <p className="empty-state">Dishify did not return any recipes for this search.</p>
+          </BrandedEmptyState>
         )}
       </div>
 

@@ -86,6 +86,75 @@ button:disabled {
   width: 34px;
 }
 
+.dishify-logo {
+  display: block;
+  flex-shrink: 0;
+}
+
+.dishify-logo-icon {
+  height: 36px;
+  width: 36px;
+}
+
+.dishify-logo-compact {
+  height: 120px;
+  width: 120px;
+}
+
+.dishify-logo-hero {
+  height: clamp(160px, 28vw, 240px);
+  width: clamp(160px, 28vw, 240px);
+}
+
+.dishify-brand-mark {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.dishify-wordmark {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.page-brand-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.hero-panel-logo {
+  margin-bottom: 8px;
+}
+
+.branded-empty-state {
+  align-items: center;
+  background: #faf7f2;
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.branded-empty-state .dishify-logo {
+  opacity: 0.9;
+}
+
+.branded-empty-state .empty-state,
+.branded-empty-state .muted {
+  background: transparent;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
 .nav-links {
   align-items: center;
   display: flex;
@@ -171,7 +240,7 @@ button:disabled {
   text-decoration: none;
 }
 
-.mascot-card {
+.welcome-logo-card {
   align-items: center;
   aspect-ratio: 1;
   background: #dcefd9;
@@ -179,31 +248,8 @@ button:disabled {
   border-radius: 8px;
   box-shadow: var(--shadow-soft);
   display: flex;
-  gap: 14px;
   justify-content: center;
-}
-
-.food-shape {
-  display: block;
-  height: clamp(54px, 8vw, 92px);
-  width: clamp(54px, 8vw, 92px);
-}
-
-.food-shape-orange {
-  background: #ff9735;
-  border-radius: 54% 46% 58% 42%;
-  transform: rotate(-18deg);
-}
-
-.food-shape-red {
-  background: #ef6348;
-  border-radius: 52% 48% 45% 55%;
-}
-
-.food-shape-green {
-  background: #5fa95a;
-  border-radius: 70% 30% 72% 28%;
-  transform: rotate(18deg);
+  padding: 24px;
 }
 
 .hero-panel {

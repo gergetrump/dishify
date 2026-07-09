@@ -40,8 +40,8 @@ flowchart TD
 | Screen | Behavior |
 |--------|----------|
 | **Welcome** | Centered landing with bowl illustration, Log in / Sign up |
-| **Pantry** | Ingredient CRUD (local persistence), profile icon, → Vibe |
-| **Vibe** | Natural-language query, top-K, voice + camera input, → Results |
+| **Pantry** | Ingredient CRUD (local persistence), voice + camera input, profile icon, → Vibe |
+| **Vibe** | Natural-language query, top-K, → Results |
 | **Results** | Ranked recipe cards, retry, pipeline details, start over |
 | **Recipe detail** | Ingredients with MISSING badges, numbered directions (LLM augment) |
 | **Profile** | Account info, link to preferences, sign out |
