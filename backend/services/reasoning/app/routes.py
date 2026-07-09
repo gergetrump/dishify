@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from app.config import settings
-from app.llm_reasoning import augment_directions_payload, generate_reasoning_payload
+from app.llm_reasoning import UnsafeReasoningError, augment_directions_payload, generate_reasoning_payload
 from dishify_contracts import (
     AugmentRequest,
     AugmentResponse,
@@ -52,6 +52,14 @@ def explain(body: ExplainRequest) -> ExplainResponse:
             base_url=settings.openrouter_base_url,
             timeout=settings.llm_timeout_seconds,
         )
+    except UnsafeReasoningError as exc:
+        logger.warning("LLM reasoning rejected by output guardrail: %s", exc)
+        latency_ms = int((time.perf_counter() - explain_start) * 1000)
+        return ExplainResponse(
+            results=[],
+            latency_ms=latency_ms,
+            guardrail_triggered=True,
+        )
     except Exception as exc:
         logger.exception("LLM reasoning failed")
         raise HTTPException(
@@ -80,7 +88,11 @@ def explain(body: ExplainRequest) -> ExplainResponse:
         )
 
     latency_ms = int((time.perf_counter() - explain_start) * 1000)
-    return ExplainResponse(results=results, latency_ms=latency_ms)
+    return ExplainResponse(
+        results=results,
+        latency_ms=latency_ms,
+        guardrail_triggered=False,
+    )
 
 
 @router.post("/internal/augment", response_model=AugmentResponse)

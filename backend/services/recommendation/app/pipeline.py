@@ -145,7 +145,11 @@ def run_recommend_pipeline(request: RecommendRequest) -> RecommendResponse:
                         for item in explain_payload.get("results", [])
                     ]
                     reasoning_results = _build_reasoning_index(items)
-                    explain_status = "ok"
+                    explain_status = (
+                        "guarded"
+                        if explain_payload.get("guardrail_triggered")
+                        else "ok"
+                    )
                 else:
                     explain_status = "error"
         except Exception:
