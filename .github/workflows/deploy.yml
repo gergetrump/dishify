@@ -135,8 +135,6 @@ jobs:
           OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
           POSTGRES_USER=dishify
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          QDRANT_URL=${{ secrets.QDRANT_URL }}
-          QDRANT_API_KEY=${{ secrets.QDRANT_API_KEY }}
           KEYCLOAK_ADMIN=admin
           KEYCLOAK_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
           KEYCLOAK_BACKEND_SECRET=${{ secrets.KEYCLOAK_BACKEND_SECRET }}
