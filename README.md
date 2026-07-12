@@ -23,56 +23,6 @@ The repository contains the backend microservices, React web client, native iOS 
 
 ![Dishify system architecture](docs/diagram/dishify_arch.png)
 
-```mermaid
-flowchart LR
-  subgraph Clients
-    Web[React Web Client]
-    IOS[SwiftUI iOS Client]
-  end
-
-  subgraph Edge
-    Caddy[Caddy Reverse Proxy]
-    Gateway[Gateway API<br/>FastAPI]
-  end
-
-  subgraph CoreServices[Backend Services]
-    Recommendation[Recommendation Service<br/>orchestration]
-    Retrieval[Retrieval Service<br/>embedding search]
-    Reasoning[Reasoning Service<br/>LLM explanations + step augmentation]
-    Ingest[Ingest Service<br/>voice + image]
-    User[User Service<br/>profile + preferences]
-  end
-
-  subgraph DataStores[Data Stores and External Systems]
-    Qdrant[(Qdrant<br/>recipe vectors)]
-    Postgres[(Postgres<br/>Keycloak/user data)]
-    Keycloak[Keycloak<br/>identity provider]
-    Gemini[Gemini API<br/>audio + vision]
-    OpenRouter[OpenRouter API<br/>optional reasoning]
-  end
-
-  Web --> Caddy
-  IOS --> Gateway
-  Caddy --> WebStatic[Static Web Build]
-  Caddy --> Gateway
-
-  Gateway --> Recommendation
-  Gateway --> Ingest
-  Gateway --> Reasoning
-  Gateway --> User
-  Gateway --> Keycloak
-
-  Recommendation --> Retrieval
-  Recommendation --> Reasoning
-
-  Retrieval --> Qdrant
-  Retrieval --> Rules[Restriction Rules JSON]
-  Reasoning --> OpenRouter
-  Ingest --> Gemini
-  User --> Keycloak
-  Keycloak --> Postgres
-```
-
 ### Request Flow
 
 1. The web or iOS client authenticates through the gateway.
