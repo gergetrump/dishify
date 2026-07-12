@@ -165,6 +165,46 @@ describe("ApiClient", () => {
     }
   });
 
+  it("posts voice and vision media requests to gateway endpoints with auth", async () => {
+    const fetch = mockFetch([
+      {
+        status: 200,
+        body: {
+          transcript: "eggs and rice",
+          ingredients: [],
+          query: null,
+        },
+      },
+      {
+        status: 200,
+        body: {
+          ingredients: [],
+        },
+      },
+    ]);
+    vi.stubGlobal("fetch", fetch);
+
+    const client = new ApiClient({
+      baseUrl: "http://localhost:8000",
+      getToken: () => "media-token",
+    });
+
+    await client.voice({ audio_base64: "abc", mime_type: "audio/webm" });
+    await client.detectIngredients({ image_base64: "def", mime_type: "image/jpeg" });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    const voiceCall = fetch.mock.calls[0] as unknown[];
+    const visionCall = fetch.mock.calls[1] as unknown[];
+    expect(voiceCall[0]).toBe("http://localhost:8000/voice");
+    expect(visionCall[0]).toBe("http://localhost:8000/vision/ingredients");
+    expect(((voiceCall[1] as RequestInit).headers as Headers).get("Authorization")).toBe(
+      "Bearer media-token",
+    );
+    expect(((visionCall[1] as RequestInit).headers as Headers).get("Authorization")).toBe(
+      "Bearer media-token",
+    );
+  });
+
   it("throws network error when fetch fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("Failed to fetch"); }));
 
