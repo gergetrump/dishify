@@ -30,3 +30,5 @@ openssh.pub
 *.sst
 data/
 personal-docs/
+uat/*
+uat
