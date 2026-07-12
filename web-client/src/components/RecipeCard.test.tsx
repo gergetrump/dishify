@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { MemoryRouter } from "react-router-dom";
+import { MantineProvider } from "@mantine/core";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
+import { MemoryRouter } from "react-router-dom";
+import { describe, expect, it } from "vitest";
 
-import { RecipeCard } from "./RecipeCard";
 import type { RecipeResult } from "../api/types";
+import { RecipeCard } from "./RecipeCard";
 
 const recipe: RecipeResult = {
   rank: 1,
@@ -27,9 +28,11 @@ describe("RecipeCard", () => {
 
     act(() => {
       root.render(
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <RecipeCard recipe={recipe} />
-        </MemoryRouter>,
+        <MantineProvider>
+          <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <RecipeCard recipe={recipe} />
+          </MemoryRouter>
+        </MantineProvider>,
       );
     });
 

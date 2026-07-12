@@ -1,3 +1,4 @@
+import { Badge, Button, Card, Group, List, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { Link } from "react-router-dom";
 
 import type { RecipeResult } from "../api/types";
@@ -11,67 +12,90 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   const missing = recipe.inventory_missing ?? [];
   const positive = recipe.reasoning?.positive ?? [];
   const negative = recipe.reasoning?.negative ?? [];
+  const score = Math.round(recipe.score * 100);
 
   return (
-    <article className="recipe-card">
-      <div className="recipe-card-header">
-        <div>
-          <p className="eyebrow">Rank {recipe.rank}</p>
-          <h3>{recipe.title ?? "Untitled recipe"}</h3>
-          <div className="recipe-meta">
-            {recipe.time_minutes ? <span>{recipe.time_minutes} min</span> : null}
-            <span>Score {Math.round(recipe.score * 100)}</span>
-          </div>
-        </div>
-        <strong className="score">{Math.round(recipe.score * 100)}</strong>
-      </div>
+    <Card withBorder radius="lg" p="lg" shadow="xs">
+      <Stack gap="md">
+        <Group justify="space-between" align="flex-start">
+          <Stack gap={4}>
+            <Text size="sm" c="dimmed" fw={700}>
+              Rank {recipe.rank}
+            </Text>
+            <Title order={3}>{recipe.title ?? "Untitled recipe"}</Title>
 
-      {recipe.summary ? <p className="muted">{recipe.summary}</p> : null}
+            <Group gap="xs">
+              {recipe.time_minutes ? (
+                <Badge variant="light" color="orange">
+                  {recipe.time_minutes} min
+                </Badge>
+              ) : null}
+              <Badge variant="light" color="green">
+                Score {score}
+              </Badge>
+            </Group>
+          </Stack>
 
-      <div className="reasoning-preview">
-        {positive.length ? (
-          <div>
-            <h4>Why it fits</h4>
-            <ul>
-              {positive.slice(0, 2).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+          <Badge size="xl" radius="xl" color="orange">
+            {score}
+          </Badge>
+        </Group>
+
+        {recipe.summary ? (
+          <Text c="dimmed" size="sm">
+            {recipe.summary}
+          </Text>
         ) : null}
 
-        {negative.length ? (
-          <div>
-            <h4>Watch for</h4>
-            <ul>
-              {negative.slice(0, 2).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+        {(positive.length || negative.length) ? (
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            {positive.length ? (
+              <Stack gap="xs">
+                <Text fw={700}>Why it fits</Text>
+                <List size="sm" spacing={4}>
+                  {positive.slice(0, 2).map((item) => (
+                    <List.Item key={item}>{item}</List.Item>
+                  ))}
+                </List>
+              </Stack>
+            ) : null}
+
+            {negative.length ? (
+              <Stack gap="xs">
+                <Text fw={700}>Watch for</Text>
+                <List size="sm" spacing={4}>
+                  {negative.slice(0, 2).map((item) => (
+                    <List.Item key={item}>{item}</List.Item>
+                  ))}
+                </List>
+              </Stack>
+            ) : null}
+          </SimpleGrid>
         ) : null}
-      </div>
 
-      <div className="tag-list">
-        {matched.slice(0, 4).map((item) => (
-          <span className="tag tag-good" key={`matched-${item}`}>
-            Have {item}
-          </span>
-        ))}
-        {missing.slice(0, 4).map((item) => (
-          <span className="tag tag-warn" key={`missing-${item}`}>
-            Need {item}
-          </span>
-        ))}
-      </div>
+        <Group gap="xs">
+          {matched.slice(0, 4).map((item) => (
+            <Badge color="green" variant="light" key={`matched-${item}`}>
+              Have {item}
+            </Badge>
+          ))}
+          {missing.slice(0, 4).map((item) => (
+            <Badge color="yellow" variant="light" key={`missing-${item}`}>
+              Need {item}
+            </Badge>
+          ))}
+        </Group>
 
-      <div className="ingredient-summary">
-        <span>{matched.length} matched</span>
-        <span>{missing.length} missing</span>
-        <Link to={`/recipes/${recipe.id}`} state={{ recipe }}>
-          View recipe
-        </Link>
-      </div>
-    </article>
+        <Group justify="space-between" align="center">
+          <Text size="sm" c="dimmed">
+            {matched.length} matched · {missing.length} missing
+          </Text>
+
+          <Button component={Link} to={`/recipes/${recipe.id}`} state={{ recipe }} variant="light">
+            View recipe
+          </Button>
+        </Group>
+      </Stack>
+    </Card>
   );
 }

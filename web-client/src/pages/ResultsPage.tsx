@@ -1,9 +1,9 @@
+import { Alert, Button, Container, Group, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { ApiError, apiClient } from "../api/client";
 import type { RecommendRequest, RecommendResponse } from "../api/types";
-import { Button } from "../components/Button";
 import { RecipeCard } from "../components/RecipeCard";
 import {
   loadRecommendationSession,
@@ -47,54 +47,81 @@ export function ResultsPage() {
 
   if (!response) {
     return (
-      <section className="page-section">
-        <p className="eyebrow">Recipe suggestions</p>
-        <h1>No results yet</h1>
-        <p className="muted">Add pantry ingredients and describe what sounds good first.</p>
-        <Link className="button button-primary inline-action" to="/app">
-          Start cooking
-        </Link>
-      </section>
+      <Container size="md" py="xl">
+        <Paper withBorder radius="lg" p="xl" shadow="xs">
+          <Stack gap="md">
+            <Text size="sm" c="dimmed" fw={700}>
+              Recipe suggestions
+            </Text>
+            <Title order={1}>No results yet</Title>
+            <Text c="dimmed">Add pantry ingredients and describe what sounds good first.</Text>
+            <Button component={Link} to="/app" w="fit-content">
+              Start cooking
+            </Button>
+          </Stack>
+        </Paper>
+      </Container>
     );
   }
 
   return (
-    <section className="page-section">
-      <div className="results-header">
-        <div>
-          <p className="eyebrow">Recipe suggestions</p>
-          <h1>Best matches</h1>
-          {request ? <p className="muted">For: {request.query}</p> : null}
-        </div>
-        {request ? (
-          <Button type="button" variant="secondary" onClick={retryRecommendation} disabled={isRetrying}>
-            {isRetrying ? "Retrying..." : "Retry"}
-          </Button>
+    <Container size="lg" py="xl">
+      <Stack gap="xl">
+        <Group justify="space-between" align="flex-start">
+          <Stack gap={4}>
+            <Text size="sm" c="dimmed" fw={700}>
+              Recipe suggestions
+            </Text>
+            <Title order={1}>Best matches</Title>
+            {request ? <Text c="dimmed">For: {request.query}</Text> : null}
+          </Stack>
+
+          {request ? (
+            <Button type="button" variant="light" onClick={retryRecommendation} loading={isRetrying}>
+              Retry
+            </Button>
+          ) : null}
+        </Group>
+
+        {error ? (
+          <Alert color="red" title="Error" radius="md">
+            {error}
+          </Alert>
         ) : null}
-      </div>
 
-      {error ? <p className="alert alert-error">{error}</p> : null}
-
-      <div className="result-list">
         {response.results.length ? (
-          response.results.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} />)
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+            {response.results.map((recipe) => (
+              <RecipeCard key={recipe.id} recipe={recipe} />
+            ))}
+          </SimpleGrid>
         ) : (
-          <p className="empty-state">Dishify did not return any recipes for this search.</p>
+          <Paper withBorder radius="lg" p="xl">
+            <Text c="dimmed">Dishify did not return any recipes for this search.</Text>
+          </Paper>
         )}
-      </div>
 
-      <details className="stage-details">
-        <summary>Pipeline details</summary>
-        <div className="stage-grid">
-          {response.stages.map((stage) => (
-            <div className="stage-item" key={stage.name}>
-              <span>{stage.name}</span>
-              <strong data-status={stage.status}>{stage.status}</strong>
-              <small>{stage.latency_ms} ms</small>
-            </div>
-          ))}
-        </div>
-      </details>
-    </section>
+        <Paper withBorder radius="lg" p="md">
+          <details>
+            <summary>Pipeline details</summary>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm" mt="md">
+              {response.stages.map((stage) => (
+                <Paper withBorder radius="md" p="sm" key={stage.name}>
+                  <Stack gap={2}>
+                    <Text fw={700}>{stage.name}</Text>
+                    <Text size="sm" c={stage.status === "ok" ? "green" : "red"}>
+                      {stage.status}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {stage.latency_ms} ms
+                    </Text>
+                  </Stack>
+                </Paper>
+              ))}
+            </SimpleGrid>
+          </details>
+        </Paper>
+      </Stack>
+    </Container>
   );
 }
