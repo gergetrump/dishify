@@ -1,4 +1,3 @@
-import { Anchor, Box, Button, Card, Container, Group, Stack, Text, Title } from "@mantine/core";
 import { Link, Navigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthProvider";
@@ -11,59 +10,49 @@ export function WelcomePage() {
   }
 
   return (
-    <Container size="lg" py={{ base: "xl", md: 96 }}>
-      <Group justify="space-between" align="center" gap="xl">
-        <Stack gap="lg" maw={560}>
-          <Text size="sm" c="dimmed" fw={700}>
-            Dishify
-          </Text>
+    <section className="welcome-page">
+      <div className="welcome-copy">
+        <p className="eyebrow">Dishify</p>
 
-          <Title order={1} fz={{ base: 42, md: 64 }} lh={1}>
-            Your next meal is already in your kitchen.
-          </Title>
+        <h1>Your next meal is already in your kitchen.</h1>
 
-          <Text size="lg" c="dimmed">
-            Add what you have, set the foods you avoid, and get recipe ideas that fit your pantry.
-          </Text>
+        <p className="muted welcome-intro">
+          Add what you have, set the foods you avoid, and get recipe ideas that fit your pantry.
+        </p>
 
-          <Group gap="sm">
-            <Button component={Link} to="/register" size="md">
-              Sign up
-            </Button>
+        <div className="welcome-actions">
+          <Link className="button button-primary" to="/register">
+            Sign up
+          </Link>
+          <Link className="button button-secondary" to="/login">
+            Log in
+          </Link>
+        </div>
 
-            <Button component={Link} to="/login" size="md" variant="light">
-              Log in
-            </Button>
-          </Group>
-        </Stack>
+        <div className="welcome-highlights">
+          <span>Use leftovers</span>
+          <span>Quick dinner ideas</span>
+          <span>Personalized suggestions</span>
+        </div>
+      </div>
 
-        <Card
-          withBorder
-          radius="xl"
-          p="xl"
-          shadow="sm"
-          w={{ base: "100%", md: 360 }}
-          mih={300}
-          aria-hidden="true"
-        >
-          <Stack h="100%" justify="center" align="center" gap="lg">
-            <Box fz={80}>🥗</Box>
-            <Title order={2} ta="center">
-              Pantry-first cooking
-            </Title>
-            <Text ta="center" c="dimmed">
-              Turn ingredients into practical recipe ideas in seconds.
-            </Text>
-          </Stack>
-        </Card>
-      </Group>
+      <div className="mascot-card">
+        <div className="mascot-visual" aria-hidden="true">
+          <span className="food-shape food-shape-orange" />
+          <span className="food-shape food-shape-red" />
+          <span className="food-shape food-shape-green" />
+        </div>
 
-      <Text mt="xl" size="sm" c="dimmed">
-        Already have an account?{" "}
-        <Anchor component={Link} to="/login">
-          Log in here
-        </Anchor>
-      </Text>
-    </Container>
+        <div className="mascot-copy">
+          <p className="eyebrow mascot-eyebrow">How it works</p>
+          <h3>Simple pantry-first cooking</h3>
+          <ul className="mascot-steps">
+            <li>Add your ingredients</li>
+            <li>Describe what sounds good</li>
+            <li>Get recipe matches fast</li>
+          </ul>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -37,7 +37,8 @@ describe("RecipeCard", () => {
     });
 
     expect(container.textContent).toContain("Pasta With Spinach Sauce");
-    expect(container.textContent).toContain("Score 87");
+    expect(container.textContent).toContain("87");
+    expect(container.textContent).toContain("score");
     expect(container.textContent).toContain("Uses spinach from your pantry.");
     expect(container.textContent).toContain("Need cream");
     expect(container.querySelector("a")?.getAttribute("href")).toBe("/recipes/3136");

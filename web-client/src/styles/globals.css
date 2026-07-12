@@ -144,10 +144,18 @@ button:disabled {
 
 .welcome-page {
   align-items: center;
+  background:
+    radial-gradient(circle at 18% 18%, rgb(244 90 45 / 10%), transparent 32%),
+    radial-gradient(circle at 85% 28%, rgb(47 107 71 / 10%), transparent 30%),
+    linear-gradient(135deg, #fffdfa 0%, #fff7f1 48%, #f8f4ee 100%);
+  border-radius: 18px;
   display: grid;
-  gap: 24px;
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.8fr);
-  min-height: 64vh;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.75fr);
+  margin: 0 auto;
+  max-width: 980px;
+  min-height: 58vh;
+  padding: 22px;
 }
 
 .welcome-copy {
@@ -155,13 +163,13 @@ button:disabled {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: var(--shadow-soft);
-  padding: 36px;
+  padding: 32px;
 }
 
 .welcome-copy h1 {
-  font-size: clamp(2.5rem, 6vw, 5.5rem);
+  font-size: clamp(2.25rem, 5vw, 4.45rem);
   letter-spacing: 0;
-  line-height: 0.92;
+  line-height: 0.95;
   margin: 0 0 18px;
 }
 
@@ -181,20 +189,83 @@ button:disabled {
 
 .mascot-card {
   align-items: center;
-  aspect-ratio: 1;
-  background: #dcefd9;
-  border: 1px solid #c7dfc7;
-  border-radius: 8px;
-  box-shadow: var(--shadow-soft);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   display: flex;
-  gap: 14px;
+  flex-direction: column;
+  gap: 18px;
   justify-content: center;
+  min-height: 380px;
+  padding: 22px;
+}
+
+.welcome-intro {
+  max-width: 36rem;
+}
+
+.welcome-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.welcome-highlights span {
+  background: #fff1ea;
+  border: 1px solid #ffd4c4;
+  border-radius: 999px;
+  color: var(--color-primary-dark);
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 9px 12px;
+}
+
+.mascot-visual {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mascot-copy {
+  align-self: stretch;
+  background: rgb(255 253 249 / 84%);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgb(62 43 31 / 8%);
+  padding: 20px;
+}
+
+.mascot-copy h3 {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.mascot-eyebrow {
+  margin-bottom: 8px;
+}
+
+.mascot-steps {
+  color: var(--color-text);
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.mascot-steps li {
+  color: var(--color-muted);
+  font-size: 0.98rem;
+  line-height: 1.4;
 }
 
 .food-shape {
   display: block;
-  height: clamp(54px, 8vw, 92px);
-  width: clamp(54px, 8vw, 92px);
+  height: clamp(68px, 8vw, 104px);
+  width: clamp(68px, 8vw, 104px);
 }
 
 .food-shape-orange {
