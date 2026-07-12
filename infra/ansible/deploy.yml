@@ -59,6 +59,14 @@
         dest: "{{ app_dir }}/.env.secret"
         mode: "0600"
 
+    - name: Write .env
+      copy:
+        content: |
+          DOMAIN={{ domain | default('http://' + server_ip) }}
+          VITE_API_URL={{ domain | default('http://' + server_ip) }}
+        dest: "{{ app_dir }}/.env"
+        mode: "0644"
+
     - name: Build and start services
       shell: docker compose up -d --build --remove-orphans
       args:
