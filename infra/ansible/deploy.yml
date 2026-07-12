@@ -82,10 +82,22 @@
       delay: 10
       until: health.status == 200
 
-    - name: Run indexing worker (first deploy only)
+    - name: Check existing recipe index size
+      uri:
+        url: http://localhost:6333/collections/recipes_full
+        method: GET
+        status_code: [200, 404]
+      register: qdrant_collection
+      failed_when: false
+
+    - name: Run indexing worker (skipped if already indexed)
       shell: docker compose run --rm indexing-worker --recreate
       args:
         chdir: "{{ app_dir }}"
       register: indexing
       failed_when: false
       changed_when: indexing.rc == 0
+      when: >
+        force_reindex | default(false) | bool
+        or qdrant_collection.status != 200
+        or (qdrant_collection.json.result.points_count | default(0)) == 0
