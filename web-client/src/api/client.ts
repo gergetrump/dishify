@@ -13,7 +13,7 @@ import type {
   UserProfile,
 } from "./types";
 
-const DEFAULT_API_URL = "http://localhost:8000";
+const DEFAULT_API_URL = "";
 
 export type ApiErrorCode =
   | "auth"
