@@ -142,8 +142,8 @@ export function AppPage() {
               <Stack gap="md">
                 <Group justify="space-between" align="flex-end">
                   <Box>
-                    <Text size="sm" c="dimmed" fw={500}>1. Pantry</Text>
-                    <Title order={2}>Add ingredients</Title>
+                    <Text size="sm" c="dimmed" fw={500}>1. Pantry check 🥕</Text>
+                    <Title order={2}>What’s in your kitchen?</Title>
                   </Box>
                   {items.length > 0 && (
                     <Button variant="subtle" color="red" size="xs" onClick={() => setItems([])}>
@@ -190,7 +190,7 @@ export function AppPage() {
             </Box>
 
             <Box>
-              <Title order={4} mb="sm">Current Stock</Title>
+              <Title order={4} mb="sm">Your pantry shelf</Title>
 
               <ScrollArea h={items.length > 0 ? 300 : "auto"} type="auto">
                 <Stack gap="xs" pr="sm">
@@ -237,7 +237,7 @@ export function AppPage() {
                     })
                   ) : (
                     <Text c="dimmed" size="sm" ta="center" py="xs">
-                      No pantry ingredients yet.
+                      Your pantry is empty for now. Add a few ingredients to get started.
                     </Text>
                   )}
                 </Stack>
@@ -253,8 +253,8 @@ export function AppPage() {
           <Box component="form" onSubmit={handleRecommendSubmit}>
             <Stack gap="md">
               <Box>
-                <Text size="sm" c="dimmed" fw={500}>2. Vibe check</Text>
-                <Title order={2}>What sounds good?</Title>
+                <Text size="sm" c="dimmed" fw={500}>2. Vibe check ✨</Text>
+                <Title order={2}>What are you craving?</Title>
               </Box>
 
               {error && (
@@ -293,7 +293,7 @@ export function AppPage() {
                     loading={isSubmitting} 
                     style={{ flex: 1 }}
                   >
-                    Show recipes
+                    Find my recipes
                   </Button>
                 </Group>
                 </Stack>

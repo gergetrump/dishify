@@ -50,7 +50,10 @@ export function LoginPage() {
         <Box component="form" onSubmit={handleSubmit}>
           <Stack gap="xl">
             <Stack gap="xs" ta="center">
-              <Title order={2}>Log in</Title>
+              <Title order={2}>Welcome back 👋</Title>
+              <Text size="sm" c="dimmed">
+                Log in and get back to your Dishify kitchen.
+              </Text>
             </Stack>
 
             {error && (

@@ -64,7 +64,10 @@ export function RegisterPage() {
           <Stack gap="xl">
             
             <Stack gap="xs" ta="center">
-              <Title order={2}>Create your account</Title>
+              <Title order={2}>Create your Dishify kitchen 🍳</Title>
+              <Text size="sm" c="dimmed">
+                Save your preferences and start getting better recipe matches.
+              </Text>
             </Stack>
 
             {error && (
