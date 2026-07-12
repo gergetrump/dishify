@@ -78,6 +78,18 @@ struct APIClient {
         try await request("/recommend", method: .post, body: body)
     }
 
+    func augmentRecipe(_ body: AugmentRequest) async throws -> AugmentResponse {
+        try await request("/recipes/augment", method: .post, body: body)
+    }
+
+    func voice(_ body: VoiceRequest) async throws -> VoiceResponse {
+        try await request("/voice", method: .post, body: body)
+    }
+
+    func detectIngredients(_ body: VisionIngredientsRequest) async throws -> VisionIngredientsResponse {
+        try await request("/vision/ingredients", method: .post, body: body)
+    }
+
     private func request<T: Decodable>(
         _ path: String,
         method: HTTPMethod = .get,

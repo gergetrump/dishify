@@ -3,19 +3,19 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { 
-  Center, 
-  Paper, 
-  Box, 
-  Stack, 
-  Text, 
-  Title, 
-  TextInput, 
-  PasswordInput, 
-  Group, 
-  Button, 
-  Alert, 
-  Anchor 
+import {
+  Alert,
+  Anchor,
+  Box,
+  Button,
+  Center,
+  Group,
+  Paper,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+  Title,
 } from "@mantine/core";
 
 export function LoginPage() {
@@ -50,7 +50,7 @@ export function LoginPage() {
         <Box component="form" onSubmit={handleSubmit}>
           <Stack gap="xl">
             <Stack gap="xs" ta="center">
-              <Title order={2}>Welcome back 👋</Title>
+              <Title order={2}>Welcome back</Title>
               <Text size="sm" c="dimmed">
                 Log in and get back to your Dishify kitchen.
               </Text>
@@ -61,43 +61,40 @@ export function LoginPage() {
                 {error}
               </Alert>
             )}
-            
+
             <Stack gap="md">
-              <TextInput 
-                label="Username" 
-                placeholder="Your username" 
+              <TextInput
+                label="Username"
+                placeholder="Your username"
                 autoComplete="username"
-                value={username} 
-                onChange={(event) => setUsername(event.currentTarget.value)} 
+                value={username}
+                onChange={(event) => setUsername(event.currentTarget.value)}
                 required
-              /> 
-              <PasswordInput 
-                label="Password" 
-                placeholder="Your password" 
+              />
+              <PasswordInput
+                label="Password"
+                placeholder="Your password"
                 autoComplete="current-password"
-                value={password} 
-                onChange={(event) => setPassword(event.currentTarget.value)} 
+                value={password}
+                onChange={(event) => setPassword(event.currentTarget.value)}
                 required
               />
             </Stack>
 
             <Stack gap="sm">
-              <Button 
-                type="submit" 
-                loading={isSubmitting} 
-                fullWidth
-              >
+              <Button type="submit" loading={isSubmitting} fullWidth>
                 Log in
               </Button>
-              
+
               <Group justify="center" gap={4}>
-                <Text size="sm" c="dimmed">New here?</Text>
+                <Text size="sm" c="dimmed">
+                  New here?
+                </Text>
                 <Anchor component={Link} to="/register" size="sm" fw={500}>
                   Create an account
                 </Anchor>
               </Group>
             </Stack>
-
           </Stack>
         </Box>
       </Paper>

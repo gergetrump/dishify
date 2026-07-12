@@ -1,0 +1,12 @@
+// Copy to Debug.local.xcconfig (gitignored) for physical device testing.
+// Uses your Mac's Bonjour hostname so the URL survives DHCP / hotspot IP changes.
+//
+// Find your hostname: scutil --get LocalHostName
+// Example for "Georges-MacBook-Pro" → Georges-MacBook-Pro.local
+//
+// Phone and Mac must share a network (same Wi‑Fi or iPhone hotspot + Mac joined).
+// Test in Safari on the phone: http://YOUR-MAC-IP:8000/health
+// On first launch, allow Local Network access when iOS prompts you.
+
+DISHIFY_API_BASE_URL = http:/$()/192.168.178.62:8000
+DISHIFY_KEYCLOAK_BASE_URL = http:/$()/192.168.178.62:9001

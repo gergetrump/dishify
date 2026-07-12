@@ -3,18 +3,18 @@ import { useEffect, useState } from "react";
 import { ApiError, apiClient } from "../api/client";
 import { formatRestrictionLabel, restrictionSections } from "../data/restrictions";
 import {
+  Alert,
+  Box,
+  Button,
   Center,
+  Chip,
+  Divider,
+  Group,
+  Loader,
+  Paper,
   Stack,
   Text,
   Title,
-  Button,
-  Group,
-  Alert,
-  Chip,
-  Box,
-  Loader,
-  Divider,
-  Paper,
 } from "@mantine/core";
 
 export function PreferencesPage() {
@@ -82,11 +82,16 @@ export function PreferencesPage() {
     <Center mt={60} mb={60}>
       <Paper>
         <Stack gap="xl">
-          
           <Box>
-            <Text size="sm" c="dimmed" fw={500}>Hard filters</Text>
-            <Title order={2} mb="xs">Food preferences</Title>
-            <Text c="dimmed" size="sm">Choose allergies, diets, and restrictions Dishify should always avoid.</Text>
+            <Text size="sm" c="dimmed" fw={500}>
+              Hard filters
+            </Text>
+            <Title order={2} mb="xs">
+              Food preferences
+            </Title>
+            <Text c="dimmed" size="sm">
+              Choose allergies, diets, and restrictions Dishify should always avoid.
+            </Text>
           </Box>
 
           {error && (
@@ -94,7 +99,7 @@ export function PreferencesPage() {
               {error}
             </Alert>
           )}
-          
+
           {status && (
             <Alert variant="light" color="green" title="Success">
               {status}
@@ -102,17 +107,14 @@ export function PreferencesPage() {
           )}
 
           <Group justify="space-between" align="center" py="sm">
-            <Text size="sm" c="dimmed" fw={500}>{selected.length} selected</Text>
+            <Text size="sm" c="dimmed" fw={500}>
+              {selected.length} selected
+            </Text>
             <Group gap="sm">
               <Button type="button" variant="subtle" color="red" onClick={() => setSelected([])}>
                 Clear all
               </Button>
-              <Button 
-                type="button" 
-                onClick={savePreferences} 
-                loading={isSaving}
-                disabled={isLoading}
-              >
+              <Button type="button" onClick={savePreferences} loading={isSaving} disabled={isLoading}>
                 Save preferences
               </Button>
             </Group>
@@ -123,7 +125,9 @@ export function PreferencesPage() {
           {isLoading ? (
             <Group justify="center" py="xl">
               <Loader size="md" />
-              <Text size="sm" c="dimmed">Loading preferences...</Text>
+              <Text size="sm" c="dimmed">
+                Loading preferences...
+              </Text>
             </Group>
           ) : (
             <Stack gap="xl">
@@ -131,9 +135,11 @@ export function PreferencesPage() {
                 <Box key={section.id}>
                   <Box mb="md">
                     <Title order={3}>{section.title}</Title>
-                    <Text c="dimmed" size="xs">{section.description}</Text>
+                    <Text c="dimmed" size="xs">
+                      {section.description}
+                    </Text>
                   </Box>
-                  
+
                   <Group gap="xs">
                     {section.tags.map((tag) => (
                       <Chip
@@ -150,7 +156,6 @@ export function PreferencesPage() {
               ))}
             </Stack>
           )}
-
         </Stack>
       </Paper>
     </Center>

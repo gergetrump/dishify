@@ -3,18 +3,7 @@ import { Link } from "react-router-dom";
 
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { 
-  Center, 
-  Paper, 
-  Stack, 
-  Text, 
-  Title, 
-  Alert, 
-  Table, 
-  Group, 
-  Button, 
-  Loader 
-} from "@mantine/core";
+import { Alert, Button, Center, Group, Loader, Paper, Stack, Table, Text, Title } from "@mantine/core";
 
 export function ProfilePage() {
   const { loadUser, logout, user } = useAuth();
@@ -52,7 +41,6 @@ export function ProfilePage() {
     <Center mt={60} mb={60}>
       <Paper w={480}>
         <Stack gap="xl">
-          
           <Stack gap="xs" ta="center">
             <Title order={2}>Profile</Title>
           </Stack>
@@ -67,7 +55,9 @@ export function ProfilePage() {
             <Center mih={150}>
               <Stack gap="xs" align="center">
                 <Loader size="md" />
-                <Text size="sm" c="dimmed">Loading your profile...</Text>
+                <Text size="sm" c="dimmed">
+                  Loading your profile...
+                </Text>
               </Stack>
             </Center>
           ) : (
@@ -75,28 +65,54 @@ export function ProfilePage() {
               <Table variant="vertical" layout="fixed" withRowBorders>
                 <Table.Tbody>
                   <Table.Tr>
-                    <Table.Th w="40%"><Text size="sm" fw={500} c="dimmed">Username</Text></Table.Th>
-                    <Table.Td><Text size="sm" fw={600}>{user?.username ?? "Not loaded"}</Text></Table.Td>
+                    <Table.Th w="40%">
+                      <Text size="sm" fw={500} c="dimmed">
+                        Username
+                      </Text>
+                    </Table.Th>
+                    <Table.Td>
+                      <Text size="sm" fw={600}>
+                        {user?.username ?? "Not loaded"}
+                      </Text>
+                    </Table.Td>
                   </Table.Tr>
                   <Table.Tr>
-                    <Table.Th><Text size="sm" fw={500} c="dimmed">Email</Text></Table.Th>
-                    <Table.Td><Text size="sm" fw={600}>{user?.email ?? "Not loaded"}</Text></Table.Td>
+                    <Table.Th>
+                      <Text size="sm" fw={500} c="dimmed">
+                        Email
+                      </Text>
+                    </Table.Th>
+                    <Table.Td>
+                      <Text size="sm" fw={600}>
+                        {user?.email ?? "Not loaded"}
+                      </Text>
+                    </Table.Td>
                   </Table.Tr>
                   <Table.Tr>
-                    <Table.Th><Text size="sm" fw={500} c="dimmed">Email verified</Text></Table.Th>
-                    <Table.Td><Text size="sm" fw={600}>{formatBoolean(user?.email_verified)}</Text></Table.Td>
+                    <Table.Th>
+                      <Text size="sm" fw={500} c="dimmed">
+                        Email verified
+                      </Text>
+                    </Table.Th>
+                    <Table.Td>
+                      <Text size="sm" fw={600}>
+                        {formatBoolean(user?.email_verified)}
+                      </Text>
+                    </Table.Td>
                   </Table.Tr>
                 </Table.Tbody>
               </Table>
 
               <Group grow gap="sm">
+                <Button component={Link} to="/preferences" type="button" variant="light">
+                  Food preferences
+                </Button>
                 <Button type="button" variant="light" color="red" onClick={logout}>
                   Log out
                 </Button>
               </Group>
             </>
           )}
-
         </Stack>
       </Paper>
     </Center>

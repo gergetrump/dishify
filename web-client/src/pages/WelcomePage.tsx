@@ -1,6 +1,7 @@
 import { Link, Navigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthProvider";
+import { DishifyLogo } from "../components/DishifyLogo";
 
 export function WelcomePage() {
   const { isAuthenticated } = useAuth();
@@ -36,22 +37,8 @@ export function WelcomePage() {
         </div>
       </div>
 
-      <div className="mascot-card">
-        <div className="mascot-visual" aria-hidden="true">
-          <span className="food-shape food-shape-orange" />
-          <span className="food-shape food-shape-red" />
-          <span className="food-shape food-shape-green" />
-        </div>
-
-        <div className="mascot-copy">
-          <p className="eyebrow mascot-eyebrow">How it works</p>
-          <h3>Simple pantry-first cooking</h3>
-          <ul className="mascot-steps">
-            <li>Add your ingredients</li>
-            <li>Describe what sounds good</li>
-            <li>Get recipe matches fast</li>
-          </ul>
-        </div>
+      <div className="welcome-logo-card" aria-hidden="true">
+        <DishifyLogo size="hero" />
       </div>
     </section>
   );

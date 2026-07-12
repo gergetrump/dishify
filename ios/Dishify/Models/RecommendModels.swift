@@ -83,3 +83,125 @@ struct RecommendationSession: Codable, Equatable {
     let request: RecommendRequest
     let response: RecommendResponse
 }
+
+struct AugmentRequest: Codable, Equatable {
+    let title: String?
+    let ingredients: [String]
+    let directions: [String]
+    let query: String?
+    let servings: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case ingredients
+        case directions
+        case query
+        case servings
+    }
+
+    init(
+        title: String? = nil,
+        ingredients: [String] = [],
+        directions: [String] = [],
+        query: String? = nil,
+        servings: Int? = nil
+    ) {
+        self.title = title
+        self.ingredients = ingredients
+        self.directions = directions
+        self.query = query
+        self.servings = servings
+    }
+}
+
+struct AugmentedStep: Codable, Equatable, Identifiable {
+    var id: String { text }
+    let text: String
+    let tip: String?
+    let durationMinutes: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case text
+        case tip
+        case durationMinutes = "duration_minutes"
+    }
+}
+
+struct AugmentResponse: Codable, Equatable {
+    let steps: [AugmentedStep]
+    let tips: [String]
+    let estimatedTimeMinutes: Int?
+    let latencyMs: Int
+
+    enum CodingKeys: String, CodingKey {
+        case steps
+        case tips
+        case estimatedTimeMinutes = "estimated_time_minutes"
+        case latencyMs = "latency_ms"
+    }
+}
+
+struct VoiceRequest: Codable {
+    let audioBase64: String
+    let mimeType: String?
+    let language: String?
+
+    enum CodingKeys: String, CodingKey {
+        case audioBase64 = "audio_base64"
+        case mimeType = "mime_type"
+        case language
+    }
+}
+
+struct VoiceResponse: Codable {
+    let transcript: String
+    let ingredients: [ParsedIngredient]
+    let query: String?
+    let latencyMs: Int
+
+    enum CodingKeys: String, CodingKey {
+        case transcript
+        case ingredients
+        case query
+        case latencyMs = "latency_ms"
+    }
+}
+
+struct VisionIngredientsRequest: Codable {
+    let imageBase64: String
+    let mimeType: String?
+
+    enum CodingKeys: String, CodingKey {
+        case imageBase64 = "image_base64"
+        case mimeType = "mime_type"
+    }
+}
+
+struct DetectedIngredient: Codable, Equatable, Identifiable {
+    var id: String { name + (rawText) }
+    let name: String
+    let quantity: Double?
+    let unit: String?
+    let rawText: String
+    let box: [Double]?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case quantity
+        case unit
+        case rawText = "raw_text"
+        case box
+    }
+}
+
+struct VisionIngredientsResponse: Codable {
+    let ingredients: [DetectedIngredient]
+    let rawText: String?
+    let latencyMs: Int
+
+    enum CodingKeys: String, CodingKey {
+        case ingredients
+        case rawText = "raw_text"
+        case latencyMs = "latency_ms"
+    }
+}

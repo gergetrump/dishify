@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Badge,
   Button,
@@ -13,8 +14,10 @@ import {
 } from "@mantine/core";
 import { Link, useLocation, useParams } from "react-router-dom";
 
-import type { RecipeResult } from "../api/types";
+import type { AugmentResponse, RecipeResult } from "../api/types";
+import { getAugment, prefetchAugment } from "../recommendations/augmentCache";
 import { findRecipeById } from "../recommendations/session";
+import { formatIngredientName } from "../utils/ingredientFormatting";
 
 type DetailLocationState = {
   recipe?: RecipeResult;
@@ -53,7 +56,51 @@ export function RecipeDetailPage() {
   const positive = recipe.reasoning?.positive ?? [];
   const negative = recipe.reasoning?.negative ?? [];
   const directions = recipe.directions ?? [];
+
+  return (
+    <RecipeDetailBody
+      recipe={recipe}
+      matched={matched}
+      missing={missing}
+      positive={positive}
+      negative={negative}
+      directions={directions}
+    />
+  );
+}
+
+function RecipeDetailBody({
+  recipe,
+  matched,
+  missing,
+  positive,
+  negative,
+  directions,
+}: {
+  recipe: RecipeResult;
+  matched: string[];
+  missing: string[];
+  positive: string[];
+  negative: string[];
+  directions: string[];
+}) {
+  const [augmented, setAugmented] = useState<AugmentResponse | null>(null);
   const score = Math.round(recipe.score * 100);
+
+  useEffect(() => {
+    let cancelled = false;
+    const pending = getAugment(recipe.id) ?? prefetchAugment(recipe);
+    pending
+      .then((result) => {
+        if (!cancelled) setAugmented(result);
+      })
+      .catch(() => {
+        // Original directions remain visible if enhancement fails.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [recipe.id, recipe]);
 
   return (
     <Container size="lg" py="xl">
@@ -111,7 +158,32 @@ export function RecipeDetailPage() {
         <Card withBorder radius="lg" p="lg" shadow="xs">
           <Stack gap="md">
             <Title order={2}>Directions</Title>
-            {directions.length ? (
+            {augmented ? (
+              <Stack gap="md">
+                {augmented.estimated_time_minutes ? (
+                  <Text c="dimmed">Estimated total: {augmented.estimated_time_minutes} min</Text>
+                ) : null}
+                <List type="ordered" spacing="sm">
+                  {augmented.steps.map((step, index) => (
+                    <List.Item key={`${index}-${step.text}`}>
+                      <Text component="span">{step.text}</Text>
+                      {step.duration_minutes ? (
+                        <Text component="span" c="dimmed">
+                          {" "}
+                          - ~{step.duration_minutes} min
+                        </Text>
+                      ) : null}
+                      {step.tip ? (
+                        <Text size="sm" c="dimmed" mt={4}>
+                          Tip: {step.tip}
+                        </Text>
+                      ) : null}
+                    </List.Item>
+                  ))}
+                </List>
+                {augmented.tips.length ? <ReasoningList title="Tips" items={augmented.tips} empty="" /> : null}
+              </Stack>
+            ) : directions.length ? (
               <List type="ordered" spacing="sm">
                 {directions.map((step, index) => (
                   <List.Item key={`${index}-${step}`}>{step}</List.Item>
@@ -135,7 +207,7 @@ function IngredientList({ title, items, empty }: { title: string; items: string[
         <Group gap="xs">
           {items.map((item) => (
             <Badge color={title === "You have" ? "green" : "yellow"} variant="light" key={item}>
-              {item}
+              {formatIngredientName(item)}
             </Badge>
           ))}
         </Group>
@@ -158,11 +230,11 @@ function ReasoningList({ title, items, empty }: { title: string; items: string[]
             <List.Item key={item}>{item}</List.Item>
           ))}
         </List>
-      ) : (
+      ) : empty ? (
         <Text c="dimmed" size="sm">
           {empty}
         </Text>
-      )}
+      ) : null}
     </Stack>
   );
 }

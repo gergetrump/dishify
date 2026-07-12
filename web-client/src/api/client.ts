@@ -1,5 +1,7 @@
 import type {
   ApiErrorPayload,
+  AugmentRequest,
+  AugmentResponse,
   AuthConfigResponse,
   HealthResponse,
   LoginRequest,
@@ -8,9 +10,14 @@ import type {
   RegisterRequest,
   RegisterResponse,
   TokenResponse,
+  TranscribeRequest,
+  TranscribeResponse,
   UpdatePreferencesRequest,
   UserPreferences,
   UserProfile,
+  VisionIngredientsRequest,
+  VisionIngredientsResponse,
+  VoiceResponse,
 } from "./types";
 
 const DEFAULT_API_URL = "";
@@ -109,6 +116,34 @@ export class ApiClient {
 
   recommend(body: RecommendRequest) {
     return this.request<RecommendResponse>("/recommend", {
+      method: "POST",
+      body,
+    });
+  }
+
+  transcribe(body: TranscribeRequest) {
+    return this.request<TranscribeResponse>("/transcribe", {
+      method: "POST",
+      body,
+    });
+  }
+
+  voice(body: TranscribeRequest) {
+    return this.request<VoiceResponse>("/voice", {
+      method: "POST",
+      body,
+    });
+  }
+
+  detectIngredients(body: VisionIngredientsRequest) {
+    return this.request<VisionIngredientsResponse>("/vision/ingredients", {
+      method: "POST",
+      body,
+    });
+  }
+
+  augmentRecipe(body: AugmentRequest) {
+    return this.request<AugmentResponse>("/recipes/augment", {
       method: "POST",
       body,
     });

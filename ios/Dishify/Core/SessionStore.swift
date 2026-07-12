@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 @MainActor
 final class AppRouter: ObservableObject {
@@ -7,6 +8,7 @@ final class AppRouter: ObservableObject {
         case login
         case register
         case cook
+        case vibe
         case preferences
         case results
         case recipe(Int)
@@ -14,9 +16,33 @@ final class AppRouter: ObservableObject {
     }
 
     @Published var page: Page = AccessTokenStore.load() == nil ? .welcome : .cook
+    @Published var path = NavigationPath()
 
     func go(_ page: Page) {
         self.page = page
+    }
+
+    func push(_ page: Page) {
+        path.append(page)
+    }
+
+    func pop() {
+        guard !path.isEmpty else { return }
+        path.removeLast()
+    }
+
+    func popToRoot() {
+        path = NavigationPath()
+    }
+
+    func resetToWelcome() {
+        path = NavigationPath()
+        page = .welcome
+    }
+
+    func resetToCook() {
+        path = NavigationPath()
+        page = .cook
     }
 }
 

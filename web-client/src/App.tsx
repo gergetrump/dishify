@@ -2,6 +2,7 @@ import { Link, Route, Routes } from "react-router-dom";
 
 import { RequireAuth } from "./auth/RequireAuth";
 import { useAuth } from "./auth/AuthProvider";
+import { DishifyLogo } from "./components/DishifyLogo";
 import { AppPage } from "./pages/AppPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PreferencesPage } from "./pages/PreferencesPage";

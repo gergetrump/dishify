@@ -1,4 +1,5 @@
 import type { ParsedIngredient } from "../api/types";
+import { formatIngredientName } from "../utils/ingredientFormatting";
 
 const PANTRY_KEY = "dishify.pantry";
 
@@ -36,7 +37,7 @@ export function createPantryItem(input: {
   quantity?: number | null;
   unit?: string | null;
 }): PantryItem {
-  const name = input.name.trim();
+  const name = formatIngredientName(input.name);
   return {
     id: crypto.randomUUID(),
     name,

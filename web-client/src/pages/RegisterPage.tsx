@@ -4,21 +4,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
 import { formatRestrictionLabel, restrictionSections } from "../data/restrictions";
-import { 
-  Center, 
-  Paper, 
-  Box, 
-  Stack, 
-  Text, 
-  Title, 
-  TextInput, 
-  PasswordInput, 
-  Group, 
-  Button, 
-  Alert, 
-  Anchor, 
-  Chip, 
-  Divider
+import {
+  Alert,
+  Anchor,
+  Box,
+  Button,
+  Center,
+  Chip,
+  Divider,
+  Group,
+  Paper,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+  Title,
 } from "@mantine/core";
 
 export function RegisterPage() {
@@ -62,9 +62,8 @@ export function RegisterPage() {
       <Paper w={480}>
         <Box component="form" onSubmit={handleSubmit}>
           <Stack gap="xl">
-            
             <Stack gap="xs" ta="center">
-              <Title order={2}>Create your Dishify kitchen 🍳</Title>
+              <Title order={2}>Create your Dishify kitchen</Title>
               <Text size="sm" c="dimmed">
                 Save your preferences and start getting better recipe matches.
               </Text>
@@ -109,9 +108,13 @@ export function RegisterPage() {
             <Divider />
 
             <Box>
-              <Title order={4} mb={2}>Initial preferences</Title>
-              <Text size="xs" c="dimmed" mb="sm">Optional. You can change these later.</Text>
-              
+              <Title order={4} mb={2}>
+                Initial preferences
+              </Title>
+              <Text size="xs" c="dimmed" mb="sm">
+                Optional. You can change these later.
+              </Text>
+
               <Group gap="xs">
                 {restrictionSections.slice(0, 2).flatMap((section) =>
                   section.tags.slice(0, 8).map((tag) => (
@@ -128,22 +131,19 @@ export function RegisterPage() {
             </Box>
 
             <Stack gap="sm">
-              <Button 
-                type="submit" 
-                loading={isSubmitting} 
-                fullWidth
-              >
+              <Button type="submit" loading={isSubmitting} fullWidth>
                 Sign up
               </Button>
 
               <Group justify="center" gap={4}>
-                <Text size="sm" c="dimmed">Already have an account?</Text>
+                <Text size="sm" c="dimmed">
+                  Already have an account?
+                </Text>
                 <Anchor component={Link} to="/login" size="sm" fw={500}>
                   Log in
                 </Anchor>
               </Group>
             </Stack>
-
           </Stack>
         </Box>
       </Paper>

@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MantineProvider } from "@mantine/core";
 import { RecipeDetailPage } from "./RecipeDetailPage";
+import { apiClient } from "../api/client";
+import { clearAugmentCache } from "../recommendations/augmentCache";
 import type { RecipeResult } from "../api/types";
 
 const recipe: RecipeResult = {
@@ -20,12 +22,27 @@ const recipe: RecipeResult = {
   inventory_missing: ["cream"],
 };
 
+beforeEach(() => {
+  clearAugmentCache();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("RecipeDetailPage", () => {
-  it("renders selected recipe details from route state", () => {
+  it("renders recipe details and auto-enhanced directions", async () => {
+    vi.spyOn(apiClient, "augmentRecipe").mockResolvedValue({
+      steps: [{ text: "Boil the pasta until al dente.", tip: null, duration_minutes: 10 }],
+      tips: [],
+      estimated_time_minutes: 20,
+      latency_ms: 1,
+    });
+
     const container = document.createElement("div");
     const root = createRoot(container);
 
-    act(() => {
+    await act(async () => {
       root.render(
         <MantineProvider>
           <MemoryRouter
@@ -39,12 +56,17 @@ describe("RecipeDetailPage", () => {
         </MantineProvider>
       );
     });
+    // flush the auto-enhance effect's resolved promise
+    await act(async () => {});
 
+    expect(apiClient.augmentRecipe).toHaveBeenCalled();
     expect(container.textContent).toContain("Pasta With Spinach Sauce");
     expect(container.textContent).toContain("Score 87");
     expect(container.textContent).toContain("Uses spinach from your pantry.");
-    expect(container.textContent).toContain("Cook pasta.");
     expect(container.textContent).toContain("cream");
+    // enhanced steps shown, original directions are not
+    expect(container.textContent).toContain("Boil the pasta until al dente.");
+    expect(container.textContent).not.toContain("Cook pasta.");
 
     act(() => {
       root.unmount();

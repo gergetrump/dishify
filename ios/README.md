@@ -1,144 +1,94 @@
 # Dishify iOS
 
-Native SwiftUI client for the Dishify API. See [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) for the step-by-step build history.
+Native SwiftUI client for the Dishify gateway API. The UI follows the mobile Figma mockups with native stack navigation (back buttons, profile icon), while behavior matches the web client.
 
 ## Requirements
 
 - macOS with **Xcode 15+** (Swift 5.9+)
 - iOS **16.0+** simulator or device
-- Backend running locally or a reachable staging deployment — see root [`README.md`](../README.md)
+- Backend running locally or on a reachable host — see [`../backend/README.md`](../backend/README.md)
 
 ## Open and run
 
 1. Open `Dishify.xcodeproj` in Xcode.
 2. Select the **Dishify** scheme.
-3. Choose **Debug** (simulator + local backend) or **Staging** (device + remote backend).
-4. **Signing:** select your Apple Developer team under *Signing & Capabilities*.
-5. Press **Run** (⌘R).
+3. Use build configuration **Debug** for simulator + local backend (`http://localhost:8000`).
+4. **Signing:** choose your Apple Developer team under *Signing & Capabilities* (only needed for physical devices / TestFlight).
+5. **Run destination:** select an **iOS Simulator** (e.g. iPhone 17 Pro) in the Xcode toolbar — not "Any iOS Device" or "My Mac", which require a development team.
+6. Press **Run** (⌘R).
 
-The app supports PKCE sign-in, dietary preferences, pantry-aware recipe search, and result detail views.
+If the build fails with missing types like `VibePage`, run **Product → Clean Build Folder** (⇧⌘K) so Xcode picks up newly added source files.
 
-## Build configurations
+## Navigation flow
 
-| Configuration | Use case | API defaults |
-|---|---|---|
-| **Debug** | Simulator, local dev | `http://localhost:8000` |
-| **Release** | TestFlight / App Store archive | `http://localhost:8000` (override before shipping) |
-| **Staging** | Physical device against remote backend | Placeholder hosts in `Config/Staging.xcconfig` |
-
-Settings live in `Config/*.xcconfig` and flow into `Info.plist` via build settings. `Core/Config.swift` reads them at runtime.
-
-| Build setting | Purpose |
-|---|---|
-| `DISHIFY_API_BASE_URL` | Gateway (`/health`, `/recommend`, `/auth/*`, `/me/*`) |
-| `DISHIFY_KEYCLOAK_BASE_URL` | Keycloak fallback (live OIDC URLs come from `GET /auth/config`) |
-| `DISHIFY_REALM` | Keycloak realm (`dishify`) |
-| `DISHIFY_IOS_CLIENT_ID` | PKCE client (`dishify-ios`) |
-| `DISHIFY_REDIRECT_URI` | OAuth redirect (`dishify://callback`) |
-
-### Staging setup
-
-1. Copy `Config/Staging.example.xcconfig` → `Config/Staging.local.xcconfig` (gitignored).
-2. Set your real staging hosts in `Staging.local.xcconfig`.
-3. In Xcode: select the **Staging** build configuration for the **Dishify** target → *Info* → set **Based on Configuration File** to `Staging.local.xcconfig` (or edit `Staging.xcconfig` directly).
-4. Confirm Keycloak has redirect URI `dishify://callback` for client `dishify-ios`.
-
-**Auth config check:** `GET /auth/config` must return **publicly reachable** `authorization_endpoint` and `token_endpoint` URLs. If the backend returns internal Docker hostnames (e.g. `keycloak:9001`), PKCE sign-in will fail on device — that is a backend configuration issue.
-
-```bash
-curl -s https://YOUR-STAGING-API/auth/config | python3 -m json.tool
+```mermaid
+flowchart TD
+    Welcome --> Login
+    Welcome --> Register
+    Login --> Pantry
+    Register --> Pantry
+    Pantry -->|"Set your vibe"| Vibe
+    Vibe -->|"Show recipes"| Results
+    Results --> Detail
+    Pantry --> Profile
+    Results --> Profile
+    Detail --> Profile
+    Profile --> Preferences
+    Results -->|"Start over"| Pantry
 ```
 
-## Physical device + local backend
+| Screen | Behavior |
+|--------|----------|
+| **Welcome** | Centered landing with bowl illustration, Log in / Sign up |
+| **Pantry** | Ingredient CRUD (local persistence), voice + camera input, profile icon, → Vibe |
+| **Vibe** | Natural-language query, top-K, → Results |
+| **Results** | Ranked recipe cards, retry, pipeline details, start over |
+| **Recipe detail** | Ingredients with MISSING badges, numbered directions (LLM augment) |
+| **Profile** | Account info, link to preferences, sign out |
+| **Preferences** | 5 restriction sections, chip multi-select, save |
 
-Simulators can use `localhost`; a physical iPhone cannot. Point the app at your Mac's LAN IP:
+Navigation uses `NavigationStack` with `AppRouter` in [`SessionStore.swift`](Dishify/Core/SessionStore.swift). Authenticated flows are gated behind login (matching web `RequireAuth`).
 
-```
-DISHIFY_API_BASE_URL = http:/$()/192.168.1.42:8000
-DISHIFY_KEYCLOAK_BASE_URL = http:/$()/192.168.1.42:9001
-```
+## What the app does
 
-Ensure the device is on the same Wi‑Fi network and macOS firewall allows incoming connections.
-
-## OAuth URL scheme
-
-Registered in `Info.plist`:
-
-- **Scheme:** `dishify`
-- **Redirect:** `dishify://callback`
-
-Keycloak must list this redirect URI on the `dishify-ios` public client.
+| Area | Behavior |
+|------|----------|
+| **Auth** | Register / log in via gateway `POST /auth/register` and `POST /auth/login`. Tokens in UserDefaults; refresh via `POST /auth/refresh`. |
+| **Pantry** | Ingredients saved locally (`dishify.pantry`). |
+| **Voice** | `POST /voice` — extracts ingredients + vibe from speech. |
+| **Camera** | `POST /vision/ingredients` — scan ingredients from photo. |
+| **Recommend** | `POST /recommend` with pantry + vibe query. |
+| **Preferences** | `GET/PUT /me/preferences`. |
 
 ## Project layout
 
 ```
 ios/
-├── Config/                  # xcconfig build settings (Debug / Release / Staging)
+├── Config/                     # xcconfig (Debug, Release, Staging)
 ├── Dishify.xcodeproj/
 ├── Dishify/
-│   ├── Core/                # Config, networking, auth, theme
-│   ├── Features/            # Auth, Preferences, Recommend, Root
+│   ├── Core/                   # APIClient, SessionStore, Theme, VoiceInputService
+│   ├── Features/
+│   │   ├── Auth/               # WelcomePage, LoginPage, RegisterPage
+│   │   ├── Preferences/        # PreferencesPage
+│   │   ├── Recommend/          # PantryPage, VibePage, ResultsPage, RecipeDetailPage
+│   │   └── Root/               # RootView, ProfileView
 │   ├── Models/
 │   └── Assets.xcassets/
-├── DishifyTests/
-└── scripts/validate_release.sh
+└── DishifyTests/
 ```
 
 ## Command line
 
-**Run unit tests:**
-
 ```bash
 cd ios
 xcodebuild -scheme Dishify \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -destination 'generic/platform=iOS Simulator' \
   -configuration Debug \
-  -derivedDataPath build/DerivedData test
+  -derivedDataPath build/DerivedData \
+  CODE_SIGNING_ALLOWED=NO build test
 ```
-
-**Release validation (tests + archive + staging build):**
-
-```bash
-cd ios
-chmod +x scripts/validate_release.sh
-./scripts/validate_release.sh
-```
-
-Optional auth-config smoke check against a live backend:
-
-```bash
-DISHIFY_API_BASE_URL=https://api.staging.example.com ./scripts/validate_release.sh
-```
-
-**Archive for TestFlight** (requires signing team):
-
-```bash
-xcodebuild -scheme Dishify \
-  -configuration Release \
-  -destination 'generic/platform=iOS' \
-  -archivePath build/Dishify.xcarchive \
-  archive
-```
-
-Then upload via Xcode Organizer or `xcodebuild -exportArchive`.
-
-## Device validation checklist
-
-Run on a physical iPhone against staging (or LAN IP for local backend):
-
-- [ ] Register or sign in (PKCE or username/password)
-- [ ] Set dietary restrictions in **Preferences** → Save → relaunch → verify persisted
-- [ ] Search in **Recommend** with pantry items → results appear
-- [ ] Tap a result → detail shows reasoning, inventory, directions
-- [ ] Background the app for several minutes → relaunch → still signed in (token refresh)
-- [ ] Force expired refresh token → app returns to sign-in cleanly
 
 ## API contract
 
-All networking matches [`docs/API.md`](../docs/API.md). Keycloak client: `dishify-ios` (PKCE, redirect `dishify://callback`).
-
-## TestFlight notes
-
-- `ITSAppUsesNonExemptEncryption` is set to `false` (standard HTTPS only).
-- Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` before each upload.
-- Staging URLs must use HTTPS for production TestFlight builds (ATS).
+Networking matches [`../docs/API.md`](../docs/API.md).

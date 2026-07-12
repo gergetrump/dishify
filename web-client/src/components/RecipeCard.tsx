@@ -16,6 +16,7 @@ import {
 import { Link } from "react-router-dom";
 
 import type { RecipeResult } from "../api/types";
+import { formatIngredientName } from "../utils/ingredientFormatting";
 
 type RecipeCardProps = {
   recipe: RecipeResult;
@@ -94,7 +95,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
           </Text>
         ) : null}
 
-        {(positive.length || negative.length) ? (
+        {positive.length || negative.length ? (
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             {positive.length ? (
               <Card radius="lg" p="md" bg="orange.0">
@@ -129,12 +130,12 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
         <Group gap="xs">
           {matched.slice(0, 4).map((item) => (
             <Badge color="green" variant="light" key={`matched-${item}`}>
-              Have {item}
+              Have {formatIngredientName(item)}
             </Badge>
           ))}
           {missing.slice(0, 4).map((item) => (
             <Badge color="yellow" variant="light" key={`missing-${item}`}>
-              Need {item}
+              Need {formatIngredientName(item)}
             </Badge>
           ))}
         </Group>
