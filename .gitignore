@@ -32,3 +32,5 @@ data/
 personal-docs/
 uat/*
 uat
+.cursor/*
+.cursor
