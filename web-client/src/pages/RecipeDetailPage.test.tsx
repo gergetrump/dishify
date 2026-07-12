@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-
+import { MantineProvider } from "@mantine/core";
 import { RecipeDetailPage } from "./RecipeDetailPage";
 import type { RecipeResult } from "../api/types";
 
@@ -27,14 +27,16 @@ describe("RecipeDetailPage", () => {
 
     act(() => {
       root.render(
-        <MemoryRouter
-          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-          initialEntries={[{ pathname: "/recipes/3136", state: { recipe } }]}
-        >
-          <Routes>
-            <Route path="/recipes/:id" element={<RecipeDetailPage />} />
-          </Routes>
-        </MemoryRouter>,
+        <MantineProvider>
+          <MemoryRouter
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+            initialEntries={[{ pathname: "/recipes/3136", state: { recipe } }]}
+          >
+           <Routes>
+              <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+            </Routes>
+          </MemoryRouter>,
+        </MantineProvider>
       );
     });
 
