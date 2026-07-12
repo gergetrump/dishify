@@ -20,7 +20,7 @@ import type {
   VoiceResponse,
 } from "./types";
 
-const DEFAULT_API_URL = "";
+const DEFAULT_API_URL = "http://localhost:8000";
 
 export type ApiErrorCode =
   | "auth"

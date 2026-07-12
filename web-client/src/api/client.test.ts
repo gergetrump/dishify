@@ -18,6 +18,20 @@ function mockFetch(responses: Array<{ status: number; body?: unknown; headers?: 
 describe("ApiClient", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("defaults to the local gateway when VITE_API_URL is not configured", async () => {
+    const fetch = mockFetch([{ status: 200, body: { status: "ok", service: "test" } }]);
+    vi.stubGlobal("fetch", fetch);
+    vi.stubEnv("VITE_API_URL", "");
+
+    const client = new ApiClient();
+    await client.health();
+
+    expect(fetch).toHaveBeenCalledOnce();
+    const call = fetch.mock.calls[0] as unknown[];
+    expect(call[0]).toBe("http://localhost:8000/health");
   });
 
   it("attaches bearer token on authenticated requests", async () => {

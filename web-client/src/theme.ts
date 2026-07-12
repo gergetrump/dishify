@@ -94,7 +94,6 @@ export const theme = createTheme({
           fontFamily: "Inter, system-ui, sans-serif",
           fontSize: "14px",
           fontWeight: 600,
-          lineHeight: "34px",
         },
       },
     },
