@@ -341,4 +341,4 @@ Retrieval warms the embedding model after startup. The first request can be slow
 
 ## License
 
-No license file is currently included. Add one before publishing or distributing outside the project team.
+Dishify is licensed under the [MIT License](LICENSE).
