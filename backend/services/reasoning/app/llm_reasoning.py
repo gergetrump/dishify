@@ -161,7 +161,7 @@ def _recipe_grounding_terms(
     recipe: RetrievedRecipe,
     restrictions: list[str],
 ) -> set[str]:
-    values: list[object] = [recipe.title or "", *restrictions]
+    values: list[object] = [recipe.title or ""]
     values.extend(recipe.ingredients or [])
     values.extend(recipe.raw_ingredients or [])
     values.extend(recipe.ner or [])

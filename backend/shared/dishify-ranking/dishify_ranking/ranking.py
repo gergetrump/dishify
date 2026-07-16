@@ -24,9 +24,7 @@ def _ingredient_names_match(recipe_name: str, available_name: str) -> bool:
     if not recipe_tokens or not available_tokens:
         return False
 
-    return recipe_tokens.issubset(available_tokens) or available_tokens.issubset(
-        recipe_tokens
-    )
+    return recipe_tokens.issubset(available_tokens)
 
 
 def _find_available_match(
