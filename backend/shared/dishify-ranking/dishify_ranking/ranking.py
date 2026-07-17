@@ -1,14 +1,33 @@
 from __future__ import annotations
 
+import re
 from typing import Iterable
 
 from dishify_contracts import RetrievedRecipe
 
 
+_WORD_RE = re.compile(r"[a-z0-9]+")
+
+
+def _singularize_token(value: str) -> str:
+    if len(value) <= 3:
+        return value
+    if value.endswith("ies") and len(value) > 4:
+        return f"{value[:-3]}y"
+    if value.endswith("oes") and len(value) > 4:
+        return value[:-2]
+    if value.endswith(("ches", "shes", "xes", "ses")) and len(value) > 5:
+        return value[:-2]
+    if value.endswith("s") and not value.endswith("ss"):
+        return value[:-1]
+    return value
+
+
 def _normalize_name(value: str | None) -> str:
     if not value:
         return ""
-    return " ".join(value.strip().lower().split())
+    tokens = [_singularize_token(token) for token in _WORD_RE.findall(value.lower())]
+    return " ".join(tokens)
 
 
 def _name_tokens(value: str) -> set[str]:
@@ -24,7 +43,9 @@ def _ingredient_names_match(recipe_name: str, available_name: str) -> bool:
     if not recipe_tokens or not available_tokens:
         return False
 
-    return recipe_tokens.issubset(available_tokens)
+    return recipe_tokens.issubset(available_tokens) or available_tokens.issubset(
+        recipe_tokens
+    )
 
 
 def _find_available_match(
