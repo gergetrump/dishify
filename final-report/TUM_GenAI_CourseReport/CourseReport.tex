@@ -1,0 +1,85 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TUM project-report template
+% Course: Foundations and Application of Generative AI
+%
+% HOW TO USE
+%   1. Fill in the metadata block below (report title, group, team members, date).
+%   2. Delete the "LaTeX cheat sheet" chapter (it only shows optional syntax).
+%   3. Write your report -- you choose the structure (chapters/sections).
+%      References are optional: cite with \cite{...} (entries go in references.bib);
+%      if you cite nothing, no bibliography appears.
+%
+% Build (or just press "Recompile" in Overleaf):
+%   latexmk -pdf CourseReport.tex      % build -> CourseReport.pdf
+%   latexmk -c                         % remove temporary files
+%
+% Layout/design based on the official TUM "Wissenschaftliche Arbeit" template
+% (TUM / ediundsepp / eWorks), adapted into a single-file English project report.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{./Ressourcen/Praeambel.tex} % !!! DO NOT REMOVE !!!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%=============================================================================
+%  >>> EDIT YOUR REPORT METADATA HERE <<<
+%=============================================================================
+\newcommand{\ReportTitle}{Dishify}
+\newcommand{\ReportSubtitle}{AI-assisted recipe recommendation from your pantry}
+\newcommand{\Course}{Foundations and Application of Generative AI}
+\newcommand{\Term}{Summer Semester 2026}
+\newcommand{\Lecturer}{Prof.\ Dr.\ Chunyang Chen}
+\newcommand{\Chair}{Chair of Software Engineering \& AI}
+\newcommand{\School}{TUM School of Computation, Information and Technology}
+\newcommand{\GroupName}{Group 1}              % GitLab LRZ: GenAI-SoSe2026-Group01
+% Team members: one row per person  ->  Name & Matriculation No. \\
+% Add or remove rows as needed; keep the trailing \\ on each row.
+\newcommand{\TeamMembers}{%
+    Maria Chatzipavlou Arvaniti & 03807978 \\
+    Aymen Faouel                & 03746185 \\
+    Can Lin                     & 03815336 \\
+    Georg Tichy                 & 03725138 \\
+    George Trump                & 03752881 \\
+    Chengjie Zhou               & 03756877 \\
+}
+\newcommand{\SubmissionDate}{27 July 2026}     % or \today
+
+% The page footer shows the report title (left), group (centre) and page number
+% (right). It is built from \ReportTitle and \GroupName above; no need to edit here.
+%=============================================================================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{./Ressourcen/Anfang.tex} % !!! DO NOT REMOVE !!!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+% ---- Title page --------------------------------------------------------------
+\input{./Ressourcen/Titelseite.tex}
+
+% ---- Table of contents -------------------------------------------------------
+\tableofcontents
+
+% The report contains several screenshots and diagrams:
+\listoffigures
+
+\clearpage
+
+%=============================================================================
+%  >>> REPORT BODY <<<
+%  One chapter per graded part (Moodle: "all four parts combined as one PDF").
+%  Each content file carries its own page-budget reminder at the top.
+%=============================================================================
+\input{./content/01-user-guide.tex}
+\input{./content/02-project-management.tex}
+\input{./content/03-user-acceptance-testing.tex}
+\input{./content/04-safety-reflection.tex}
+\input{./content/05-novelty-value.tex}
+\input{./content/99-genai-usage.tex}
+
+%=============================================================================
+%  BIBLIOGRAPHY
+%=============================================================================
+\printbibliography[heading=bibintoc, title=References]
+
+\end{document}

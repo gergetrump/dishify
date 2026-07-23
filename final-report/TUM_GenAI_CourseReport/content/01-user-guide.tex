@@ -1,0 +1,53 @@
+%=============================================================================
+%  PART 1 --- USER GUIDE
+%  PAGE BUDGET: 5 pages (excluding title, ToC)          Rubric weight: 10 pts
+%
+%  Goal: after reading this, an end user knows what Dishify does and how to use
+%  every feature WITHOUT running it. Keep it visually appealing, short, and to
+%  the point -- think of it as a pitch embodied in a document.
+%  If there is a landing page: add screenshots + the link.
+%  If the app has multiple roles, give each feature its own section per role.
+%=============================================================================
+\chapter{User Guide}
+\label{ch:user-guide}
+
+\section{What is Dishify?}
+\noindent\includegraphics[width=32mm]{./Ressourcen/dishify-logo.png}\par\vspace{6pt}
+% TODO: 2-4 sentence pitch. What problem it solves (recipes from the ingredients
+% you already have) and who it is for. Reuse framing from the root README.md.
+
+\section{Getting Started}
+% TODO: How a user accesses the app (web client URL / iOS app), sign-up / login
+% via Keycloak, and the very first action (enter pantry items).
+% TODO: Add landing page link here if one exists: \url{...}
+
+\section{Features}
+
+\subsection{Pantry-based Recipe Recommendation}
+% TODO: Enter available ingredients -> get ranked recipe suggestions.
+% Screenshot placeholder below.
+\begin{figure}[!ht]
+    \centering
+    \fbox{\rule{0pt}{45mm}\rule{110mm}{0pt}}%
+    % \includegraphics[width=0.8\textwidth]{./Ressourcen/screenshots/recommend.png}
+    \caption{Recommendation flow: entering pantry items and viewing ranked recipes.}
+    \label{fig:ug-recommend}
+\end{figure}
+
+\subsection{Dietary, Allergy, and Restriction Filtering}
+% TODO: How users set restrictions and how results are filtered.
+
+\subsection{Voice Input}
+% TODO: Speaking pantry items / cooking intent (ingest service, Gemini).
+
+\subsection{Image-based Ingredient Detection}
+% TODO: Capturing / uploading a photo to detect ingredients (camera capture).
+
+\subsection{Accounts, Profile, and Saved Preferences}
+% TODO: Authenticated accounts, editing profile, saving preferences.
+
+\subsection{Recipe Detail and Step Augmentation}
+% TODO: Viewing a recipe, LLM-augmented directions and tips.
+
+\section{Tips and Troubleshooting}
+% TODO: A few short, high-value tips. Keep within the 5-page budget.

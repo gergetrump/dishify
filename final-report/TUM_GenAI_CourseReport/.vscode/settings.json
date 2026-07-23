@@ -1,0 +1,14 @@
+{
+  "terminal.integrated.env.osx": {
+    "PATH": "/Library/TeX/texbin:${env:PATH}"
+  },
+  "latex-workshop.latex.rootFile.useSubFile": false,
+  "latex-workshop.latex.rootFile.doNotPrompt": true,
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.recipe.default": "latexmk",
+  "latex-workshop.latex.outDir": "%DIR%",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.message.badbox.show": false,
+  "cSpell.language": "en",
+  "cSpell.enabledLanguageIds": ["latex", "markdown", "plaintext"]
+}

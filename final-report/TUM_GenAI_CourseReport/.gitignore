@@ -1,0 +1,18 @@
+# LaTeX build artifacts (latexmk / biber)
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.run.xml
+*.synctex.gz
+*.xdv
+
+# Keep the built report if you want to track it; otherwise uncomment:
+# CourseReport.pdf
