@@ -170,6 +170,7 @@ struct IngredientCaptureView: View {
 
 private struct CameraCaptureButton: UIViewControllerRepresentable {
     let onCapture: (UIImage) -> Void
+    let onCancel: () -> Void
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
@@ -181,28 +182,31 @@ private struct CameraCaptureButton: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onCapture: onCapture)
+        Coordinator(onCapture: onCapture, onCancel: onCancel)
     }
 
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         let onCapture: (UIImage) -> Void
+        let onCancel: () -> Void
 
-        init(onCapture: @escaping (UIImage) -> Void) {
+        init(onCapture: @escaping (UIImage) -> Void, onCancel: @escaping () -> Void) {
             self.onCapture = onCapture
+            self.onCancel = onCancel
         }
 
         func imagePickerController(
             _ picker: UIImagePickerController,
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
-            picker.dismiss(animated: true)
             if let image = info[.originalImage] as? UIImage {
                 onCapture(image)
+            } else {
+                onCancel()
             }
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
+            onCancel()
         }
     }
 }
@@ -220,8 +224,16 @@ struct CameraCaptureButtonLabel: View {
         }
         .buttonStyle(PrimaryButtonStyle(variant: .secondary))
         .fullScreenCover(isPresented: $showCamera) {
-            CameraCaptureButton(onCapture: onCapture)
-                .ignoresSafeArea()
+            CameraCaptureButton(
+                onCapture: { image in
+                    showCamera = false
+                    onCapture(image)
+                },
+                onCancel: {
+                    showCamera = false
+                }
+            )
+            .ignoresSafeArea()
         }
     }
 }
