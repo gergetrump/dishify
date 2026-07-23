@@ -59,6 +59,14 @@
         dest: "{{ app_dir }}/.env.secret"
         mode: "0600"
 
+    - name: Write .env
+      copy:
+        content: |
+          DOMAIN={{ domain | default('http://' + server_ip) }}
+          VITE_API_URL={{ domain | default('http://' + server_ip) }}
+        dest: "{{ app_dir }}/.env"
+        mode: "0644"
+
     - name: Build and start services
       shell: docker compose up -d --build --remove-orphans
       args:
@@ -74,10 +82,34 @@
       delay: 10
       until: health.status == 200
 
-    - name: Run indexing worker (first deploy only)
-      shell: docker compose run --rm indexing-worker --recreate
-      args:
-        chdir: "{{ app_dir }}"
-      register: indexing
+    - name: Check existing recipe index size
+      uri:
+        url: http://localhost:6333/collections/recipes_full
+        method: GET
+        status_code: [200, 404]
+      register: qdrant_collection
       failed_when: false
-      changed_when: indexing.rc == 0
+
+    - name: Show manual data-management options
+      debug:
+        msg: |
+          recipes_full: {{ 'found, ' + (qdrant_collection.json.result.points_count | default(0) | string) + ' points' if qdrant_collection.status == 200 else 'not found' }}.
+          Indexing is not run automatically during deploy — manage it manually:
+
+          1) To swap in a pre-built Qdrant dataset (e.g. a dump a teammate sent you):
+               From your local machine:
+                 infra/scripts/qdrant_swap.sh validate <path-to-qdrant_volume.tar.gz>
+                 infra/scripts/qdrant_swap.sh promote   # after reviewing the validate output
+
+               Or manually inside the server:
+                 ssh -i ~/.ssh/dishify_deploy root@{{ server_ip }}
+                 mkdir -p /root/qdrant_import && tar -xzf /root/qdrant_volume.tar.gz -C /root/qdrant_import
+                 docker stop dishify-qdrant
+                 mv /var/lib/docker/volumes/dishify_qdrant_data/_data /var/lib/docker/volumes/dishify_qdrant_data/_data.bak
+                 mv /root/qdrant_import /var/lib/docker/volumes/dishify_qdrant_data/_data
+                 docker start dishify-qdrant
+
+          2) To (re)run the indexing worker against a CSV already sitting in ./data:
+               ssh -i ~/.ssh/dishify_deploy root@{{ server_ip }}
+               cd {{ app_dir }}
+               docker compose run --rm indexing-worker --csv /data/<your-file>.csv --recreate

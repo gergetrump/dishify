@@ -1,8 +1,5 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: dishify-vector-store
 Version: 0.1.0
 Summary: Shared Qdrant vector store for Dishify indexing and retrieval
 Requires-Python: >=3.12
-Requires-Dist: dishify-contracts
-Requires-Dist: qdrant-client>=1.12
-Requires-Dist: sentence-transformers>=3.0

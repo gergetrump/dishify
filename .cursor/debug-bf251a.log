@@ -1,1 +1,0 @@
-{"sessionId": "bf251a", "hypothesisId": "H-B", "location": "docker-compose.yml:60,200", "message": "CONFIRMED: QDRANT_COLLECTION was recipes_10000 in docker-compose.yml; fixed to recipes_full", "data": {"before": "recipes_10000", "after": "recipes_full"}, "timestamp": 1782040494739}

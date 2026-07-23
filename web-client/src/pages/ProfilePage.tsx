@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { Button } from "../components/Button";
-import { DishifyBrandMark } from "../components/DishifyLogo";
+import { Alert, Button, Center, Group, Loader, Paper, Stack, Table, Text, Title } from "@mantine/core";
 
 export function ProfilePage() {
   const { loadUser, logout, user } = useAuth();
@@ -39,38 +38,84 @@ export function ProfilePage() {
   }, [loadUser]);
 
   return (
-    <section className="narrow-page">
-      <DishifyBrandMark />
-      <p className="eyebrow">Account</p>
-      <h1>Profile</h1>
-      {error ? <p className="alert alert-error">{error}</p> : null}
-      {isLoading ? <p className="muted">Loading your profile...</p> : null}
-      <div className="profile-list">
-        <div>
-          <span>Username</span>
-          <strong>{user?.username ?? "Not loaded"}</strong>
-        </div>
-        <div>
-          <span>Email</span>
-          <strong>{user?.email ?? "Not loaded"}</strong>
-        </div>
-        <div>
-          <span>Email verified</span>
-          <strong>{formatBoolean(user?.email_verified)}</strong>
-        </div>
-      </div>
-      <div className="profile-actions">
-        <Link className="button button-primary" to="/preferences">
-          Food preferences
-        </Link>
-        <Button type="button" variant="secondary" onClick={logout}>
-          Log out
-        </Button>
-      </div>
-      <p className="muted profile-note">
-        Password changes and account deletion are not available in the backend yet.
-      </p>
-    </section>
+    <Center mt={60} mb={60}>
+      <Paper w={480}>
+        <Stack gap="xl">
+          <Stack gap="xs" ta="center">
+            <Title order={2}>Profile</Title>
+          </Stack>
+
+          {error && (
+            <Alert variant="light" color="red" title="Error">
+              {error}
+            </Alert>
+          )}
+
+          {isLoading ? (
+            <Center mih={150}>
+              <Stack gap="xs" align="center">
+                <Loader size="md" />
+                <Text size="sm" c="dimmed">
+                  Loading your profile...
+                </Text>
+              </Stack>
+            </Center>
+          ) : (
+            <>
+              <Table variant="vertical" layout="fixed" withRowBorders>
+                <Table.Tbody>
+                  <Table.Tr>
+                    <Table.Th w="40%">
+                      <Text size="sm" fw={500} c="dimmed">
+                        Username
+                      </Text>
+                    </Table.Th>
+                    <Table.Td>
+                      <Text size="sm" fw={600}>
+                        {user?.username ?? "Not loaded"}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                  <Table.Tr>
+                    <Table.Th>
+                      <Text size="sm" fw={500} c="dimmed">
+                        Email
+                      </Text>
+                    </Table.Th>
+                    <Table.Td>
+                      <Text size="sm" fw={600}>
+                        {user?.email ?? "Not loaded"}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                  <Table.Tr>
+                    <Table.Th>
+                      <Text size="sm" fw={500} c="dimmed">
+                        Email verified
+                      </Text>
+                    </Table.Th>
+                    <Table.Td>
+                      <Text size="sm" fw={600}>
+                        {formatBoolean(user?.email_verified)}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                </Table.Tbody>
+              </Table>
+
+              <Group grow gap="sm">
+                <Button component={Link} to="/preferences" type="button" variant="light">
+                  Food preferences
+                </Button>
+                <Button type="button" variant="light" color="red" onClick={logout}>
+                  Log out
+                </Button>
+              </Group>
+            </>
+          )}
+        </Stack>
+      </Paper>
+    </Center>
   );
 }
 

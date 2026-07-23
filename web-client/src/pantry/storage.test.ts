@@ -57,6 +57,19 @@ describe("pantry storage", () => {
     expect(loadPantryItems()).toEqual([{ id: "valid", name: "Spinach" }]);
   });
 
+  it("falls back to a generated id when crypto.randomUUID is unavailable", () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: (arr: Uint8Array) => {
+        arr.fill(1);
+        return arr;
+      },
+    });
+
+    const item = createPantryItem({ name: "eggs" });
+
+    expect(item.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+
   it("removes local ids when converting to backend ingredients", () => {
     const ingredients = pantryItemsToIngredients([
       {

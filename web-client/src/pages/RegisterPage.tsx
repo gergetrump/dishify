@@ -3,11 +3,23 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthProvider";
-import { Button } from "../components/Button";
-import { Chip } from "../components/Chip";
-import { DishifyBrandMark } from "../components/DishifyLogo";
-import { Input } from "../components/Input";
 import { formatRestrictionLabel, restrictionSections } from "../data/restrictions";
+import {
+  Alert,
+  Anchor,
+  Box,
+  Button,
+  Center,
+  Chip,
+  Divider,
+  Group,
+  Paper,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -46,66 +58,95 @@ export function RegisterPage() {
   }
 
   return (
-    <section className="narrow-page">
-      <DishifyBrandMark logoSize="compact" showWordmark={false} />
-      <p className="eyebrow">Start cooking smarter</p>
-      <h1>Create your account</h1>
-      <form className="stack" onSubmit={handleSubmit}>
-        {error ? <p className="alert alert-error">{error}</p> : null}
-        <Input
-          label="Username"
-          name="username"
-          autoComplete="username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          minLength={3}
-          required
-        />
-        <Input
-          label="Email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
-        <Input
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          minLength={8}
-          required
-        />
+    <Center mt={60} mb={60}>
+      <Paper w={480}>
+        <Box component="form" onSubmit={handleSubmit}>
+          <Stack gap="xl">
+            <Stack gap="xs" ta="center">
+              <Title order={2}>Create your Dishify kitchen</Title>
+              <Text size="sm" c="dimmed">
+                Save your preferences and start getting better recipe matches.
+              </Text>
+            </Stack>
 
-        <div className="form-section">
-          <h2>Initial preferences</h2>
-          <p className="muted">Optional. You can change these later.</p>
-          <div className="chip-grid compact">
-            {restrictionSections.slice(0, 2).flatMap((section) =>
-              section.tags.slice(0, 8).map((tag) => (
-                <Chip
-                  key={tag}
-                  selected={selectedRestrictions.includes(tag)}
-                  onClick={() => toggleRestriction(tag)}
-                >
-                  {formatRestrictionLabel(tag)}
-                </Chip>
-              )),
+            {error && (
+              <Alert variant="light" color="red" title="Registration Failed">
+                {error}
+              </Alert>
             )}
-          </div>
-        </div>
 
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Creating account..." : "Sign up"}
-        </Button>
-      </form>
-      <p className="muted">
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-    </section>
+            <Stack gap="md">
+              <TextInput
+                label="Username"
+                placeholder="Pick a unique username"
+                autoComplete="username"
+                value={username}
+                onChange={(event) => setUsername(event.currentTarget.value)}
+                minLength={3}
+                required
+              />
+              <TextInput
+                label="Email"
+                placeholder="your@email.com"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.currentTarget.value)}
+                required
+              />
+              <PasswordInput
+                label="Password"
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => setPassword(event.currentTarget.value)}
+                minLength={8}
+                required
+              />
+            </Stack>
+
+            <Divider />
+
+            <Box>
+              <Title order={4} mb={2}>
+                Initial preferences
+              </Title>
+              <Text size="xs" c="dimmed" mb="sm">
+                Optional. You can change these later.
+              </Text>
+
+              <Group gap="xs">
+                {restrictionSections.slice(0, 2).flatMap((section) =>
+                  section.tags.slice(0, 8).map((tag) => (
+                    <Chip
+                      key={tag}
+                      checked={selectedRestrictions.includes(tag)}
+                      onChange={() => toggleRestriction(tag)}
+                    >
+                      {formatRestrictionLabel(tag)}
+                    </Chip>
+                  )),
+                )}
+              </Group>
+            </Box>
+
+            <Stack gap="sm">
+              <Button type="submit" loading={isSubmitting} fullWidth>
+                Sign up
+              </Button>
+
+              <Group justify="center" gap={4}>
+                <Text size="sm" c="dimmed">
+                  Already have an account?
+                </Text>
+                <Anchor component={Link} to="/login" size="sm" fw={500}>
+                  Log in
+                </Anchor>
+              </Group>
+            </Stack>
+          </Stack>
+        </Box>
+      </Paper>
+    </Center>
   );
 }

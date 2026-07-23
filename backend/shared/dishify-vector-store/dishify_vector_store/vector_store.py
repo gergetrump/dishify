@@ -181,10 +181,27 @@ class RecipeVectorStore:
         recipes: list[RetrievedRecipe] = []
         for result in response.points:
             parsed_raw = result.payload.get("parsed_ingredients") or []
-            parsed_ingredients = [
-                ParsedIngredientModel(**item) if isinstance(item, dict) else item
-                for item in parsed_raw
-            ]
+            parsed_ingredients: list[ParsedIngredientModel] = []
+            for item in parsed_raw:
+                if not isinstance(item, dict):
+                    if isinstance(item, ParsedIngredientModel):
+                        parsed_ingredients.append(item)
+                    continue
+                try:
+                    clean_item = {
+                        "name": str(item.get("name", "")).strip() or "",
+                        "raw_text": str(item.get("raw_text", "")).strip() or "",
+                    }
+                    if "quantity" in item and item["quantity"] is not None:
+                        try:
+                            clean_item["quantity"] = float(item["quantity"])
+                        except (ValueError, TypeError):
+                            clean_item["quantity"] = None
+                    if "unit" in item and item["unit"] is not None:
+                        clean_item["unit"] = str(item["unit"]).strip() or None
+                    parsed_ingredients.append(ParsedIngredientModel(**clean_item))
+                except (TypeError, ValueError) as e:
+                    continue
             recipes.append(
                 RetrievedRecipe(
                     id=int(result.id),

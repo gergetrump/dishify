@@ -134,15 +134,14 @@ def recommend(
             detail=f"Recommendation service unavailable: {exc}",
         ) from exc
 
-    if response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=response.json().get("detail", response.text),
-        )
     if not response.is_success:
+        try:
+            detail = response.json().get("detail", response.text)
+        except ValueError:
+            detail = response.text
         raise HTTPException(
             status_code=response.status_code,
-            detail=response.json().get("detail", response.text),
+            detail=detail,
         )
 
     return RecommendResponse(**response.json())

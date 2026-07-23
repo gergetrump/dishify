@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-
+import { MantineProvider } from "@mantine/core";
 import { RecipeDetailPage } from "./RecipeDetailPage";
 import { apiClient } from "../api/client";
 import { clearAugmentCache } from "../recommendations/augmentCache";
@@ -44,14 +44,16 @@ describe("RecipeDetailPage", () => {
 
     await act(async () => {
       root.render(
-        <MemoryRouter
-          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-          initialEntries={[{ pathname: "/recipes/3136", state: { recipe } }]}
-        >
-          <Routes>
-            <Route path="/recipes/:id" element={<RecipeDetailPage />} />
-          </Routes>
-        </MemoryRouter>,
+        <MantineProvider>
+          <MemoryRouter
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+            initialEntries={[{ pathname: "/recipes/3136", state: { recipe } }]}
+          >
+           <Routes>
+              <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+            </Routes>
+          </MemoryRouter>,
+        </MantineProvider>
       );
     });
     // flush the auto-enhance effect's resolved promise

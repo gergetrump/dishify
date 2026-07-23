@@ -18,6 +18,20 @@ function mockFetch(responses: Array<{ status: number; body?: unknown; headers?: 
 describe("ApiClient", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("defaults to the local gateway when VITE_API_URL is not configured", async () => {
+    const fetch = mockFetch([{ status: 200, body: { status: "ok", service: "test" } }]);
+    vi.stubGlobal("fetch", fetch);
+    vi.stubEnv("VITE_API_URL", "");
+
+    const client = new ApiClient();
+    await client.health();
+
+    expect(fetch).toHaveBeenCalledOnce();
+    const call = fetch.mock.calls[0] as unknown[];
+    expect(call[0]).toBe("http://localhost:8000/health");
   });
 
   it("attaches bearer token on authenticated requests", async () => {
@@ -149,6 +163,46 @@ describe("ApiClient", () => {
       expect(e).toBeInstanceOf(ApiError);
       expect((e as ApiError).code).toBe("unavailable");
     }
+  });
+
+  it("posts voice and vision media requests to gateway endpoints with auth", async () => {
+    const fetch = mockFetch([
+      {
+        status: 200,
+        body: {
+          transcript: "eggs and rice",
+          ingredients: [],
+          query: null,
+        },
+      },
+      {
+        status: 200,
+        body: {
+          ingredients: [],
+        },
+      },
+    ]);
+    vi.stubGlobal("fetch", fetch);
+
+    const client = new ApiClient({
+      baseUrl: "http://localhost:8000",
+      getToken: () => "media-token",
+    });
+
+    await client.voice({ audio_base64: "abc", mime_type: "audio/webm" });
+    await client.detectIngredients({ image_base64: "def", mime_type: "image/jpeg" });
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    const voiceCall = fetch.mock.calls[0] as unknown[];
+    const visionCall = fetch.mock.calls[1] as unknown[];
+    expect(voiceCall[0]).toBe("http://localhost:8000/voice");
+    expect(visionCall[0]).toBe("http://localhost:8000/vision/ingredients");
+    expect(((voiceCall[1] as RequestInit).headers as Headers).get("Authorization")).toBe(
+      "Bearer media-token",
+    );
+    expect(((visionCall[1] as RequestInit).headers as Headers).get("Authorization")).toBe(
+      "Bearer media-token",
+    );
   });
 
   it("throws network error when fetch fails", async () => {

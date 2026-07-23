@@ -1,14 +1,65 @@
 from __future__ import annotations
 
+import re
 from typing import Iterable
 
 from dishify_contracts import RetrievedRecipe
 
 
+_WORD_RE = re.compile(r"[a-z0-9]+")
+
+
+def _singularize_token(value: str) -> str:
+    if len(value) <= 3:
+        return value
+    if value.endswith("ies") and len(value) > 4:
+        return f"{value[:-3]}y"
+    if value.endswith("oes") and len(value) > 4:
+        return value[:-2]
+    if value.endswith(("ches", "shes", "xes", "ses")) and len(value) > 5:
+        return value[:-2]
+    if value.endswith("s") and not value.endswith("ss"):
+        return value[:-1]
+    return value
+
+
 def _normalize_name(value: str | None) -> str:
     if not value:
         return ""
-    return " ".join(value.strip().lower().split())
+    tokens = [_singularize_token(token) for token in _WORD_RE.findall(value.lower())]
+    return " ".join(tokens)
+
+
+def _name_tokens(value: str) -> set[str]:
+    return {token for token in value.split() if token}
+
+
+def _ingredient_names_match(recipe_name: str, available_name: str) -> bool:
+    if recipe_name == available_name:
+        return True
+
+    recipe_tokens = _name_tokens(recipe_name)
+    available_tokens = _name_tokens(available_name)
+    if not recipe_tokens or not available_tokens:
+        return False
+
+    return recipe_tokens.issubset(available_tokens) or available_tokens.issubset(
+        recipe_tokens
+    )
+
+
+def _find_available_match(
+    recipe_name: str,
+    available: dict[str, tuple[float | None, str | None]],
+) -> tuple[float | None, str | None] | None:
+    if recipe_name in available:
+        return available[recipe_name]
+
+    for available_name, values in available.items():
+        if _ingredient_names_match(recipe_name, available_name):
+            return values
+
+    return None
 
 
 def _normalize_available_ingredients(
@@ -71,6 +122,7 @@ def score_recipes_by_inventory(
         semantic_score = float(recipe.score or 0)
         parsed = recipe.parsed_ingredients or []
         recipe_names: list[str] = []
+        recipe_matches: dict[str, tuple[float | None, str | None] | None] = {}
         full_matches = 0
         partial_matches = 0
 
@@ -84,10 +136,15 @@ def score_recipes_by_inventory(
                 continue
 
             recipe_names.append(normalized_name)
-            if normalized_name not in available:
+            if normalized_name not in recipe_matches:
+                recipe_matches[normalized_name] = _find_available_match(
+                    normalized_name, available
+                )
+            available_match = recipe_matches[normalized_name]
+            if available_match is None:
                 continue
 
-            available_qty, available_unit = available[normalized_name]
+            available_qty, available_unit = available_match
             if (
                 quantity is not None
                 and unit
@@ -106,8 +163,8 @@ def score_recipes_by_inventory(
         else:
             inventory_score = (full_matches + 0.5 * partial_matches) / total
 
-        matched_names = [n for n in recipe_names if n in available]
-        missing_names = [n for n in recipe_names if n not in available]
+        matched_names = [n for n in recipe_names if recipe_matches.get(n) is not None]
+        missing_names = [n for n in recipe_names if recipe_matches.get(n) is None]
         final_score = (semantic_weight * semantic_score) + (
             ingredient_weight * inventory_score
         )

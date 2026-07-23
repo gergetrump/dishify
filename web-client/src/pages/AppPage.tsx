@@ -3,13 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import { ApiError, apiClient } from "../api/client";
 import type { DetectedIngredient } from "../api/types";
-import { Button } from "../components/Button";
-import { BrandedEmptyState } from "../components/BrandedEmptyState";
-import { DishifyLogo } from "../components/DishifyLogo";
 import { IngredientCapture } from "../components/IngredientCapture";
-import { Input } from "../components/Input";
 import { blobToBase64 } from "../media/encode";
-import { prefetchAugmentAll } from "../recommendations/augmentCache";
 import {
   createPantryItem,
   loadPantryItems,
@@ -17,7 +12,28 @@ import {
   savePantryItems,
   type PantryItem,
 } from "../pantry/storage";
+import { prefetchAugmentAll } from "../recommendations/augmentCache";
 import { saveRecommendationSession } from "../recommendations/session";
+
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  Container,
+  Divider,
+  Flex,
+  Group,
+  Paper,
+  ScrollArea,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+  Title,
+} from "@mantine/core";
 
 export function AppPage() {
   const navigate = useNavigate();
@@ -30,7 +46,6 @@ export function AppPage() {
   const [topK, setTopK] = useState(5);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [showCapture, setShowCapture] = useState(false);
@@ -97,21 +112,14 @@ export function AppPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await apiClient.recommend({
-        query: resolvedQuery,
-        top_k: topK,
-        available_ingredients: pantryIngredients,
-      });
       const request = {
         query: resolvedQuery,
         top_k: topK,
         available_ingredients: pantryIngredients,
       };
+      const response = await apiClient.recommend(request);
 
-      // Start enhancing every result's directions in the background now, so
-      // opening any recipe shows the enhanced steps instantly.
       prefetchAugmentAll(response.results);
-
       saveRecommendationSession({ request, response });
 
       navigate("/results", {
@@ -202,11 +210,11 @@ export function AppPage() {
         const parts: string[] = [];
         if (added.length) parts.push(`added ${added.length} ingredient(s)`);
         if (vibe) parts.push("set your vibe");
-        setMediaNotice(`Heard you — ${parts.join(" and ")}.`);
+        setMediaNotice(`Heard you - ${parts.join(" and ")}.`);
       } else if (!transcript.trim()) {
         setMediaError("Could not hear anything in that recording.");
       } else {
-        setMediaError("Didn't catch any ingredients — try naming what you have.");
+        setMediaError("Didn't catch any ingredients - try naming what you have.");
       }
     } catch (err) {
       setMediaError(err instanceof ApiError ? err.message : "Could not process audio.");
@@ -236,157 +244,220 @@ export function AppPage() {
   }
 
   return (
-    <section className="cook-layout">
+    <Container size="md" my="xl" mt={60} mb={60}>
       {showCapture ? (
-        <IngredientCapture
-          onConfirm={addDetectedIngredients}
-          onClose={() => setShowCapture(false)}
-        />
+        <IngredientCapture onConfirm={addDetectedIngredients} onClose={() => setShowCapture(false)} />
       ) : null}
-      <div className="hero-panel">
-        <DishifyLogo size="compact" className="hero-panel-logo" />
-        <p className="eyebrow">What is available today?</p>
-        <h1>Your next meal is already in your kitchen.</h1>
-        <p className="muted">
-          Add pantry items, describe what sounds good, and Dishify will recommend recipes that fit.
-        </p>
-        <div className="example-list" aria-label="Example vibe prompts">
-          <span>quick high-protein dinner</span>
-          <span>cozy vegetarian pasta</span>
-          <span>spicy lunch with eggs</span>
-        </div>
-      </div>
 
-      <div className="compose-panel">
-        <form className="stack" onSubmit={handleIngredientSubmit}>
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Pantry</p>
-              <h2>Add ingredients</h2>
-            </div>
-            {items.length ? (
-              <button className="link-button danger-link" type="button" onClick={() => setItems([])}>
-                Clear all
-              </button>
-            ) : null}
-          </div>
+      <Paper bg="var(--mantine-color-body)">
+        <Flex direction={{ base: "column", md: "row" }} gap="xl" align={{ base: "center", md: "stretch" }}>
+          <Box style={{ flex: 1 }} w="100%" maw={{ base: 480, md: "100%" }}>
+            <Stack gap="xl">
+              <Box component="form" onSubmit={handleIngredientSubmit}>
+                <Stack gap="md">
+                  <Group justify="space-between" align="flex-end">
+                    <Box>
+                      <Text size="sm" c="dimmed" fw={500}>
+                        1. Pantry check
+                      </Text>
+                      <Title order={2}>What's in your kitchen?</Title>
+                    </Box>
+                    {items.length > 0 && (
+                      <Button variant="subtle" color="red" size="xs" onClick={() => setItems([])}>
+                        Clear all
+                      </Button>
+                    )}
+                  </Group>
 
-          <div className="button-row">
-            <Button type="button" variant="secondary" onClick={() => setShowCapture(true)}>
-              📷 Scan ingredients
-            </Button>
-            <Button
-              type="button"
-              variant={isRecording ? "ghost" : "secondary"}
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={isTranscribing}
-            >
-              {isRecording ? "■ Stop & add" : isTranscribing ? "Listening..." : "🎤 Say what you have"}
-            </Button>
-          </div>
-          {mediaError ? <p className="alert alert-error">{mediaError}</p> : null}
-          {mediaNotice ? <p className="alert alert-success">{mediaNotice}</p> : null}
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    <Button type="button" variant="light" onClick={() => setShowCapture(true)}>
+                      Scan ingredients
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={isRecording ? "outline" : "light"}
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={isTranscribing}
+                    >
+                      {isRecording ? "Stop and add" : isTranscribing ? "Listening..." : "Say what you have"}
+                    </Button>
+                  </SimpleGrid>
 
-          <Input
-            label="Ingredient"
-            name="ingredient"
-            placeholder="Eggs"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            maxLength={512}
-            required
-          />
-          <div className="form-grid">
-            <Input
-              label="Quantity"
-              name="quantity"
-              type="number"
-              min="0"
-              step="any"
-              placeholder="2"
-              value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
-            />
-            <Input
-              label="Unit"
-              name="unit"
-              placeholder="pieces"
-              value={unit}
-              onChange={(event) => setUnit(event.target.value)}
-            />
-          </div>
-          <div className="button-row">
-            <Button type="submit" variant="secondary">
-              {editingId ? "Save ingredient" : "Add ingredient"}
-            </Button>
-            {editingId ? (
-              <Button type="button" variant="ghost" onClick={resetIngredientForm}>
-                Cancel
-              </Button>
-            ) : null}
-          </div>
-        </form>
+                  {mediaError ? (
+                    <Alert variant="light" color="red" title="Media input">
+                      {mediaError}
+                    </Alert>
+                  ) : null}
+                  {mediaNotice ? (
+                    <Alert variant="light" color="green" title="Media input">
+                      {mediaNotice}
+                    </Alert>
+                  ) : null}
 
-        <div className="pantry-list" aria-live="polite">
-          {items.length ? (
-            items.map((item) => (
-              <article className="pantry-item" key={item.id}>
-                <div>
-                  <strong>{item.name}</strong>
-                  <span>{item.raw_text}</span>
-                </div>
-                <div className="pantry-actions">
-                  <button type="button" onClick={() => editItem(item)}>
-                    Edit
-                  </button>
-                  <button type="button" onClick={() => deleteItem(item.id)}>
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))
-          ) : (
-            <BrandedEmptyState>
-              <p className="empty-state">No pantry ingredients yet.</p>
-            </BrandedEmptyState>
-          )}
-        </div>
+                  <TextInput
+                    label="Ingredient"
+                    placeholder="Eggs"
+                    value={name}
+                    onChange={(event) => setName(event.currentTarget.value)}
+                    maxLength={512}
+                    required
+                  />
 
-        <form className="stack vibe-form" onSubmit={handleRecommendSubmit}>
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Vibe check</p>
-              <h2>What sounds good?</h2>
-            </div>
-            <label className="compact-field" htmlFor="top-k">
-              <span>Results</span>
-              <select id="top-k" value={topK} onChange={(event) => setTopK(Number(event.target.value))}>
-                <option value={3}>3</option>
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-              </select>
-            </label>
-          </div>
+                  <SimpleGrid cols={2} spacing="md">
+                    <TextInput
+                      label="Quantity"
+                      type="number"
+                      min={0}
+                      step="any"
+                      placeholder="2"
+                      value={quantity}
+                      onChange={(event) => setQuantity(event.currentTarget.value)}
+                    />
+                    <TextInput
+                      label="Unit"
+                      placeholder="pieces"
+                      value={unit}
+                      onChange={(event) => setUnit(event.currentTarget.value)}
+                    />
+                  </SimpleGrid>
 
-          {error ? <p className="alert alert-error">{error}</p> : null}
+                  <Group gap="sm" justify="flex-end">
+                    {editingId && (
+                      <Button type="button" variant="subtle" color="gray" onClick={resetIngredientForm}>
+                        Cancel
+                      </Button>
+                    )}
+                    <Button type="submit" variant="light">
+                      {editingId ? "Save ingredient" : "Add ingredient"}
+                    </Button>
+                  </Group>
+                </Stack>
+              </Box>
 
-          <label className="field" htmlFor="query">
-            <span>Eating vibe <small>optional</small></span>
-            <textarea
-              id="query"
-              className="textarea"
-              placeholder="Optional, e.g. quick spicy dinner with eggs"
-              value={query}
-              maxLength={512}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Finding recipes..." : "Show recipes"}
-          </Button>
-        </form>
-      </div>
-    </section>
+              <Box>
+                <Title order={4} mb="sm">
+                  Your pantry shelf
+                </Title>
+
+                <ScrollArea h={items.length > 0 ? 300 : "auto"} type="auto">
+                  <Stack gap="xs" pr="sm">
+                    {items.length > 0 ? (
+                      items.map((item) => {
+                        const isEditing = item.id === editingId;
+
+                        return (
+                          <Card
+                            key={item.id}
+                            withBorder
+                            p="sm"
+                            radius="sm"
+                            style={(theme) => ({
+                              borderColor: isEditing ? theme.colors.orange[4] : undefined,
+                              transition: "all 0.15s ease",
+                            })}
+                            shadow={isEditing ? "sm" : "none"}
+                          >
+                            <Group justify="space-between" align="center">
+                              <Box style={{ flex: 1 }}>
+                                <Text fw={600} size="sm">
+                                  {item.name}
+                                </Text>
+                                {item.raw_text && (
+                                  <Text size="xs" c="dimmed">
+                                    {item.raw_text}
+                                  </Text>
+                                )}
+                              </Box>
+                              <Group gap={4}>
+                                <Button
+                                  size="xs"
+                                  variant="subtle"
+                                  disabled={isEditing}
+                                  color={isEditing ? "blue" : "gray"}
+                                  onClick={() => editItem(item)}
+                                >
+                                  {isEditing ? "Editing" : "Edit"}
+                                </Button>
+                                <Button size="xs" variant="subtle" color="red" onClick={() => deleteItem(item.id)}>
+                                  Delete
+                                </Button>
+                              </Group>
+                            </Group>
+                          </Card>
+                        );
+                      })
+                    ) : (
+                      <Text c="dimmed" size="sm" ta="center" py="xs">
+                        Your pantry is empty for now. Add a few ingredients to get started.
+                      </Text>
+                    )}
+                  </Stack>
+                </ScrollArea>
+              </Box>
+            </Stack>
+          </Box>
+
+          <Divider orientation="horizontal" w="100%" hiddenFrom="md" />
+          <Divider orientation="vertical" visibleFrom="md" />
+
+          <Box style={{ flex: 1 }} w="100%" maw={{ base: 480, md: "100%" }}>
+            <Box component="form" onSubmit={handleRecommendSubmit}>
+              <Stack gap="md">
+                <Box>
+                  <Text size="sm" c="dimmed" fw={500}>
+                    2. Vibe check
+                  </Text>
+                  <Title order={2}>What are you craving?</Title>
+                </Box>
+
+                {error && (
+                  <Alert variant="light" color="red" title="Error">
+                    {error}
+                  </Alert>
+                )}
+
+                <Stack gap="xl">
+                  <Textarea
+                    label={
+                      <Text size="sm" fw={500}>
+                        Eating vibe{" "}
+                        <Text component="span" size="xs" c="dimmed" fw={400}>
+                          (optional)
+                        </Text>
+                      </Text>
+                    }
+                    placeholder="Optional, e.g. quick spicy dinner with eggs"
+                    minRows={4}
+                    value={query}
+                    onChange={(event) => setQuery(event.currentTarget.value)}
+                    maxLength={512}
+                  />
+
+                  <Divider orientation="horizontal" />
+
+                  <Group justify="space-between" align="flex-end" w="100%">
+                    <Select
+                      label="Results"
+                      w={80}
+                      size="sm"
+                      value={String(topK)}
+                      onChange={(value) => {
+                        if (value) setTopK(Number(value));
+                      }}
+                      data={["3", "5", "10"]}
+                      allowDeselect={false}
+                    />
+                    <Button type="submit" loading={isSubmitting} style={{ flex: 1 }}>
+                      Find my recipes
+                    </Button>
+                  </Group>
+                </Stack>
+              </Stack>
+            </Box>
+          </Box>
+        </Flex>
+      </Paper>
+    </Container>
   );
 }
 
