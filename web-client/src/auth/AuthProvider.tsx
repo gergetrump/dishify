@@ -10,6 +10,9 @@ import {
 
 import { apiClient } from "../api/client";
 import type { LoginRequest, RegisterRequest, TokenResponse, UserProfile } from "../api/types";
+import { clearPantryItems } from "../pantry/storage";
+import { clearAugmentCache } from "../recommendations/augmentCache";
+import { clearRecommendationSession } from "../recommendations/session";
 import {
   clearStoredAccessToken,
   clearStoredRefreshToken,
@@ -79,6 +82,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     clearStoredAccessToken();
     clearStoredRefreshToken();
+    clearPantryItems();
+    clearRecommendationSession();
+    clearAugmentCache();
     setToken(null);
     setUser(null);
   }, []);

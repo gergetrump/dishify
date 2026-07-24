@@ -11,6 +11,10 @@ export function saveRecommendationSession(session: RecommendationSession) {
   window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
+export function clearRecommendationSession() {
+  window.sessionStorage.removeItem(SESSION_KEY);
+}
+
 export function loadRecommendationSession(): RecommendationSession | null {
   const raw = window.sessionStorage.getItem(SESSION_KEY);
   if (!raw) {

@@ -28,6 +28,10 @@ export function savePantryItems(items: PantryItem[]) {
   window.localStorage.setItem(PANTRY_KEY, JSON.stringify(items));
 }
 
+export function clearPantryItems() {
+  window.localStorage.removeItem(PANTRY_KEY);
+}
+
 export function pantryItemsToIngredients(items: PantryItem[]): ParsedIngredient[] {
   return items.map(({ id: _id, ...ingredient }) => ingredient);
 }
