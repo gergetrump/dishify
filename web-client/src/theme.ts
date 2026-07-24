@@ -1,4 +1,4 @@
-import { createTheme, Paper } from "@mantine/core";
+import { createTheme } from "@mantine/core";
 
 export const theme = createTheme({
   primaryColor: "orange",
