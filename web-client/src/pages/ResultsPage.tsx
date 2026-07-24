@@ -107,27 +107,6 @@ export function ResultsPage() {
             <Text c="dimmed">Dishify did not return any recipes for this search.</Text>
           </Paper>
         )}
-
-        <Paper withBorder radius="lg" p="md">
-          <details>
-            <summary>Pipeline details</summary>
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="sm" mt="md">
-              {response.stages.map((stage) => (
-                <Paper withBorder radius="md" p="sm" key={stage.name}>
-                  <Stack gap={2}>
-                    <Text fw={700}>{stage.name}</Text>
-                    <Text size="sm" c={stage.status === "ok" ? "green" : "red"}>
-                      {stage.status}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {stage.latency_ms} ms
-                    </Text>
-                  </Stack>
-                </Paper>
-              ))}
-            </SimpleGrid>
-          </details>
-        </Paper>
       </Stack>
     </Container>
   );

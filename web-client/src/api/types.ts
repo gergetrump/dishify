@@ -90,15 +90,8 @@ export type RecipeResult = {
   inventory_missing?: string[] | null;
 };
 
-export type PipelineStage = {
-  name: string;
-  status: string;
-  latency_ms: number;
-};
-
 export type RecommendResponse = {
   results: RecipeResult[];
-  stages: PipelineStage[];
 };
 
 export type TranscribeRequest = {

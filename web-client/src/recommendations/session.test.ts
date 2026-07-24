@@ -35,7 +35,6 @@ const session: RecommendationSession = {
         inventory_missing: ["spinach"],
       },
     ],
-    stages: [{ name: "retrieve", status: "ok", latency_ms: 12 }],
   },
 };
 
