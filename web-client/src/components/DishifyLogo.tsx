@@ -27,24 +27,3 @@ export function DishifyLogo({ size = "hero", className }: DishifyLogoProps) {
     />
   );
 }
-
-type DishifyBrandMarkProps = {
-  logoSize?: DishifyLogoSize;
-  showWordmark?: boolean;
-  className?: string;
-};
-
-export function DishifyBrandMark({
-  logoSize = "compact",
-  showWordmark = true,
-  className,
-}: DishifyBrandMarkProps) {
-  const classes = ["dishify-brand-mark", className].filter(Boolean).join(" ");
-
-  return (
-    <div className={classes}>
-      <DishifyLogo size={logoSize} />
-      {showWordmark ? <span className="dishify-wordmark">Dishify</span> : null}
-    </div>
-  );
-}
