@@ -151,5 +151,16 @@ export const theme = createTheme({
       }
     },
 
+    Modal: {
+      styles: {
+        title: {
+          fontFamily: "Inter, system-ui, sans-serif",
+          fontSize: "24px",
+          fontWeight: 700,
+          lineHeight: 1.2,
+        },
+      },
+    },
+
   },
 });

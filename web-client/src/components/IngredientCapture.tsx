@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
+import { Alert, Badge, Box, Button, Chip, Group, Image, Modal, Overlay, Stack, Text } from "@mantine/core";
+
 import { ApiError, apiClient } from "../api/client";
 import type { DetectedIngredient } from "../api/types";
 import { blobToBase64, parseDataUrl } from "../media/encode";
-import { Button } from "./Button";
 
 type CaptureMode = "choose" | "camera" | "review";
 
@@ -128,94 +129,141 @@ export function IngredientCapture({ onConfirm, onClose }: Props) {
   }
 
   return (
-    <div className="capture-overlay" role="dialog" aria-modal="true">
-      <div className="capture-modal">
-        <div className="capture-head">
-          <h2>Scan ingredients</h2>
-          <button type="button" className="link-button" onClick={() => { stopCamera(); onClose(); }}>
-            Close
-          </button>
-        </div>
-
-        {error ? <p className="alert alert-error">{error}</p> : null}
+    <Modal
+      opened
+      onClose={() => {
+        stopCamera();
+        onClose();
+      }}
+      title="Scan ingredients"
+      size={640}
+    >
+      <Stack gap="md">
+        {error ? (
+          <Alert variant="light" color="red" title="Error">
+            {error}
+          </Alert>
+        ) : null}
 
         {mode === "choose" ? (
-          <div className="capture-choose">
-            <p className="muted">Point your camera at your fridge or pantry, or upload a photo.</p>
-            <div className="button-row">
-              <Button type="button" onClick={openCamera}>📷 Open camera</Button>
-              <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+          <Stack gap="md">
+            <Text c="dimmed" size="sm">
+              Point your camera at your fridge or pantry, or upload a photo.
+            </Text>
+            <Group gap="sm">
+              <Button type="button" onClick={openCamera}>
+                📷 Open camera
+              </Button>
+              <Button type="button" variant="default" onClick={() => fileInputRef.current?.click()}>
                 Upload photo
               </Button>
-            </div>
+            </Group>
             <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleUpload} />
-          </div>
+          </Stack>
         ) : null}
 
         {mode === "camera" ? (
-          <div className="capture-camera">
-            <video ref={videoRef} className="capture-video" playsInline muted />
-            <div className="button-row">
-              <Button type="button" onClick={capturePhoto}>Capture</Button>
-              <Button type="button" variant="ghost" onClick={reset}>Cancel</Button>
-            </div>
-          </div>
+          <Stack gap="md">
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              style={{ width: "100%", borderRadius: 12, background: "#000", maxHeight: "60vh", display: "block" }}
+            />
+            <Group gap="sm">
+              <Button type="button" onClick={capturePhoto}>
+                Capture
+              </Button>
+              <Button type="button" variant="subtle" color="gray" onClick={reset}>
+                Cancel
+              </Button>
+            </Group>
+          </Stack>
         ) : null}
 
         {mode === "review" ? (
-          <div className="capture-review">
-            <div className="capture-stage">
-              {imageUrl ? <img src={imageUrl} alt="Captured ingredients" className="capture-image" /> : null}
+          <Stack gap="md">
+            <Box pos="relative" style={{ display: "inline-block", lineHeight: 0, borderRadius: 12, overflow: "hidden" }}>
+              {imageUrl ? <Image src={imageUrl} alt="Captured ingredients" radius="md" /> : null}
               {detected.map((item, index) =>
                 item.box && item.box.length === 4 ? (
-                  <div
+                  <Box
                     key={index}
-                    className={`capture-box${selected.has(index) ? " on" : ""}${hovered === index ? " hovered" : ""}`}
+                    onClick={() => toggle(index)}
                     style={{
+                      position: "absolute",
                       left: `${item.box[0] * 100}%`,
                       top: `${item.box[1] * 100}%`,
                       width: `${(item.box[2] - item.box[0]) * 100}%`,
                       height: `${(item.box[3] - item.box[1]) * 100}%`,
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      border: `2px solid ${
+                        hovered === index
+                          ? "var(--mantine-color-green-6)"
+                          : selected.has(index)
+                            ? "var(--mantine-primary-color-filled)"
+                            : "rgba(255, 255, 255, 0.7)"
+                      }`,
+                      background: selected.has(index) ? "var(--mantine-primary-color-light)" : "transparent",
+                      transition: "border-color 120ms ease, background 120ms ease",
                     }}
-                    onClick={() => toggle(index)}
                   >
-                    <span className="capture-box-label">{item.name}</span>
-                  </div>
+                    <Badge
+                      color={selected.has(index) ? undefined : "dark"}
+                      variant="filled"
+                      size="sm"
+                      tt="none"
+                      style={{ position: "absolute", top: "-1.4rem", left: -2, pointerEvents: "none" }}
+                    >
+                      {item.name}
+                    </Badge>
+                  </Box>
                 ) : null,
               )}
-              {isDetecting ? <div className="capture-detecting">Detecting…</div> : null}
-            </div>
+              {isDetecting ? (
+                <Overlay color="#000" backgroundOpacity={0.35} radius="md" center>
+                  <Text c="white" fw={700}>
+                    Detecting…
+                  </Text>
+                </Overlay>
+              ) : null}
+            </Box>
 
             {detected.length ? (
               <>
-                <p className="muted">Tap an item to include or exclude it, then add to your pantry.</p>
-                <ul className="capture-list">
+                <Text c="dimmed" size="sm">
+                  Tap an item to include or exclude it, then add to your pantry.
+                </Text>
+                <Group gap="xs">
                   {detected.map((item, index) => (
-                    <li
+                    <Chip
                       key={index}
-                      className={selected.has(index) ? "on" : ""}
-                      onMouseEnter={() => setHovered(index)}
-                      onMouseLeave={() => setHovered(null)}
+                      checked={selected.has(index)}
+                      onChange={() => toggle(index)}
+                      wrapperProps={{
+                        onMouseEnter: () => setHovered(index),
+                        onMouseLeave: () => setHovered(null),
+                      }}
                     >
-                      <label>
-                        <input type="checkbox" checked={selected.has(index)} onChange={() => toggle(index)} />
-                        <span>{item.raw_text || item.name}</span>
-                      </label>
-                    </li>
+                      {item.raw_text || item.name}
+                    </Chip>
                   ))}
-                </ul>
+                </Group>
               </>
             ) : null}
 
-            <div className="button-row">
+            <Group gap="sm">
               <Button type="button" onClick={confirm} disabled={isDetecting || selected.size === 0}>
                 Add {selected.size || ""} to pantry
               </Button>
-              <Button type="button" variant="ghost" onClick={reset}>Retake</Button>
-            </div>
-          </div>
+              <Button type="button" variant="subtle" color="gray" onClick={reset}>
+                Retake
+              </Button>
+            </Group>
+          </Stack>
         ) : null}
-      </div>
-    </div>
+      </Stack>
+    </Modal>
   );
 }
