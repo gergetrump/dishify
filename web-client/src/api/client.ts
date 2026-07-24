@@ -314,19 +314,14 @@ function errorCodeFor(status: number): ApiErrorCode {
 }
 
 function errorMessageFor(status: number, detail: unknown) {
-  const detailText = detailToText(detail);
-  if (detailText) {
-    return detailText;
-  }
-
   if (status === 401) {
     return "Your session is missing or expired. Log in again.";
   }
   if (status === 422) {
-    return "Some fields need attention before Dishify can continue.";
+    return detailToText(detail) ?? "Some fields need attention before Dishify can continue.";
   }
   if (status === 503) {
-    return "Dishify is not ready yet. Check backend services and indexing.";
+    return "Dishify is not ready yet. Try again in a moment.";
   }
   return "Something went wrong. Try again.";
 }
