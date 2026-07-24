@@ -1,3 +1,4 @@
+import { Button } from "@mantine/core";
 import { Link, Navigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthProvider";
@@ -22,12 +23,12 @@ export function WelcomePage() {
         </p>
 
         <div className="welcome-actions">
-          <Link className="button button-primary" to="/register">
+          <Button component={Link} to="/register">
             Sign up
-          </Link>
-          <Link className="button button-secondary" to="/login">
+          </Button>
+          <Button component={Link} to="/login" variant="light">
             Log in
-          </Link>
+          </Button>
         </div>
 
         <div className="welcome-highlights">

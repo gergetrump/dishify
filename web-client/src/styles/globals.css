@@ -123,13 +123,6 @@ button:disabled {
   margin-top: 28px;
 }
 
-.welcome-actions .button {
-  align-items: center;
-  display: inline-flex;
-  justify-content: center;
-  text-decoration: none;
-}
-
 .welcome-logo-card {
   align-items: center;
   background: transparent;
@@ -173,34 +166,6 @@ button:disabled {
 .muted {
   color: var(--color-muted);
   line-height: 1.6;
-}
-
-.button:focus-visible {
-  outline: 3px solid rgb(244 90 45 / 30%);
-  outline-offset: 2px;
-}
-
-.button {
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 900;
-  min-height: 48px;
-  padding: 12px 18px;
-}
-
-.button-primary {
-  background: var(--color-primary);
-  color: white;
-}
-
-.button-primary:hover {
-  background: var(--color-primary-dark);
-}
-
-.button-secondary {
-  background: var(--color-surface-muted);
-  color: var(--color-text);
 }
 
 @media (max-width: 760px) {
