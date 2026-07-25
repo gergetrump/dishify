@@ -138,7 +138,6 @@ export function IngredientCapture({ opened, onConfirm, onClose }: Props) {
       }}
       onExitTransitionEnd={reset}
       title="Scan ingredients"
-      // size={640}
       centered
     >
       <Stack gap="md">
