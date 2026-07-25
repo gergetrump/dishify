@@ -245,9 +245,11 @@ export function AppPage() {
 
   return (
     <Container size="md" my="xl" mt={60} mb={60}>
-      {showCapture ? (
-        <IngredientCapture onConfirm={addDetectedIngredients} onClose={() => setShowCapture(false)} />
-      ) : null}
+      <IngredientCapture
+        opened={showCapture}
+        onConfirm={addDetectedIngredients}
+        onClose={() => setShowCapture(false)}
+      />
 
       <Paper bg="var(--mantine-color-body)">
         <Flex direction={{ base: "column", md: "row" }} gap="xl" align={{ base: "center", md: "stretch" }}>

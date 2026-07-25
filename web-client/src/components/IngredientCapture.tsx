@@ -9,11 +9,12 @@ import { blobToBase64, parseDataUrl } from "../media/encode";
 type CaptureMode = "choose" | "camera" | "review";
 
 type Props = {
+  opened: boolean;
   onConfirm: (ingredients: DetectedIngredient[]) => void;
   onClose: () => void;
 };
 
-export function IngredientCapture({ onConfirm, onClose }: Props) {
+export function IngredientCapture({ opened, onConfirm, onClose }: Props) {
   const [mode, setMode] = useState<CaptureMode>("choose");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [detected, setDetected] = useState<DetectedIngredient[]>([]);
@@ -130,13 +131,15 @@ export function IngredientCapture({ onConfirm, onClose }: Props) {
 
   return (
     <Modal
-      opened
+      opened={opened}
       onClose={() => {
         stopCamera();
         onClose();
       }}
+      onExitTransitionEnd={reset}
       title="Scan ingredients"
       size={640}
+      centered
     >
       <Stack gap="md">
         {error ? (
