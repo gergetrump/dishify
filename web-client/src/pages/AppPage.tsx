@@ -244,7 +244,7 @@ export function AppPage() {
   }
 
   return (
-    <Container size="md" my="xl" mt={60} mb={60}>
+    <Container size="lg" my="xl" mt={60} mb={60}>
       <IngredientCapture
         opened={showCapture}
         onConfirm={addDetectedIngredients}

@@ -6,8 +6,8 @@ import {
   Alert,
   Box,
   Button,
-  Center,
   Chip,
+  Container,
   Divider,
   Group,
   Loader,
@@ -79,7 +79,7 @@ export function PreferencesPage() {
   }
 
   return (
-    <Center mt={60} mb={60}>
+    <Container size="lg" my="xl" mt={60} mb={60}>
       <Paper>
         <Stack gap="xl">
           <Box>
@@ -158,6 +158,6 @@ export function PreferencesPage() {
           )}
         </Stack>
       </Paper>
-    </Center>
+    </Container>
   );
 }
