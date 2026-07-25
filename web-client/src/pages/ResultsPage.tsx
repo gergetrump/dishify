@@ -86,11 +86,14 @@ export function ResultsPage() {
             {request ? <Text c="dimmed">For: {request.query}</Text> : null}
           </Stack>
 
-          {request ? (
-            <Button type="button" variant="light" onClick={retryRecommendation} loading={isRetrying}>
-              Retry
-            </Button>
-          ) : null}
+          <Group>
+            <Button component={Link} variant="light" to="/app">Start over</Button>
+            {request ? (
+              <Button type="button" variant="light" onClick={retryRecommendation} loading={isRetrying}>
+                Retry
+              </Button>
+            ) : null}
+          </Group>
         </Group>
 
         {error ? (

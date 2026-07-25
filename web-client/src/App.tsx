@@ -60,7 +60,7 @@ export function App() {
                 
                 <Menu trigger="hover" openDelay={100} shadow="md" width={160} position="bottom-end">
                   <Menu.Target>
-                    <Avatar variant="light" radius="md" color="orange" src="" />
+                    <Avatar variant="light" radius="md" color="orange" />
                   </Menu.Target>
 
                   <Menu.Dropdown>
