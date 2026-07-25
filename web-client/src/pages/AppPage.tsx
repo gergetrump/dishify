@@ -255,19 +255,12 @@ export function AppPage() {
             <Stack gap="xl">
               <Box component="form" onSubmit={handleIngredientSubmit}>
                 <Stack gap="md">
-                  <Group justify="space-between" align="flex-end">
                     <Box>
                       <Text size="sm" c="dimmed" fw={500}>
                         1. Pantry check
                       </Text>
                       <Title order={2}>What's in your kitchen?</Title>
                     </Box>
-                    {items.length > 0 && (
-                      <Button variant="subtle" color="red" size="xs" onClick={() => setItems([])}>
-                        Clear all
-                      </Button>
-                    )}
-                  </Group>
 
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                     <Button type="button" variant="light" onClick={() => setShowCapture(true)}>
@@ -335,9 +328,14 @@ export function AppPage() {
               </Box>
 
               <Box>
-                <Title order={4} mb="sm">
-                  Your pantry shelf
-                </Title>
+                <Group justify="space-between" align="center" mb="sm">
+                  <Title order={4}>Your pantry shelf</Title>
+                  {items.length > 0 && (
+                    <Button variant="subtle" color="red" size="xs" onClick={() => setItems([])}>
+                      Clear all
+                    </Button>
+                  )}
+                </Group>
 
                 <ScrollArea h={items.length > 0 ? 300 : "auto"} type="auto">
                   <Stack gap="xs" pr="sm">
