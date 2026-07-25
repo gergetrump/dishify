@@ -340,7 +340,7 @@ export function AppPage() {
                 <ScrollArea h={items.length > 0 ? 300 : "auto"} type="auto">
                   <Stack gap="xs" pr="sm">
                     {items.length > 0 ? (
-                      items.map((item) => {
+                      [...items].reverse().map((item) => {
                         const isEditing = item.id === editingId;
 
                         return (
