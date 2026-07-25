@@ -1,4 +1,5 @@
 import { Alert, Button, Container, Group, Paper, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -17,6 +18,8 @@ type ResultsLocationState = {
 };
 
 export function ResultsPage() {
+  useDocumentTitle("Recipe results · Dishify");
+
   const location = useLocation();
   const state = location.state as ResultsLocationState | null;
   const storedSession = useMemo(() => loadRecommendationSession(), []);

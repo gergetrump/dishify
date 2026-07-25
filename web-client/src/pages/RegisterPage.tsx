@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Link, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../api/client";
@@ -22,6 +23,8 @@ import {
 } from "@mantine/core";
 
 export function RegisterPage() {
+  useDocumentTitle("Sign up · Dishify");
+
   const { register } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useDocumentTitle } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 
 import { ApiError, apiClient } from "../api/client";
@@ -36,6 +37,8 @@ import {
 } from "@mantine/core";
 
 export function AppPage() {
+  useDocumentTitle("Cook · Dishify");
+
   const navigate = useNavigate();
   const [items, setItems] = useState<PantryItem[]>(() => loadPantryItems());
   const [editingId, setEditingId] = useState<string | null>(null);

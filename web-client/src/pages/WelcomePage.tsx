@@ -1,4 +1,5 @@
 import { Box, Button, Container, Group, Stack, Title, Text, Image } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Link, Navigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthProvider";
@@ -7,6 +8,8 @@ import suggestion from "../assets/suggestion.png";
 
 export function WelcomePage() {
   const { isAuthenticated } = useAuth();
+
+  useDocumentTitle("Dishify · Cook from your pantry");
 
   if (isAuthenticated) {
     return <Navigate to="/app" replace />;

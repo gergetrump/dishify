@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../api/client";
@@ -19,6 +20,8 @@ import {
 } from "@mantine/core";
 
 export function LoginPage() {
+  useDocumentTitle("Log in · Dishify");
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

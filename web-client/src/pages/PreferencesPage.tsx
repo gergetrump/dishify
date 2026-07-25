@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDocumentTitle } from "@mantine/hooks";
 
 import { ApiError, apiClient } from "../api/client";
 import { formatRestrictionLabel, restrictionSections } from "../data/restrictions";
@@ -18,6 +19,8 @@ import {
 } from "@mantine/core";
 
 export function PreferencesPage() {
+  useDocumentTitle("Preferences · Dishify");
+
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);

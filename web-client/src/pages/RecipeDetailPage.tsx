@@ -12,6 +12,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import type { AugmentResponse, RecipeResult } from "../api/types";
@@ -29,6 +30,8 @@ export function RecipeDetailPage() {
   const state = location.state as DetailLocationState | null;
   const recipeId = Number(id);
   const recipe = state?.recipe ?? (Number.isFinite(recipeId) ? findRecipeById(recipeId) : null);
+
+  useDocumentTitle(recipe?.title ? `${recipe.title} · Dishify` : "Recipe · Dishify");
 
   if (!recipe) {
     return (

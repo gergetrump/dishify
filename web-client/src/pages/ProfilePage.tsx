@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDocumentTitle } from "@mantine/hooks";
 import { Link } from "react-router-dom";
 
 import { ApiError } from "../api/client";
@@ -6,6 +7,8 @@ import { useAuth } from "../auth/AuthProvider";
 import { Alert, Button, Center, Group, Loader, Paper, Stack, Table, Text, Title } from "@mantine/core";
 
 export function ProfilePage() {
+  useDocumentTitle("Profile · Dishify");
+
   const { loadUser, logout, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(!user);
