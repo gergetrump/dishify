@@ -450,7 +450,12 @@ export function AppPage() {
                       data={["3", "5", "10"]}
                       allowDeselect={false}
                     />
-                    <Button type="submit" loading={isSubmitting} style={{ flex: 1 }}>
+                    <Button
+                      type="submit"
+                      loading={isSubmitting}
+                      disabled={items.length === 0}
+                      style={{ flex: 1 }}
+                    >
                       Find my recipes
                     </Button>
                   </Group>
