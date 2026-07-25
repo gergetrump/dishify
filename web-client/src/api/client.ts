@@ -247,7 +247,7 @@ export class ApiClient {
     }
 
     if (!response.ok) {
-      throw await buildApiError(response);
+      throw await buildApiError(response, path);
     }
 
     if (response.status === 204) {
@@ -281,9 +281,9 @@ function normalizeBaseUrl(value: string) {
   return value.replace(/\/+$/, "");
 }
 
-async function buildApiError(response: Response) {
+async function buildApiError(response: Response, path: string) {
   const payload = await readErrorPayload(response);
-  const message = errorMessageFor(response.status, payload?.detail);
+  const message = errorMessageFor(response.status, payload?.detail, path);
   return new ApiError(message, errorCodeFor(response.status), response.status, payload?.detail);
 }
 
@@ -313,8 +313,11 @@ function errorCodeFor(status: number): ApiErrorCode {
   return "unknown";
 }
 
-function errorMessageFor(status: number, detail: unknown) {
+function errorMessageFor(status: number, detail: unknown, path: string) {
   if (status === 401) {
+    if (path === "/auth/login") {
+      return detailToText(detail) ?? "Invalid username or password.";
+    }
     return "Your session is missing or expired. Log in again.";
   }
   if (status === 422) {
