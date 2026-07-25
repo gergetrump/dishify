@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatRestrictionLabel, restrictionSections, restrictionTags } from "./restrictions";
+import { formatRestrictionLabel, restrictionSections } from "./restrictions";
 
 describe("restriction metadata", () => {
   it("groups backend restriction tags into user-facing sections", () => {
@@ -11,9 +11,6 @@ describe("restriction metadata", () => {
       "medical-sensitivities",
       "ingredient-exclusions",
     ]);
-    expect(restrictionTags).toContain("nut_allergy");
-    expect(restrictionTags).toContain("vegetarian");
-    expect(restrictionTags).toContain("halal");
   });
 
   it("formats restriction keys for chip labels", () => {

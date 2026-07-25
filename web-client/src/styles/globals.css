@@ -1,16 +1,8 @@
 :root {
   color-scheme: light;
   --color-bg: #f6f2ec;
-  --color-surface: #fffdf9;
-  --color-surface-muted: #f1ece6;
   --color-text: #242321;
-  --color-muted: #68625b;
-  --color-primary: #f45a2d;
   --color-primary-dark: #d8431c;
-  --color-green: #2f6b47;
-  --color-border: #e4ddd4;
-  --shadow-soft: 0 18px 60px rgb(62 43 31 / 10%);
-
   --new-primary-surface: #FFFCFA;
 
   font-family:

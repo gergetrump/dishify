@@ -115,8 +115,6 @@ export const restrictionSections: RestrictionSection[] = [
   },
 ];
 
-export const restrictionTags = restrictionSections.flatMap((section) => section.tags);
-
 export function formatRestrictionLabel(value: string) {
   return value
     .split("_")
