@@ -144,15 +144,19 @@ username: testuser
 password: test-secret
 ```
 
-### 4. Index the Development Recipe Sample
+### 4. Load Recipe Data (pick one)
 
-If `/recommend` reports that `recipes_full` is missing, index the local 10k development sample:
+**Option A — quick local demo (10k sample):** if `/recommend` reports that `recipes_full` is missing:
 
 ```bash
 docker compose run --rm indexing-worker --recreate
 ```
 
-The full production-scale vector index is expected to be restored from a shared Qdrant volume artifact rather than rebuilt during normal development.
+**Option B — full corpus (~2.2M recipes):** download the shared Qdrant Docker volume archive (~7 GB) from Google Drive, save it as `data/qdrant_volume.tar.gz`, then restore it (do **not** commit this file):
+
+- Download: [Qdrant volume (Google Drive)](https://drive.google.com/drive/folders/1JjDzPP-vp9-RT9hfcGWjNe8eaJIthGPt)
+
+Restore steps are in [backend/README.md](backend/README.md) (section *Install the shared vector store*).
 
 ## Configuration
 
@@ -179,7 +183,7 @@ See [.env.example](.env.example) for the canonical local template.
 | --- | --- |
 | `data/dataset_10000_annotated.csv` | Development recipe sample used by the Docker indexing worker. |
 | `data/restriction_rules.json` | Restriction, allergy, and diet rule definitions. |
-| `data/qdrant_volume.tar.gz` | Optional shared Qdrant volume archive; should not be committed. |
+| `data/qdrant_volume.tar.gz` | Optional shared Qdrant volume archive (~7 GB, 2.2M vectors); download from [Google Drive](https://drive.google.com/drive/folders/1JjDzPP-vp9-RT9hfcGWjNe8eaJIthGPt); do not commit. |
 | `notebooks/data_cleaning/` | Data exploration, normalization, and annotation notebooks. |
 
 Development indexing:
