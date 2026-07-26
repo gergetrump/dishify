@@ -1,47 +1,144 @@
 % !TeX root = ../CourseReport.tex
-%=============================================================================
-%  PART 3 --- USER ACCEPTANCE TESTING (UAT)
-%  PAGE BUDGET: 3 pages (excluding title, ToC)          Rubric weight: 10 pts
-%
-%  Document the process and outcome of engaging real target users.
-%  Required content:
-%    - User Case Study (who, why this user, background)
-%    - User Survey Design (steps users take, what you evaluate)
-%    - Survey Execution (>= 5 participants, data collected)
-%    - Result Analysis and Evaluation (feedback + whether/how incorporated)
-%=============================================================================
+
 \chapter{User Acceptance Testing}
 \label{ch:uat}
 
-\section{User Case Study}
-% TODO: Describe the targeted end user(s), with detailed background on WHY this
-% particular user profile was chosen. Note processes, pros, and cons of studying
-% them.
+The purpose of the User Acceptance Testing was to determine whether Dishify
+solves a relevant problem for its intended users and whether the application is
+understandable, useful, and trustworthy in realistic everyday situations. In
+total, nine participants took part, exceeding the minimum requirement of five
+participants.
 
-\section{Survey Design}
-% TODO: How you study users of the product: the exact steps they should take
-% when using Dishify, and what you evaluate (metrics / questions).
+\section{Studying the Target User}
 
-\section{Survey Execution}
-% TODO: At least 5 participants. Summarize how the sessions were run and what
-% data was collected.
+Dishify primarily targets regular home cooks who often need to decide what to
+prepare using ingredients that are already available at home. This user group
+was selected because it directly experiences the main problem addressed by the
+application: deciding what to cook while considering available ingredients,
+limited time, dietary preferences, and allergies.
+
+The survey sample closely matched this profile. Four of the nine participants
+reported cooking daily, while the remaining five cooked several times per week.
+Before using Dishify, five participants identified ``not knowing what to make
+with what I have'' as one of their main difficulties. Four participants also
+reported that recipes often take too long to prepare. These findings show that
+the selected participants experienced the exact problems Dishify was designed
+to address.
+
+Studying regular home cooks offered several advantages. They could evaluate
+whether the recommendations were practical, whether the suggested recipes
+matched everyday cooking situations, and whether the instructions and
+ingredient substitutions were useful. Their previous cooking experience also
+allowed them to assess whether the recommendations were realistic.
+
+However, there were also limitations. Cooking habits, skills, and expectations
+vary considerably between users. More experienced cooks may need less guidance,
+while less experienced users may expect more detailed instructions. In
+addition, the sample was relatively small and mainly included people who already
+cook frequently. Therefore, the results provide useful initial evidence, but
+they cannot yet be generalized to all possible users.
+
+\section{User Survey Design}
+
+The User Acceptance Testing was designed as a structured task-based test
+followed by a survey. Each participant was asked to use Dishify as independently
+as possible and complete the following process:
+
+\begin{enumerate}
+    \item Open the Dishify application and review the available input options.
+    \item Enter ingredients that could realistically be available in their kitchen.
+    \item Specify any relevant dietary preferences or allergy restrictions.
+    \item Request recipe recommendations.
+    \item Review at least one recommended recipe.
+    \item Examine the matched and missing ingredients, preparation information,
+          and the explanation of why the recipe was recommended.
+    \item Review any proposed ingredient substitutions.
+    \item Decide whether the recommended recipe could realistically be prepared.
+    \item Complete the post-test survey and provide optional written feedback.
+\end{enumerate}
+
+The survey evaluated seven main dimensions using a five-point Likert scale,
+where 1 represented a very negative evaluation and 5 represented a very positive
+evaluation:
+
+\begin{itemize}
+    \item overall ease of use;
+    \item ease of obtaining a recommendation;
+    \item clarity of the recommendation explanation;
+    \item relevance of the recommended recipes;
+    \item usefulness of ingredient substitutions;
+    \item trust in the handling of allergies and dietary restrictions;
+    \item likelihood of using Dishify again.
+\end{itemize}
+
+The survey also included questions about cooking frequency, current cooking
+difficulties, positive aspects of Dishify, problems encountered during the test,
+and desired future features. The combination of quantitative ratings and
+open-ended feedback was chosen to provide both measurable results and more
+detailed information about possible improvements.
+
+\section{Performing the User Survey}
+
+During the test, participants entered ingredients, requested a recommendation,
+reviewed recipe information, and then completed the survey. The sessions focused
+on whether users could complete the main recommendation process without
+assistance and whether the results were perceived as useful, understandable,
+relevant, and safe.
+
+The collected data included cooking frequency, common problems experienced
+before using Dishify, seven numerical ratings on a five-point scale, positive
+aspects of the application, problems experienced during the test, and
+suggestions for future improvements and features. No personally identifiable
+information was required.
+
+\section{Result Analysis and Evaluation}
+
+The results were generally positive. All evaluated dimensions received an
+average score above 3.5 out of 5.
+
 \begin{table}[!ht]
     \centering
-    \caption{UAT participants and collected data (summary).}
-    \label{tab:uat-participants}
-    \begin{tabular}{@{}clp{70mm}@{}}
+    \caption{Mean UAT ratings on a five-point Likert scale.}
+    \label{tab:uat-results}
+    \begin{tabular}{@{}lr@{}}
         \toprule
-        \textbf{\#} & \textbf{Participant profile} & \textbf{Key data / observations} \\
+        \textbf{Evaluation dimension} & \textbf{Mean score} \\
         \midrule
-        1 & TODO & TODO \\
-        2 & TODO & TODO \\
-        3 & TODO & TODO \\
-        4 & TODO & TODO \\
-        5 & TODO & TODO \\
+        Overall ease of use                    & 4.67 \\
+        Ease of obtaining a recommendation     & 4.56 \\
+        Trust in allergy and dietary handling  & 4.44 \\
+        Clarity of recommendation explanations & 4.11 \\
+        Relevance of recommended recipes       & 4.00 \\
+        Usefulness of ingredient substitutions & 3.88 \\
+        Likelihood of using Dishify again       & 3.67 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-\section{Result Analysis and Evaluation}
-% TODO: Summarize UAT execution and user feedback; state whether the team can
-% incorporate the feedback and how.
+Overall ease of use received the highest rating. This indicates that
+participants generally understood the interface and were able to complete the
+main workflow successfully. The lowest score was the likelihood of using
+Dishify again. Although this result was still positive, it shows that good
+usability does not automatically guarantee long-term use.
+
+Participants identified several positive aspects of Dishify. The application
+reduced decision fatigue by helping users decide what to cook. It also supported
+the use of ingredients already available at home, which may reduce food waste.
+In addition, the explanations increased transparency and helped users understand
+why particular recipes were recommended.
+
+The main problems identified were that recommendation generation was sometimes
+too slow, ingredient matching could be too literal, cooking instructions needed
+more detail, ingredient substitutions required clearer explanations, and
+onboarding could be clearer.
+
+The most requested future features were saving or bookmarking recipes, filtering
+by cooking time, difficulty, and health goals, recipe photographs, and a
+print-friendly recipe view.
+
+Overall, the User Acceptance Testing indicates that Dishify addresses a relevant
+problem for regular home cooks. Participants found the application easy to use,
+trusted its handling of dietary restrictions, and valued its ingredient-based
+recommendations. However, the lower score for future reuse shows that further
+development should focus on speed, flexible ingredient matching, richer recipe
+information, and features that encourage users to return.
