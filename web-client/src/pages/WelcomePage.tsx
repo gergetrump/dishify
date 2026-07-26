@@ -3,7 +3,7 @@ import { useDocumentTitle } from "@mantine/hooks";
 import { Link, Navigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthProvider";
-import parts from "../assets/app-parts-draft-v2.png";
+import parts from "../assets/app-parts.png";
 import suggestion from "../assets/suggestion.png";
 
 export function WelcomePage() {
