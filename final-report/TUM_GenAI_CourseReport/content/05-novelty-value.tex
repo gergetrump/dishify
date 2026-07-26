@@ -12,10 +12,20 @@
 \chapter{Novelty and Value Proposition}
 \label{ch:novelty}
 
-% TODO: Argue why Dishify is not a thin GenAI wrapper or a clone. Emphasize the
-% novel combination of methods, e.g.:
-%   - Pantry-aware vector retrieval + inventory-aware ranking (matched/missing
-%     ingredients) combined with optional LLM reasoning.
-%   - Dietary/allergy restriction guardrails layered on top of generation.
-%   - Multimodal input (voice + image ingredient detection) feeding one gateway.
-% Compare against the industry baseline and state the concrete user value.
+Dishify addresses a common everyday problem: deciding what to cook with the ingredients already available at home. The value of the system is that it reduces the effort of searching manually through recipe websites or asking a general chatbot for ideas. Instead, the user can enter available ingredients, dietary restrictions, or allergies, and receives recipe recommendations that include matched ingredients, missing ingredients, and an explanation of why each recipe fits the situation.
+
+
+
+The novelty of Dishify is that it is not a thin wrapper around a GenAI API. A simple GenAI wrapper would send the full user request directly to a language model and return a generated answer. Dishify follows a more controlled pipeline. First, recipes are retrieved from a structured recipe dataset using vector search. Then, the results are ranked based on how well they match the user's available pantry ingredients. This makes the recommendation process more deterministic and transparent than a pure chatbot-based approach.
+
+
+
+Another important part of the value proposition is how dietary restrictions and allergies are handled. Instead of relying only on the language model to remember these constraints, Dishify treats them as explicit user preferences and uses them as guardrails in the recommendation process. This helps reduce unsuitable recommendations and increases user trust, especially for users who need to avoid specific ingredients.
+
+
+
+Dishify also combines multiple input methods into one workflow. Users can type ingredients manually, but the system can also support voice and image input through the ingest service. Detected ingredients from speech or images are then passed into the same recommendation pipeline. This creates a more convenient user experience, because the user does not need to formulate a perfect prompt manually.
+
+
+
+Compared to the industry baseline, Dishify is neither only a recipe search engine nor only a chatbot. Traditional recipe platforms mainly rely on keyword search and manual filters, while general chatbots can generate recipes but usually do not use a curated recipe database, pantry-based ranking, and structured user restrictions together. Dishify combines these methods into one hybrid system: vector retrieval provides relevant recipe candidates, inventory-aware ranking personalizes the results, restriction guardrails improve safety, and GenAI is used to explain and enhance the recommendations. This combination creates a more practical, transparent, and user-centered cooking assistant.
