@@ -207,7 +207,9 @@ export function IngredientCapture({ opened, onConfirm, onClose }: Props) {
                             ? "var(--mantine-primary-color-filled)"
                             : "rgba(255, 255, 255, 0.7)"
                       }`,
-                      background: selected.has(index) ? "var(--mantine-primary-color-light)" : "transparent",
+                      background: selected.has(index)
+                        ? "color-mix(in srgb, var(--mantine-primary-color-filled) 14%, transparent)"
+                        : "transparent",
                       transition: "border-color 120ms ease, background 120ms ease",
                     }}
                   >
