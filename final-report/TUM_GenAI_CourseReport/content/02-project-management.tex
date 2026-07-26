@@ -97,10 +97,10 @@ submission deadline (27~July).
 
         \ganttgroup{Infrastructure}{8}{16} \\
         \ganttbar{Docker, Keycloak, CI (CZ, GTr)}{8}{13} \\
-        \ganttbar{Deploy platform, TF/Ansible (CZ)}{14}{16} \\
+        \ganttbar{Deploy platform, TF/Ansible (CZ, AF)}{14}{16} \\
 
         \ganttgroup{Quality}{12}{16} \\
-        \ganttbar{User acceptance testing (MCA, AF)}{12}{16} \\
+        \ganttbar{User acceptance testing (MCA)}{12}{16} \\
         \ganttbar{Safety guardrails (GTr)}{14}{16} \\
 
         \ganttgroup{Submission}{15}{17} \\
@@ -267,8 +267,8 @@ across the team.
         Chengjie Zhou               & Data, infrastructure \& planning & Data cleaning and corpus preparation, Docker/CI and Keycloak, deployment tooling (Terraform/Ansible), ranking/search fixes at scale, and project planning and task coordination. \\
         Can Lin                     & Multimodal GenAI & Voice and image ingest service (Gemini) and recipe-augmentation hooks, plus ingredient-matching fixes. \\
         Georg Tichy                 & Web platform & Mantine setup and custom theme, core web pages and layout. \\
-        Maria Chatzipavlou Arvaniti & Web UX \& content & Mantine styling and product copy on the welcome, results, and recipe pages. \\
-        Aymen Faouel                & QA \& user study & User acceptance testing and quality assurance support. \\
+        Maria Chatzipavlou Arvaniti & Web UX \& content & Mantine styling and product copy on the welcome, results, and recipe pages; user acceptance testing. \\
+        Aymen Faouel                & Infrastructure \& QA & Supported deployment platform work (Terraform/Ansible) and quality assurance. \\
         \bottomrule
     \end{tabularx}
 \end{table}
@@ -300,9 +300,8 @@ view, would be natural next additions.
 
 \section{Pitch Video}
 
-A short (approximately 60-second) product pitch accompanies this report and is
-submitted as a separate attachment on Moodle. It states the problem, shows the
-live application and the primary user journey, and points out where generative AI
-is used (voice and image ingestion and the recipe-fit explanations). The current
-demo recording is available at
-\url{https://www.youtube.com/shorts/XWc4LrsOffw}. % CONFIRM final pitch-video URL for Moodle.
+A short product pitch accompanies this report and is submitted as a separate
+attachment on Moodle. It states the problem, shows the live iOS application and
+the primary user journey (pantry from a photo, vibe, ranked recipes), and points
+out where generative AI is used (Gemini image ingredient detection and
+recipe-fit explanations on the results).
