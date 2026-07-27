@@ -170,33 +170,34 @@
 \setuptoc{lot}{noparskipfake} % Angleichung der Abstände nach Tabellenverzeichnisüberschrift an andere Überschriften
 
 % Beschriftungen:
-\DeclareCaptionFormat{WissenschaftlicheArbeiten}{\fontsize{8pt}{10pt}\selectfont#1 #2#3\par}
+\DeclareCaptionFormat{WissenschaftlicheArbeiten}{\fontsize{8pt}{10pt}\selectfont#1#2#3\par}
 \DeclareCaptionLabelFormat{WissenschaftlicheArbeiten}{\bfseries\selectfont#1 #2}
 
 % -- Tabellen:
 \captionsetup[table]{%
     format=WissenschaftlicheArbeiten,
     labelformat=WissenschaftlicheArbeiten,
-    labelsep=none,
+    labelsep=colon,
     singlelinecheck=off,
-    justification=centering,
+    justification=raggedright,
     %margin=6pt,
-    skip=3pt
+    skip=4pt
 }
 
 % -- Abbildungen:
 \captionsetup[figure]{%
     format=WissenschaftlicheArbeiten,
     labelformat=WissenschaftlicheArbeiten,
-    labelsep=none,
+    labelsep=colon,
     singlelinecheck=off,
-    justification=centering,
+    justification=raggedright,
     skip=6.6mm
 }
 
 
 % Tabellen:
-\renewcommand{\arraystretch}{1.8} % Skalierung der Tabellen
+\renewcommand{\arraystretch}{1.35} % Skalierung der Tabellen
+\setlength{\tabcolsep}{5pt}
 \newcolumntype{M}{X<{\vspace{4pt}}} % Spaltentyp mit Abstand rechts
 
 

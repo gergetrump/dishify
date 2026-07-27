@@ -3,45 +3,160 @@
 %  PART 3 --- USER ACCEPTANCE TESTING (UAT)
 %  PAGE BUDGET: 3 pages (excluding title, ToC)          Rubric weight: 10 pts
 %
-%  Document the process and outcome of engaging real target users.
-%  Required content:
-%    - User Case Study (who, why this user, background)
-%    - User Survey Design (steps users take, what you evaluate)
-%    - Survey Execution (>= 5 participants, data collected)
-%    - Result Analysis and Evaluation (feedback + whether/how incorporated)
 %=============================================================================
 \chapter{User Acceptance Testing}
 \label{ch:uat}
 
-\section{User Case Study}
-% TODO: Describe the targeted end user(s), with detailed background on WHY this
-% particular user profile was chosen. Note processes, pros, and cons of studying
-% them.
+\section{User Case Study: Who We Studied and Why}
+
+Dishify's target user is the \textbf{everyday home cook who already owns food
+but has no plan}: someone who cooks for a small household on most days, shops
+irregularly, and repeatedly faces the same 6~p.m.\ question --- what can I make
+with what is in the fridge right now? We chose this profile over \emph{novice
+cooks}, who would have stressed instruction quality rather than recommendation
+quality, and \emph{enthusiast cooks}, who already own the mental index Dishify
+is meant to replace; neither would exercise the core pantry-to-recipe loop. The
+everyday cook is also the group for whom our two value claims --- less decision
+fatigue, less waste --- are testable.
+
+Recruitment was therefore screened on \emph{cooking frequency} rather than
+skill. Nine participants were drawn from the team's wider student and personal
+network in two deliberately different segments: \textbf{four cook daily}, the
+group with the highest exposure to repeat decision fatigue, who would show
+whether suggestions stay varied and a standing pantry is convenient to
+maintain; and \textbf{five cook weekly}, planning in batches from a
+longer-lived pantry, who would stress ingredient coverage, tolerance for
+missing items, and the usefulness of the shopping gap. Their self-reported pain
+points confirmed the premise before they saw the product: \textbf{5 of 9} named
+``I don't know what to cook'' and \textbf{4 of 9} ``recipes take too long''.
+The trade-off is that a convenience sample is small ($n=9$), student-skewed,
+and prone to politeness bias --- which is why we weight the behavioural and
+free-text findings at least as heavily as the Likert means.
 
 \section{Survey Design}
-% TODO: How you study users of the product: the exact steps they should take
-% when using Dishify, and what you evaluate (metrics / questions).
+
+The study combined a \textbf{task-based usability test} with a
+\textbf{structured survey}, so that what people did could be compared with what
+they said. Participants were given the deployed web application and a short
+scenario --- \emph{cook something tonight from what you actually have at
+home} --- and were asked to think aloud while working through a fixed task
+sequence:
+
+\begin{enumerate}[itemsep=0pt, topsep=2pt, parsep=0pt]
+    \item register an account and complete first-time setup;
+    \item record any real allergies, diets, or restrictions in
+          \emph{Preferences};
+    \item enter a pantry reflecting their own kitchen, using typing, voice, or
+          the photo scan;
+    \item request recommendations and judge the ranked list;
+    \item open one recipe and decide whether they would actually cook it.
+\end{enumerate}
+
+Each task carried an observed success criterion --- completed unaided, with a
+hint, or abandoned --- and we noted where participants hesitated. The survey
+then asked for agreement on a five-point Likert scale across seven dimensions
+chosen to map onto the project's value claims rather than to generic
+usability: \textbf{ease of use} and \textbf{recommendation process} (is the
+pantry-first flow learnable without instruction?), \textbf{recipe relevance}
+(are suggestions actually cookable from the stated pantry?),
+\textbf{explanation clarity} (do ``why it fits'' and ``watch for'' carry real
+information?), \textbf{allergy and diet trust} (would the user rely on the hard
+filters for a restriction that matters to them?), \textbf{substitution quality}
+(is the handling of missing ingredients helpful?), and \textbf{likelihood to
+reuse} --- our retention proxy, and the hardest question we asked. Two
+free-text questions closed the survey: what worked well, and what would have to
+change before they would use Dishify again next week.
 
 \section{Survey Execution}
-% TODO: At least 5 participants. Summarize how the sessions were run and what
-% data was collected.
-\begin{table}[!ht]
-    \centering
-    \caption{UAT participants and collected data (summary).}
-    \label{tab:uat-participants}
-    \begin{tabular}{@{}clp{70mm}@{}}
-        \toprule
-        \textbf{\#} & \textbf{Participant profile} & \textbf{Key data / observations} \\
-        \midrule
-        1 & TODO & TODO \\
-        2 & TODO & TODO \\
-        3 & TODO & TODO \\
-        4 & TODO & TODO \\
-        5 & TODO & TODO \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+
+All nine participants completed the full task sequence and the survey on the
+deployed instance (\url{http://167.233.165.44}), each using their own real
+pantry and real restrictions rather than a scripted example. Sessions ran
+individually; the observer recorded task outcomes and think-aloud remarks,
+after which the participant filled in the survey unobserved to limit courtesy
+effects. Every participant reached a ranked result list and opened at least one
+recipe, so no session was excluded, and all seven Likert dimensions received
+nine responses.
 
 \section{Result Analysis and Evaluation}
-% TODO: Summarize UAT execution and user feedback; state whether the team can
-% incorporate the feedback and how.
+\label{sec:uat-analysis}
+
+\begin{table}[!ht]
+    \centering
+    \caption[User acceptance results]{Mean Likert agreement across the seven
+    evaluated dimensions ($n=9$).}
+    \label{tab:uat-scores}
+    \footnotesize
+    \begin{tabularx}{\textwidth}{@{}p{39mm}cX@{}}
+        \toprule
+        \textbf{Dimension} & \textbf{Mean} & \textbf{Interpretation} \\
+        \midrule
+        \rowcolor{dishifygreen!18}
+        Ease of use & 4.67 & \textbf{Very strong:} pantry-first flow understood without instruction. \\
+        \rowcolor{dishifygreen!18}
+        Recommendation process & 4.56 & \textbf{Very strong:} pantry to ranked recipes felt like a natural sequence. \\
+        \rowcolor{dishifygreen!18}
+        Allergy and diet trust & 4.44 & \textbf{Strong:} users with real restrictions relied on hard filtering. \\
+        \rowcolor{dishifycream}
+        Explanation clarity & 4.11 & \textbf{Good:} reasoning was useful, but users wanted more detail. \\
+        \rowcolor{dishifycream}
+        Recipe relevance & 4.00 & \textbf{Good:} useful suggestions, room for stronger matching. \\
+        \rowcolor{dishifyorange!10}
+        Substitution quality & 3.88 & \textbf{Improvement area:} needs a stronger substitution base. \\
+        \rowcolor{dishifyorange!10}
+        Likelihood to reuse & 3.67 & \textbf{Improvement area:} depends on faster generation and deeper content. \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+Table~\ref{tab:uat-scores} shows a clear split. Everything about
+\emph{operating} Dishify scored highly --- ease of use $4.67$, recommendation
+process $4.56$ --- so the pantry-first model is understood without instruction,
+and our central bet on inverting the usual dish-first search was correct.
+Allergy and diet trust at $4.44$ is the result we cared most about:
+participants with real restrictions were willing to rely on the hard filters,
+validating the decision to enforce restrictions in retrieval rather than in the
+prompt. The weaker scores concern \emph{content}, not interaction, and form a
+descending chain: recipes that are only approximately cookable ($4.00$) produce
+weak substitution advice ($3.88$), and weak substitution advice erodes the
+reason to come back ($3.67$). Explanation clarity ($4.11$) sits between --- the
+explanations are trusted, but were found terse.
+
+The free-text answers explain the numbers. What users valued matched our value
+claims almost exactly: Dishify \emph{removes the decision}, \emph{uses up food
+they already own}, and the explanations \emph{make the ranking legible} rather
+than arbitrary. The improvement requests were concrete: generation should feel
+faster; ingredient matching should handle near-synonyms such as ``spring
+onion'' and ``onion''; recipe instructions should be more detailed;
+substitutions should be more useful; and first-time onboarding should make the
+value visible sooner. Participants also asked most often for bookmarking,
+cooking-time and difficulty filters, health-goal filters, recipe photos, and a
+print-friendly view.
+
+\paragraph{What we incorporated, and what we did not.}
+Table~\ref{tab:uat-actions} records the disposition of each finding. Two items
+were incorporated immediately, literal matching was improved within the time
+available, latency was measured per stage so the team could target generated
+explanations specifically, and the remaining convenience requests were added to
+the future-work list. Overall, the UAT supports Dishify's usability and trust
+claims, while identifying repeat use as the strongest next product metric to
+optimise.
+
+\begin{table}[!htbp]
+    \centering
+    \footnotesize
+    \caption{Disposition of the main UAT findings.}
+    \label{tab:uat-actions}
+    \begin{tabularx}{\textwidth}{@{}p{36mm}p{22mm}X@{}}
+        \toprule
+        \textbf{Finding} & \textbf{Status} & \textbf{Action taken / rationale} \\
+        \midrule
+        Instructions too terse & Incorporated & LLM step augmentation rewrites terse directions into timed, numbered steps. \\
+        Explanations too short & Incorporated & Reasoning prompt tightened to produce specific, recipe-grounded bullets. \\
+        Matching too literal & Partial & Plural normalisation and token-containment matching added; synonym ontology deferred. \\
+        Generation too slow & Diagnosed & Explanation is $\approx$\,47\,\% of median response time; fix is streaming/deferred explanation. \\
+        Weak substitutions & Deferred & Needs an ingredient-substitution knowledge base. \\
+        Onboarding, bookmarks, filters, photos, print view & Deferred & Valuable but non-core; recorded as future work (Section~\ref{sec:pm-progress}). \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
