@@ -119,4 +119,4 @@ web-client/
 
 ## API contract
 
-Networking matches [`../docs/API.md`](../docs/API.md). The app uses gateway REST auth endpoints, not direct Keycloak OIDC from the browser. CORS is enabled for all origins in backend dev mode — see [`../docs/INTEGRATION.md`](../docs/INTEGRATION.md).
+Networking matches [`../docs/API.md`](../docs/API.md). The app uses gateway REST auth endpoints, not direct Keycloak OIDC from the browser. CORS is enabled for all origins in backend dev mode.
