@@ -52,9 +52,11 @@
 
 % This report is figure-heavy and page-budgeted; the default KOMA float
 % separation wastes roughly a line per float. Tighten it slightly.
-\setlength{\textfloatsep}{14pt plus 3pt minus 3pt}
-\setlength{\intextsep}{12pt plus 3pt minus 3pt}
-\setlength{\floatsep}{12pt plus 3pt minus 3pt}
+\setlength{\textfloatsep}{16pt plus 4pt minus 2pt}
+\setlength{\intextsep}{14pt plus 4pt minus 2pt}
+\setlength{\floatsep}{14pt plus 4pt minus 2pt}
+% [H] placement keeps large screenshots from covering the heading above them.
+\usepackage{float}
 
 % TikZ libraries for the pipeline and guardrail diagrams:
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc, fit, backgrounds}

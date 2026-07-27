@@ -1,161 +1,144 @@
 % !TeX root = ../CourseReport.tex
-%=============================================================================
-%  PART 3 --- USER ACCEPTANCE TESTING (UAT)
-%  PAGE BUDGET: 3 pages (excluding title, ToC)          Rubric weight: 10 pts
-%
-%=============================================================================
+
 \chapter{User Acceptance Testing}
 \label{ch:uat}
 
-\section{User Case Study: Who We Studied and Why}
+The purpose of the User Acceptance Testing was to determine whether Dishify
+solves a relevant problem for its intended users and whether the application is
+understandable, useful, and trustworthy in realistic everyday situations. In
+total, nine participants took part, exceeding the minimum requirement of five
+participants.
 
-Dishify's target user is the \textbf{everyday home cook who already owns food
-but has no plan}: someone who cooks for a small household on most days, shops
-irregularly, and repeatedly faces the same 6~p.m.\ question: what can I make
-with what is in the fridge right now? We chose this profile over \emph{novice
-cooks}, who would have stressed instruction quality rather than recommendation
-quality, and \emph{enthusiast cooks}, who already own the mental index Dishify
-is meant to replace; neither would exercise the core pantry-to-recipe loop. The
-everyday cook is also the group for whom our two value claims, less decision
-fatigue and less waste, are testable.
+\section{Studying the Target User}
 
-Recruitment was therefore screened on \emph{cooking frequency} rather than
-skill. Nine participants were drawn from the team's wider student and personal
-network in two deliberately different segments: \textbf{four cook daily}, the
-group with the highest exposure to repeat decision fatigue, who would show
-whether suggestions stay varied and a standing pantry is convenient to
-maintain; and \textbf{five cook weekly}, planning in batches from a
-longer-lived pantry, who would stress ingredient coverage, tolerance for
-missing items, and the usefulness of the shopping gap. Their self-reported pain
-points confirmed the premise before they saw the product: \textbf{5 of 9} named
-``I don't know what to cook'' and \textbf{4 of 9} ``recipes take too long''.
-The trade-off is that a convenience sample is small ($n=9$), student-skewed,
-and prone to politeness bias. For that reason, we weight the behavioural and
-free-text findings at least as heavily as the Likert means.
+Dishify primarily targets regular home cooks who often need to decide what to
+prepare using ingredients that are already available at home. This user group
+was selected because it directly experiences the main problem addressed by the
+application: deciding what to cook while considering available ingredients,
+limited time, dietary preferences, and allergies.
 
-\section{Survey Design}
+The survey sample closely matched this profile. Four of the nine participants
+reported cooking daily, while the remaining five cooked several times per week.
+Before using Dishify, five participants identified ``not knowing what to make
+with what I have'' as one of their main difficulties. Four participants also
+reported that recipes often take too long to prepare. These findings show that
+the selected participants experienced the exact problems Dishify was designed
+to address.
 
-The study combined a \textbf{task-based usability test} with a
-\textbf{structured survey}, so that what people did could be compared with what
-they said. Participants were given the deployed web application and a short
-scenario: \emph{cook something tonight from what you actually have at home}.
-They were asked to think aloud while working through a fixed task sequence:
+Studying regular home cooks offered several advantages. They could evaluate
+whether the recommendations were practical, whether the suggested recipes
+matched everyday cooking situations, and whether the instructions and
+ingredient substitutions were useful. Their previous cooking experience also
+allowed them to assess whether the recommendations were realistic.
 
-\begin{enumerate}[itemsep=0pt, topsep=2pt, parsep=0pt]
-    \item register an account and complete first-time setup;
-    \item record any real allergies, diets, or restrictions in
-          \emph{Preferences};
-    \item enter a pantry reflecting their own kitchen, using typing, voice, or
-          the photo scan;
-    \item request recommendations and judge the ranked list;
-    \item open one recipe and decide whether they would actually cook it.
+However, there were also limitations. Cooking habits, skills, and expectations
+vary considerably between users. More experienced cooks may need less guidance,
+while less experienced users may expect more detailed instructions. In
+addition, the sample was relatively small and mainly included people who already
+cook frequently. Therefore, the results provide useful initial evidence, but
+they cannot yet be generalized to all possible users.
+
+\section{User Survey Design}
+
+The User Acceptance Testing was designed as a structured task-based test
+followed by a survey. Each participant was asked to use Dishify as independently
+as possible and complete the following process:
+
+\begin{enumerate}
+    \item Open the Dishify application and review the available input options.
+    \item Enter ingredients that could realistically be available in their kitchen.
+    \item Specify any relevant dietary preferences or allergy restrictions.
+    \item Request recipe recommendations.
+    \item Review at least one recommended recipe.
+    \item Examine the matched and missing ingredients, preparation information,
+          and the explanation of why the recipe was recommended.
+    \item Review any proposed ingredient substitutions.
+    \item Decide whether the recommended recipe could realistically be prepared.
+    \item Complete the post-test survey and provide optional written feedback.
 \end{enumerate}
 
-Each task carried an observed success criterion: completed unaided, completed
-with a hint, or abandoned. We also noted where participants hesitated. The
-survey then asked for agreement on a five-point Likert scale across seven dimensions
-chosen to map onto the project's value claims rather than to generic
-usability: \textbf{ease of use} and \textbf{recommendation process} (is the
-pantry-first flow learnable without instruction?), \textbf{recipe relevance}
-(are suggestions actually cookable from the stated pantry?),
-\textbf{explanation clarity} (do ``why it fits'' and ``watch for'' carry real
-information?), \textbf{allergy and diet trust} (would the user rely on the hard
-filters for a restriction that matters to them?), \textbf{substitution quality}
-(is the handling of missing ingredients helpful?), and \textbf{likelihood to
-reuse}, which served as our retention proxy and the hardest question we asked.
-Two free-text questions closed the survey: what worked well, and what would
-have to change before they would use Dishify again next week.
+The survey evaluated seven main dimensions using a five-point Likert scale,
+where 1 represented a very negative evaluation and 5 represented a very positive
+evaluation:
 
-\section{Survey Execution}
+\begin{itemize}
+    \item overall ease of use;
+    \item ease of obtaining a recommendation;
+    \item clarity of the recommendation explanation;
+    \item relevance of the recommended recipes;
+    \item usefulness of ingredient substitutions;
+    \item trust in the handling of allergies and dietary restrictions;
+    \item likelihood of using Dishify again.
+\end{itemize}
 
-All nine participants completed the full task sequence and the survey on the
-deployed instance (\url{http://167.233.165.44}), each using their own real
-pantry and real restrictions rather than a scripted example. Sessions ran
-individually; the observer recorded task outcomes and think-aloud remarks,
-after which the participant filled in the survey unobserved to limit courtesy
-effects. Every participant reached a ranked result list and opened at least one
-recipe, so no session was excluded, and all seven Likert dimensions received
-nine responses.
+The survey also included questions about cooking frequency, current cooking
+difficulties, positive aspects of Dishify, problems encountered during the test,
+and desired future features. The combination of quantitative ratings and
+open-ended feedback was chosen to provide both measurable results and more
+detailed information about possible improvements.
+
+\section{Performing the User Survey}
+
+During the test, participants entered ingredients, requested a recommendation,
+reviewed recipe information, and then completed the survey. The sessions focused
+on whether users could complete the main recommendation process without
+assistance and whether the results were perceived as useful, understandable,
+relevant, and safe.
+
+The collected data included cooking frequency, common problems experienced
+before using Dishify, seven numerical ratings on a five-point scale, positive
+aspects of the application, problems experienced during the test, and
+suggestions for future improvements and features. No personally identifiable
+information was required.
 
 \section{Result Analysis and Evaluation}
-\label{sec:uat-analysis}
+
+The results were generally positive. All evaluated dimensions received an
+average score above 3.5 out of 5.
 
 \begin{table}[!ht]
     \centering
-    \caption[User acceptance results]{Mean Likert agreement across the seven
-    evaluated dimensions ($n=9$).}
-    \label{tab:uat-scores}
-    \footnotesize
-    \begin{tabularx}{\textwidth}{@{}p{39mm}cX@{}}
+    \caption{Mean UAT ratings on a five-point Likert scale.}
+    \label{tab:uat-results}
+    \begin{tabular}{@{}lr@{}}
         \toprule
-        \textbf{Dimension} & \textbf{Mean} & \textbf{Interpretation} \\
+        \textbf{Evaluation dimension} & \textbf{Mean score} \\
         \midrule
-        \rowcolor{dishifygreen!18}
-        Ease of use & 4.67 & \textbf{Very strong:} pantry-first flow understood without instruction. \\
-        \rowcolor{dishifygreen!18}
-        Recommendation process & 4.56 & \textbf{Very strong:} pantry to ranked recipes felt like a natural sequence. \\
-        \rowcolor{dishifygreen!18}
-        Allergy and diet trust & 4.44 & \textbf{Strong:} users with real restrictions relied on hard filtering. \\
-        \rowcolor{dishifycream}
-        Explanation clarity & 4.11 & \textbf{Good:} reasoning was useful, but users wanted more detail. \\
-        \rowcolor{dishifycream}
-        Recipe relevance & 4.00 & \textbf{Good:} useful suggestions, room for stronger matching. \\
-        \rowcolor{dishifyorange!10}
-        Substitution quality & 3.88 & \textbf{Improvement area:} needs a stronger substitution base. \\
-        \rowcolor{dishifyorange!10}
-        Likelihood to reuse & 3.67 & \textbf{Improvement area:} depends on faster generation and deeper content. \\
+        Overall ease of use                    & 4.67 \\
+        Ease of obtaining a recommendation     & 4.56 \\
+        Trust in allergy and dietary handling  & 4.44 \\
+        Clarity of recommendation explanations & 4.11 \\
+        Relevance of recommended recipes       & 4.00 \\
+        Usefulness of ingredient substitutions & 3.88 \\
+        Likelihood of using Dishify again       & 3.67 \\
         \bottomrule
-    \end{tabularx}
+    \end{tabular}
 \end{table}
 
-Table~\ref{tab:uat-scores} shows a clear split. Everything about
-\emph{operating} Dishify scored highly: ease of use $4.67$ and recommendation
-process $4.56$. This shows that the pantry-first model is understood without
-instruction, and our central bet on inverting the usual dish-first search was correct.
-Allergy and diet trust at $4.44$ is the result we cared most about:
-participants with real restrictions were willing to rely on the hard filters,
-validating the decision to enforce restrictions in retrieval rather than in the
-prompt. The weaker scores concern \emph{content}, not interaction, and form a
-descending chain: recipes that are only approximately cookable ($4.00$) produce
-weak substitution advice ($3.88$), and weak substitution advice erodes the
-reason to come back ($3.67$). Explanation clarity ($4.11$) sits between these
-two groups: the explanations are trusted, but were found terse.
+Overall ease of use received the highest rating. This indicates that
+participants generally understood the interface and were able to complete the
+main workflow successfully. The lowest score was the likelihood of using
+Dishify again. Although this result was still positive, it shows that good
+usability does not automatically guarantee long-term use.
 
-The free-text answers explain the numbers. What users valued matched our value
-claims almost exactly: Dishify \emph{removes the decision}, \emph{uses up food
-they already own}, and the explanations \emph{make the ranking legible} rather
-than arbitrary. The improvement requests were concrete: generation should feel
-faster; ingredient matching should handle near-synonyms such as ``spring
-onion'' and ``onion''; recipe instructions should be more detailed;
-substitutions should be more useful; and first-time onboarding should make the
-value visible sooner. Participants also asked most often for bookmarking,
-cooking-time and difficulty filters, health-goal filters, recipe photos, and a
-print-friendly view.
+Participants identified several positive aspects of Dishify. The application
+reduced decision fatigue by helping users decide what to cook. It also supported
+the use of ingredients already available at home, which may reduce food waste.
+In addition, the explanations increased transparency and helped users understand
+why particular recipes were recommended.
 
-\paragraph{What we incorporated, and what we did not.}
-Table~\ref{tab:uat-actions} records the disposition of each finding. Two items
-were incorporated immediately, literal matching was improved within the time
-available, latency was measured per stage so the team could target generated
-explanations specifically, and the remaining convenience requests were added to
-the future-work list. Overall, the UAT supports Dishify's usability and trust
-claims, while identifying repeat use as the strongest next product metric to
-optimise.
+The main problems identified were that recommendation generation was sometimes
+too slow, ingredient matching could be too literal, cooking instructions needed
+more detail, ingredient substitutions required clearer explanations, and
+onboarding could be clearer.
 
-\begin{table}[!htbp]
-    \centering
-    \footnotesize
-    \caption{Disposition of the main UAT findings.}
-    \label{tab:uat-actions}
-    \begin{tabularx}{\textwidth}{@{}p{36mm}p{22mm}X@{}}
-        \toprule
-        \textbf{Finding} & \textbf{Status} & \textbf{Action taken / rationale} \\
-        \midrule
-        Instructions too terse & Incorporated & LLM step augmentation rewrites terse directions into timed, numbered steps. \\
-        Explanations too short & Incorporated & Reasoning prompt tightened to produce specific, recipe-grounded bullets. \\
-        Matching too literal & Partial & Plural normalisation and token-containment matching added; synonym ontology deferred. \\
-        Generation too slow & Diagnosed & Explanation is $\approx$\,47\,\% of median response time; fix is streaming/deferred explanation. \\
-        Weak substitutions & Deferred & Needs an ingredient-substitution knowledge base. \\
-        Onboarding, bookmarks, filters, photos, print view & Deferred & Valuable but non-core; recorded as future work (Section~\ref{sec:pm-progress}). \\
-        \bottomrule
-    \end{tabularx}
-\end{table}
+The most requested future features were saving or bookmarking recipes, filtering
+by cooking time, difficulty, and health goals, recipe photographs, and a
+print-friendly recipe view.
+
+Overall, the User Acceptance Testing indicates that Dishify addresses a relevant
+problem for regular home cooks. Participants found the application easy to use,
+trusted its handling of dietary restrictions, and valued its ingredient-based
+recommendations. However, the lower score for future reuse shows that further
+development should focus on speed, flexible ingredient matching, richer recipe
+information, and features that encourage users to return.
