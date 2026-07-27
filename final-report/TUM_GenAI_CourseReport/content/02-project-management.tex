@@ -63,49 +63,85 @@ submission deadline (27~July).
 \begin{figure}[!ht]
     \centering
     \resizebox{\textwidth}{!}{%
-    \begin{ganttchart}[
-        hgrid,
-        vgrid,
-        bar height=0.6,
-        bar top shift=0.2,
-        group peaks height=0,
-        title height=0.9,
-        y unit title=0.55cm,
-        y unit chart=0.6cm
-    ]{1}{17}
-        \gantttitle{April 2026}{4}
-        \gantttitle{May 2026}{4}
-        \gantttitle{June 2026}{5}
-        \gantttitle{July 2026}{4} \\
+    \begin{tikzpicture}[
+        font=\scriptsize,
+        x=0.52cm,
+        y=0.58cm,
+        month/.style={fill=dishifyorange!16, draw=dishifyorange!45, rounded corners=1pt},
+        grid/.style={draw=black!10},
+        row/.style={draw=black!8, fill=black!2},
+        lane/.style={font=\scriptsize\bfseries, text=black!72, anchor=east},
+        bartext/.style={font=\tiny, text=black!88, align=center, inner sep=0pt},
+        data/.style={rounded corners=2pt, fill=dishifygreen!60, draw=dishifygreen!90!black},
+        backend/.style={rounded corners=2pt, fill=dishifyorange!38, draw=dishifyorange!80!black},
+        client/.style={rounded corners=2pt, fill=blue!18, draw=blue!45!black},
+        infra/.style={rounded corners=2pt, fill=black!12, draw=black!35},
+        quality/.style={rounded corners=2pt, fill=teal!22, draw=teal!55!black},
+        submit/.style={rounded corners=2pt, fill=red!13, draw=red!45!black},
+        ms/.style={diamond, aspect=1.2, fill=black!82, draw=black!82,
+                   inner sep=1.6pt}
+    ]
+        \def\xzero{6.2}
+        \def\rowtop{-1.25}
+        \def\rowgap{0.88}
+        \def\barh{0.50}
 
-        \ganttgroup{Data}{2}{13} \\
-        \ganttbar{Preprocessing \& cleaning (CZ)}{2}{8} \\
-        \ganttbar{Indexing / Qdrant corpus (GTr, CZ)}{5}{13} \\
+        % Month header.
+        \foreach \label/\start/\len in {April 2026/1/4, May 2026/5/4,
+            June 2026/9/5, July 2026/14/4} {
+            \pgfmathsetmacro{\x}{\xzero+\start-1}
+            \node[month, minimum width=\len*0.52cm, minimum height=0.42cm,
+                  anchor=west] at (\x,0) {\label};
+        }
 
-        \ganttgroup{Backend / GenAI}{5}{15} \\
-        \ganttbar{Recommend, retrieve, rank, reason (GTr)}{5}{15} \\
-        \ganttbar{Multimodal ingest: voice, vision (CL)}{12}{14} \\
+        % Week grid and row bands.
+        \foreach \w in {1,...,17} {
+            \pgfmathsetmacro{\x}{\xzero+\w-1}
+            \draw[grid] (\x,-0.45) -- (\x,-10.35);
+            \node[font=\tiny, text=black!50] at (\x+0.5,-0.63) {\w};
+        }
+        \foreach \r in {0,...,10} {
+            \pgfmathsetmacro{\y}{\rowtop-\r*\rowgap}
+            \draw[row] (0.1,\y-0.35) rectangle (\xzero+17,\y+0.35);
+        }
+        \foreach \w in {9,16,17} {
+            \pgfmathsetmacro{\x}{\xzero+\w-0.5}
+            \draw[densely dotted, draw=black!35] (\x,-0.45) -- (\x,-10.65);
+        }
 
-        \ganttgroup{Clients}{11}{17} \\
-        \ganttbar{iOS app, SwiftUI (GTr)}{11}{17} \\
-        \ganttbar{Web client, Mantine + UX (GT, MCA)}{12}{16} \\
+        \newcommand{\timelinebar}[6]{%
+            \pgfmathsetmacro{\y}{\rowtop-(#1)*\rowgap}%
+            \node[lane] at (5.85,\y) {#2};%
+            \pgfmathsetmacro{\xs}{\xzero+(#3)-1}%
+            \pgfmathsetmacro{\xe}{\xzero+(#4)}%
+            \path[#6] (\xs,\y-\barh/2) rectangle (\xe,\y+\barh/2);%
+            \node[bartext] at ({(\xs+\xe)/2},\y) {\strut #5};%
+        }
 
-        \ganttgroup{Infrastructure}{8}{16} \\
-        \ganttbar{Docker, Keycloak, CI (CZ, GTr)}{8}{13} \\
-        \ganttbar{Deploy platform, TF/Ansible (CZ)}{14}{16} \\
+        \timelinebar{0}{Data}{2}{8}{Preprocessing (CZ)}{data}
+        \timelinebar{1}{Data}{5}{13}{Qdrant corpus (GTr, CZ)}{data}
+        \timelinebar{2}{Backend / GenAI}{5}{15}{Retrieve, rank, reason (GTr)}{backend}
+        \timelinebar{3}{Backend / GenAI}{12}{14}{Vision ingest (CL)}{backend}
+        \timelinebar{4}{Clients}{11}{17}{iOS app (GTr)}{client}
+        \timelinebar{5}{Clients}{12}{16}{Web + UX (GT, MCA)}{client}
+        \timelinebar{6}{Infrastructure}{8}{13}{Docker, Keycloak, CI}{infra}
+        \timelinebar{7}{Infrastructure}{14}{16}{Deploy (CZ)}{infra}
+        \timelinebar{8}{Quality}{12}{16}{UAT (MCA, AF)}{quality}
+        \timelinebar{9}{Quality}{14}{16}{Safety (GTr)}{quality}
+        \timelinebar{10}{Submission}{15}{17}{Report (all)}{submit}
 
-        \ganttgroup{Quality}{12}{16} \\
-        \ganttbar{User acceptance testing (MCA, AF)}{12}{16} \\
-        \ganttbar{Safety guardrails (GTr)}{14}{16} \\
-
-        \ganttgroup{Submission}{15}{17} \\
-        \ganttbar{Final report + code (all)}{15}{17} \\
-
-        % Milestones on separate rows so their inline labels cannot overlap.
-        \ganttmilestone[name=ms1]{Midterm presentation (1 Jun)}{9} \\
-        \ganttmilestone[name=ms2]{Final presentation (20 Jul)}{16} \\
-        \ganttmilestone[name=ms3]{Submission deadline (27 Jul)}{17}
-    \end{ganttchart}%
+        % Course milestones. Labels are staggered so the July dates stay legible.
+        \foreach \w in {9,16,17} {
+            \pgfmathsetmacro{\x}{\xzero+\w-0.5}
+            \node[ms] at (\x,-10.95) {};
+        }
+        \node[font=\tiny, text=black!70, align=center, anchor=north]
+              at (\xzero+8.5,-11.2) {Midterm\\1 Jun};
+        \node[font=\tiny, text=black!70, align=center, anchor=north east]
+              at (\xzero+15.35,-11.2) {Final pres.\\20 Jul};
+        \node[font=\tiny, text=black!70, align=center, anchor=north west]
+              at (\xzero+16.65,-11.75) {Submit\\27 Jul};
+    \end{tikzpicture}%
     }
     \caption[Dishify project timeline]{\textbf{Dishify project timeline,
     April--July 2026} (one column $\approx$ one week from 20 April). Bars show
