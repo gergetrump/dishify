@@ -13,7 +13,7 @@ in a prompt, and print whatever the model returned. Dishify inverts that: the
 model never decides what you are shown. Retrieval over a 2.2\,M-recipe index
 decides the candidate set, a deterministic filter decides what is safe, an
 explicit scoring function decides the order, and the language model is
-consulted only afterwards --- to explain a decision that has already been made,
+consulted only afterwards. It explains a decision that has already been made,
 under an output contract that is verified before anything reaches the user
 (Chapter~\ref{ch:safety-reflection}). Remove the model entirely and Dishify
 still returns correct, ranked, restriction-safe results; that is the concrete
@@ -28,17 +28,17 @@ first-class output rather than a shopping list.
 \section{The Novel Combination}
 
 The contribution is the combination, and specifically three couplings. Each
-individual technique exists elsewhere --- vector search, dietary tagging, and
-multi-modal capture are all established --- so we do not claim novelty in any
-one of them. What we claim is the architecture that binds them: generation is
+individual technique exists elsewhere. Vector search, dietary tagging, and
+multi-modal capture are all established, so we do not claim novelty in any one
+of them. What we claim is the architecture that binds them: generation is
 subordinated to a deterministic retrieve-filter-rank core, rather than being
 the thing that produces the answer.
 
 \paragraph{Retrieval scored against inventory, not just similarity.}
 Semantic search alone returns recipes that \emph{sound} right; pantry matching
 alone returns recipes that are cookable but dull. Dishify blends both into one
-score --- $0.7$ semantic similarity plus $0.3$ inventory coverage --- where
-coverage itself is graded rather than binary: an ingredient present in
+score: $0.7$ semantic similarity plus $0.3$ inventory coverage. Coverage itself
+is graded rather than binary: an ingredient present in
 sufficient quantity and matching units counts fully, one merely present counts
 half. Ranking therefore optimises for what a cook actually wants, a dish that
 fits the craving \emph{and} the shelf, and produces the matched/missing split
@@ -48,17 +48,17 @@ that the interface is built around.
 Seventy-two restriction tags are resolved to forbidden ingredient terms,
 annotated onto recipes offline, and applied as a vector-store filter. Unsafe
 recipes are excluded from the candidate set before ranking or generation. The
-industry-baseline approach --- asking a model to respect a dietary constraint
---- fails open under prompt injection or a bad sample; ours fails closed,
-which is why acceptance-testing trust in allergy handling was among our highest
+industry-baseline approach asks a model to respect a dietary constraint, and it
+fails open under prompt injection or a bad sample. Ours fails closed, which is
+why acceptance-testing trust in allergy handling was among our highest
 scores.
 
 \paragraph{Multi-modal capture that stays reviewable.}
 Voice and photo input feed the \emph{same} pantry contract as typing: a single
 Gemini call turns a spoken sentence into a structured ingredient list plus a
 separate craving string, and an image into normalised ingredient candidates.
-Crucially, both are review-then-confirm --- generation proposes, the user
-disposes --- so a misdetection is a correction rather than a silently wrong
+Crucially, both are review-then-confirm. Generation proposes and the user
+decides, so a misdetection is a correction rather than a silently wrong
 recommendation.
 
 \begin{table}[!ht]
@@ -85,7 +85,7 @@ For the user this yields three things a dish-first product cannot: recipes that
 are actually cookable tonight, a visible shopping gap instead of a hidden one,
 and restriction safety that does not depend on remembering to restate an
 allergy. In acceptance testing these translated into the two benefits users
-named unprompted --- less decision fatigue and less wasted food --- and into
-$4.44/5$ trust in the allergy handling. The wider value is a reusable pattern:
+named unprompted, less decision fatigue and less wasted food, and into $4.44/5$
+trust in the allergy handling. The wider value is a reusable pattern:
 constrain and rank deterministically, generate only to explain, and verify
 before display.

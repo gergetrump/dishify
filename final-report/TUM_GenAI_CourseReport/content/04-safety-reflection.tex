@@ -64,9 +64,9 @@ relevant failure; a vector filter cannot be talked out of its decision.
 Requests carrying an unknown restriction tag are rejected outright.
 
 \paragraph{Untrusted input is treated as data, not instruction.}
-Every value reaching the reasoning prompt --- typed ingredients, voice
-transcripts, photo detections, retrieved recipe fields --- originates outside
-our control. The system message pins the model to recipe evaluation and states
+Every value reaching the reasoning prompt originates outside our control:
+typed ingredients, voice transcripts, photo detections, and retrieved recipe
+fields. The system message pins the model to recipe evaluation and states
 that all values in the user message are untrusted data that must never be
 followed; the payload is wrapped in explicit \texttt{<untrusted\_data>}
 delimiters. Before that, contract-level validation caps field lengths and
@@ -78,9 +78,9 @@ preserve every recipe id and title unchanged, and stay within six bullets per
 list and 400 characters per bullet. It then faces a \emph{grounding} check: the
 reasoning must share vocabulary with the recipe's own ingredients, NER terms,
 or the user's restrictions. Anything failing raises
-\texttt{UnsafeReasoningError} and is discarded --- which is what bounds
-hallucination in practice, since a fluent but invented justification has
-nothing to ground against. When validation fails the stage is marked
+\texttt{UnsafeReasoningError} and is discarded. This bounds hallucination in
+practice, since a fluent but invented justification has nothing to ground
+against. When validation fails the stage is marked
 \texttt{guarded}; when the provider is unreachable it is marked \texttt{error};
 either way the response falls back to a deterministic explanation computed from
 the inventory match, so the interface can report whether reasoning was generated
@@ -92,8 +92,8 @@ We built a 24-case adversarial harness
 direct injection, indirect injection through recipe fields, prompt-leakage
 attempts, boundary validation, and unusual input. A case passes only if a
 planted marker never appears, no system-prompt fragment leaks, recipe
-identities survive, and --- for normal inputs --- the guardrail does \emph{not}
-fire, so a system that simply refused everything would fail. The harness
+identities survive, and the guardrail does \emph{not} fire for normal inputs,
+so a system that simply refused everything would fail. The harness
 computes and reports an acceptance verdict (at least 22 of 24, all six normal
 cases passing, zero disclosure), though wiring that verdict up as a CI build
 gate remains an open item. For this report we re-ran nine representative cases
@@ -127,9 +127,9 @@ nine passed.
 \paragraph{Privacy.}
 Identity is delegated to Keycloak, so Dishify stores no passwords; preferences
 live in our own Postgres database and are never sent to a provider as an
-identified profile. Only the minimum needed for a task leaves the system --- the
+identified profile. Only the minimum needed for a task leaves the system: the
 recipe payload and ingredient list for reasoning, the audio clip for
-transcription, the image for detection --- and media is processed transiently.
+transcription, and the image for detection. Media is processed transiently.
 Restrictions are health-adjacent data, which is why they are enforced locally
 in the vector filter and reach the model only as anonymous tags.
 

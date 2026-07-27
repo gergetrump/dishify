@@ -11,13 +11,13 @@
 
 Dishify's target user is the \textbf{everyday home cook who already owns food
 but has no plan}: someone who cooks for a small household on most days, shops
-irregularly, and repeatedly faces the same 6~p.m.\ question --- what can I make
+irregularly, and repeatedly faces the same 6~p.m.\ question: what can I make
 with what is in the fridge right now? We chose this profile over \emph{novice
 cooks}, who would have stressed instruction quality rather than recommendation
 quality, and \emph{enthusiast cooks}, who already own the mental index Dishify
 is meant to replace; neither would exercise the core pantry-to-recipe loop. The
-everyday cook is also the group for whom our two value claims --- less decision
-fatigue, less waste --- are testable.
+everyday cook is also the group for whom our two value claims, less decision
+fatigue and less waste, are testable.
 
 Recruitment was therefore screened on \emph{cooking frequency} rather than
 skill. Nine participants were drawn from the team's wider student and personal
@@ -30,7 +30,7 @@ missing items, and the usefulness of the shopping gap. Their self-reported pain
 points confirmed the premise before they saw the product: \textbf{5 of 9} named
 ``I don't know what to cook'' and \textbf{4 of 9} ``recipes take too long''.
 The trade-off is that a convenience sample is small ($n=9$), student-skewed,
-and prone to politeness bias --- which is why we weight the behavioural and
+and prone to politeness bias. For that reason, we weight the behavioural and
 free-text findings at least as heavily as the Likert means.
 
 \section{Survey Design}
@@ -38,9 +38,8 @@ free-text findings at least as heavily as the Likert means.
 The study combined a \textbf{task-based usability test} with a
 \textbf{structured survey}, so that what people did could be compared with what
 they said. Participants were given the deployed web application and a short
-scenario --- \emph{cook something tonight from what you actually have at
-home} --- and were asked to think aloud while working through a fixed task
-sequence:
+scenario: \emph{cook something tonight from what you actually have at home}.
+They were asked to think aloud while working through a fixed task sequence:
 
 \begin{enumerate}[itemsep=0pt, topsep=2pt, parsep=0pt]
     \item register an account and complete first-time setup;
@@ -52,9 +51,9 @@ sequence:
     \item open one recipe and decide whether they would actually cook it.
 \end{enumerate}
 
-Each task carried an observed success criterion --- completed unaided, with a
-hint, or abandoned --- and we noted where participants hesitated. The survey
-then asked for agreement on a five-point Likert scale across seven dimensions
+Each task carried an observed success criterion: completed unaided, completed
+with a hint, or abandoned. We also noted where participants hesitated. The
+survey then asked for agreement on a five-point Likert scale across seven dimensions
 chosen to map onto the project's value claims rather than to generic
 usability: \textbf{ease of use} and \textbf{recommendation process} (is the
 pantry-first flow learnable without instruction?), \textbf{recipe relevance}
@@ -63,9 +62,9 @@ pantry-first flow learnable without instruction?), \textbf{recipe relevance}
 information?), \textbf{allergy and diet trust} (would the user rely on the hard
 filters for a restriction that matters to them?), \textbf{substitution quality}
 (is the handling of missing ingredients helpful?), and \textbf{likelihood to
-reuse} --- our retention proxy, and the hardest question we asked. Two
-free-text questions closed the survey: what worked well, and what would have to
-change before they would use Dishify again next week.
+reuse}, which served as our retention proxy and the hardest question we asked.
+Two free-text questions closed the survey: what worked well, and what would
+have to change before they would use Dishify again next week.
 
 \section{Survey Execution}
 
@@ -110,17 +109,17 @@ nine responses.
 \end{table}
 
 Table~\ref{tab:uat-scores} shows a clear split. Everything about
-\emph{operating} Dishify scored highly --- ease of use $4.67$, recommendation
-process $4.56$ --- so the pantry-first model is understood without instruction,
-and our central bet on inverting the usual dish-first search was correct.
+\emph{operating} Dishify scored highly: ease of use $4.67$ and recommendation
+process $4.56$. This shows that the pantry-first model is understood without
+instruction, and our central bet on inverting the usual dish-first search was correct.
 Allergy and diet trust at $4.44$ is the result we cared most about:
 participants with real restrictions were willing to rely on the hard filters,
 validating the decision to enforce restrictions in retrieval rather than in the
 prompt. The weaker scores concern \emph{content}, not interaction, and form a
 descending chain: recipes that are only approximately cookable ($4.00$) produce
 weak substitution advice ($3.88$), and weak substitution advice erodes the
-reason to come back ($3.67$). Explanation clarity ($4.11$) sits between --- the
-explanations are trusted, but were found terse.
+reason to come back ($3.67$). Explanation clarity ($4.11$) sits between these
+two groups: the explanations are trusted, but were found terse.
 
 The free-text answers explain the numbers. What users valued matched our value
 claims almost exactly: Dishify \emph{removes the decision}, \emph{uses up food

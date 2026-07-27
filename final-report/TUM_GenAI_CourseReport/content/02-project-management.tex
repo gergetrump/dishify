@@ -206,9 +206,9 @@ records its outcome as \texttt{ok}, \texttt{guarded} (the model answered but
 failed validation), \texttt{error} (the provider was unreachable), or
 \texttt{skipped}, and in every case other than \texttt{ok} it substitutes a
 deterministic inventory explanation rather than failing the request. Step
-augmentation --- the rewriting of terse directions into timed, beginner-ready
-steps with an estimated total time --- is deliberately \emph{not} part of this
-pipeline; it is a second endpoint, \texttt{/recipes/augment}, which the web
+augmentation rewrites terse directions into timed, beginner-ready steps with an
+estimated total time. It is deliberately \emph{not} part of this pipeline;
+instead, it is a second endpoint, \texttt{/recipes/augment}, which the web
 client prefetches in the background once results are on screen, so the results
 page never waits on it. The detailed HTTP contract is documented in
 \texttt{docs/API.md} and is not reproduced here.

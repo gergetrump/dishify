@@ -16,8 +16,8 @@
     \setlength{\parindent}{0pt}%
     \textbf{Your next meal is already in your kitchen.} Dishify turns the
     ingredients you already have into recipes you can actually cook tonight.
-    You tell it what is in your pantry --- by typing, by speaking, or by
-    photographing your fridge --- and it searches a corpus of roughly
+    You tell it what is in your pantry by typing, speaking, or photographing
+    your fridge, and it searches a corpus of roughly
     2.2~million recipes for the dishes that best fit both your craving and your
     shelf.
 \end{minipage}
@@ -53,7 +53,7 @@ the other.
           username, e-mail, and password. Accounts are managed by Keycloak;
           Dishify never stores your password itself.
     \item \textbf{Set what you must avoid} (recommended, and the one step worth
-          doing carefully) under \emph{Preferences} --- see
+          doing carefully) under \emph{Preferences}; see
           Section~\ref{sec:ug-restrictions}.
     \item \textbf{Add what you have} under \emph{Cook}, then press
           \emph{Find my recipes}.
@@ -78,9 +78,9 @@ match, and ranks accordingly. Items collect on \emph{Your pantry shelf}, where
 they can be edited or deleted, and they persist between visits so you do not
 retype a standing pantry.
 
-The craving field is free text and entirely optional --- ``quick weeknight
-pasta dinner'', ``something warm and cheap'' --- and the \emph{Results} spinner
-sets how many suggestions to return.
+The craving field is free text and entirely optional. Examples such as ``quick
+weeknight pasta dinner'' or ``something warm and cheap'' are enough, and the
+\emph{Results} spinner sets how many suggestions to return.
 
 \begin{figure}[!ht]
     \centering
@@ -124,9 +124,9 @@ word or a misread jar never silently changes your results.
 \label{sec:ug-restrictions}
 
 \emph{Preferences} (Figure~\ref{fig:ug-preferences}) is where Dishify learns
-what it must never suggest. It offers 72 tags in five groups --- allergies,
+what it must never suggest. It offers 72 tags in five groups: allergies,
 diets, religious and ethical rules, medical sensitivities, and broad ingredient
-exclusions --- covering everything from nut allergy and coeliac disease to
+exclusions. Together they cover everything from nut allergy and coeliac disease to
 halal, kosher, and low-FODMAP.
 
 These are \textbf{hard filters}, not hints. A recipe carrying a conflicting
@@ -151,7 +151,7 @@ Results are ranked cards (Figure~\ref{fig:ug-results}). Each one shows:
 \begin{itemize}[itemsep=1pt, topsep=3pt]
     \item a \textbf{match strength} score blending how well the recipe answers
           your craving with how much of it you can already cook;
-    \item \textbf{Why it fits} and \textbf{Watch for} --- a short, generated
+    \item \textbf{Why it fits} and \textbf{Watch for}, a short, generated
           justification grounded in the recipe's own ingredients;
     \item green \textbf{HAVE} and amber \textbf{NEED} chips, plus an
           ``\emph{n} matched $\cdot$ \emph{m} missing'' count, so the shopping
@@ -160,9 +160,9 @@ Results are ranked cards (Figure~\ref{fig:ug-results}). Each one shows:
 
 \noindent
 A collapsible \emph{Pipeline details} panel at the foot of the page reports
-what each stage of the system did and how long it took --- useful when you want
-to know whether an explanation came from the language model or from the
-built-in fallback.
+what each stage of the system did and how long it took. This is useful when
+you want to know whether an explanation came from the language model or from
+the built-in fallback.
 
 \begin{figure}[!ht]
     \centering
@@ -179,9 +179,9 @@ built-in fallback.
 Opening a card gives the full recipe (Figure~\ref{fig:ug-detail}): the
 ingredient match, the reasoning, and the directions.
 
-Source recipes are often terse --- the original of the dish shown reads, in
-full, ``\emph{In a bowl, mix pasta (cooked) of your choice with mixture and
-serve immediately.}'' Dishify rewrites such directions into numbered,
+Source recipes are often terse. The original of the dish shown reads, in full,
+``\emph{In a bowl, mix pasta (cooked) of your choice with mixture and serve
+immediately.}'' Dishify rewrites such directions into numbered,
 beginner-ready steps with per-step timings, an estimated total, and occasional
 technique tips, without inventing ingredients the recipe does not imply.
 
