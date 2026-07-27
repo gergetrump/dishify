@@ -35,11 +35,15 @@ Production Compose sets `DISABLE_AUTH=false` on the gateway. For local testing w
 
 ### 2. Install the shared vector store (`data/qdrant_volume.tar.gz`)
 
-The team shares a pre-built Qdrant Docker volume as **`data/qdrant_volume.tar.gz`** (about 7 GB). It contains collection **`recipes_full`** (2.2M recipe vectors). **Do not commit this file** — use Drive, S3, or similar.
+The team shares a pre-built Qdrant Docker volume as **`data/qdrant_volume.tar.gz`** (about 7 GB). It contains collection **`recipes_full`** (2.2M recipe vectors). **Do not commit this file.**
 
-**Teammates — from the repo root:**
+Download the archive from Google Drive:
 
-1. Put the archive at **`data/qdrant_volume.tar.gz`** (exact path and name).
+- [Qdrant volume folder](https://drive.google.com/drive/folders/1JjDzPP-vp9-RT9hfcGWjNe8eaJIthGPt)
+
+**From the repo root:**
+
+1. Download `qdrant_volume.tar.gz` (or the archive in that folder) and place it at **`data/qdrant_volume.tar.gz`** (exact path and name).
 2. Restore into Docker (Qdrant must be stopped while restoring):
 
 ```bash
@@ -76,7 +80,7 @@ docker run --rm \
 docker compose start qdrant
 ```
 
-Share **`data/qdrant_volume.tar.gz`** out of band. Run `docker compose stop qdrant` — not `git docker compose`.
+Re-upload / share the archive via the [Google Drive folder](https://drive.google.com/drive/folders/1JjDzPP-vp9-RT9hfcGWjNe8eaJIthGPt) (or equivalent). Run `docker compose stop qdrant` before restore — not `git docker compose`.
 
 ### 3. Run the stack
 
