@@ -334,7 +334,6 @@ Retrieval warms the embedding model after startup. The first request can be slow
 - Backend details: [backend/README.md](backend/README.md)
 - Web client details: [web-client/README.md](web-client/README.md)
 - iOS details: [ios/README.md](ios/README.md)
-- Integration notes: [docs/INTEGRATION.md](docs/INTEGRATION.md)
 - Agent scope rules: [AGENTS.md](AGENTS.md)
 
 ## Security and Secrets

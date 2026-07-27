@@ -12,47 +12,42 @@
 %    - Current Progress and Future Plans
 %    - Pitch Video (~60s) -- submitted as an attachment; link it here
 %
-%  NOTE FOR THE TEAM: dates in the Gantt chart, the exact per-member
-%  contributions, and the pitch-video link are best-effort drafts. Search for
-%  "CONFIRM" in this file and verify each before submission.
 %=============================================================================
 \chapter{Project Management Report}
 \label{ch:project-management}
 
 \section{Overall Project Vision}
 
-Dishify addresses a small but universal daily problem: deciding what to cook with
-the ingredients that are already at home. Existing recipe platforms are organised
-around dishes rather than inventory, so they rarely let a user search by the
-ingredients they actually have, and they do not reason about dietary or allergy
-constraints while doing so. Dishify's vision is a multi-modal, automatic recipe
-recommender that turns a user's pantry, expressed as text, voice, or a photo, into
-a ranked list of recipes they can realistically cook, each with a short
-explanation of why it fits and what is missing.
+Dishify addresses a small but universal daily problem: deciding what to cook
+with the ingredients already at home. Existing recipe platforms are organised
+around dishes rather than inventory; users start from a recipe name, then adapt
+or shop around it. Dishify reverses that workflow. Its vision is a multi-modal
+recipe recommender that turns a user's pantry, expressed as text, voice, or a
+photo, into a ranked list of recipes they can realistically cook, while applying
+stored dietary and allergy restrictions before anything is shown.
 
 The project scope covers an end-to-end system rather than a single model demo. The
 key deliverables are:
 
 \begin{itemize}
     \item a recommendation pipeline that performs semantic retrieval over a
-          large recipe corpus (approximately 2.2 million recipes indexed in
-          Qdrant), pantry-aware ranking, and hard dietary/allergy filtering;
+          cleaned 2.2M-recipe corpus, with the deployed Qdrant collection
+          restored from the full shared index and a 10\,000-recipe development
+          sample kept in the repository for reproducible local work;
     \item optional generative features: large language model (LLM) explanations
           of recipe fit, recipe-step augmentation, and multi-modal ingestion of
           voice and images via Gemini;
     \item two client applications, a React web client and a native SwiftUI iOS
           app, sharing a single authenticated gateway API;
-    \item a reproducible local platform (Docker Compose) and deployment
-          tooling, together with the course documentation and code submission.
+    \item a reproducible local platform using Docker Compose, plus deployment
+          tooling and the required course deliverables.
 \end{itemize}
 
-To keep the effort feasible within one semester, several directions were placed
-explicitly out of scope: grocery ordering and delivery, calendar-based meal
-planning, an Android client, and licensing of a proprietary production recipe
-dataset. Frequently requested convenience features such as bookmarking, cooking
-time and difficulty filters, and health-goal filters were also deferred; they are
-recorded as future work in Section~\ref{sec:pm-progress} rather than treated as
-project commitments.
+The project boundary was kept clear. Grocery ordering, calendar-based meal
+planning, Android support, and licensing a proprietary production recipe dataset
+were out of scope. Additional convenience features, such as bookmarking, cooking
+time and difficulty filters, and health-goal filters, are treated as future
+extensions in Section~\ref{sec:pm-progress}.
 
 \section{Project Timeline}
 \label{sec:pm-timeline}
@@ -68,57 +63,94 @@ submission deadline (27~July).
 \begin{figure}[!ht]
     \centering
     \resizebox{\textwidth}{!}{%
-    \begin{ganttchart}[
-        hgrid,
-        vgrid,
-        bar height=0.6,
-        bar top shift=0.2,
-        group peaks height=0,
-        title height=0.9,
-        y unit title=0.55cm,
-        y unit chart=0.6cm
-    ]{1}{17}
-        \gantttitle{April 2026}{4}
-        \gantttitle{May 2026}{4}
-        \gantttitle{June 2026}{5}
-        \gantttitle{July 2026}{4} \\
+    \begin{tikzpicture}[
+        font=\scriptsize,
+        x=0.52cm,
+        y=0.58cm,
+        month/.style={fill=dishifyorange!16, draw=dishifyorange!45, rounded corners=1pt},
+        grid/.style={draw=black!10},
+        row/.style={draw=black!8, fill=black!2},
+        lane/.style={font=\scriptsize\bfseries, text=black!72, anchor=east},
+        bartext/.style={font=\tiny, text=black!88, align=center, inner sep=0pt},
+        data/.style={rounded corners=2pt, fill=dishifygreen!60, draw=dishifygreen!90!black},
+        backend/.style={rounded corners=2pt, fill=dishifyorange!38, draw=dishifyorange!80!black},
+        client/.style={rounded corners=2pt, fill=blue!18, draw=blue!45!black},
+        infra/.style={rounded corners=2pt, fill=black!12, draw=black!35},
+        quality/.style={rounded corners=2pt, fill=teal!22, draw=teal!55!black},
+        submit/.style={rounded corners=2pt, fill=red!13, draw=red!45!black},
+        ms/.style={diamond, aspect=1.2, fill=black!82, draw=black!82,
+                   inner sep=1.6pt}
+    ]
+        \def\xzero{6.2}
+        \def\rowtop{-1.25}
+        \def\rowgap{0.88}
+        \def\barh{0.50}
 
-        \ganttgroup{Data}{2}{13} \\
-        \ganttbar{Preprocessing \& cleaning (CZ)}{2}{8} \\
-        \ganttbar{Indexing / Qdrant corpus (GTr, CZ)}{5}{13} \\
+        % Month header.
+        \foreach \label/\start/\len in {April 2026/1/4, May 2026/5/4,
+            June 2026/9/5, July 2026/14/4} {
+            \pgfmathsetmacro{\x}{\xzero+\start-1}
+            \node[month, minimum width=\len*0.52cm, minimum height=0.42cm,
+                  anchor=west] at (\x,0) {\label};
+        }
 
-        \ganttgroup{Backend / GenAI}{5}{15} \\
-        \ganttbar{Recommend, retrieve, rank, reason (GTr)}{5}{15} \\
-        \ganttbar{Multimodal ingest: voice, vision (CL)}{12}{14} \\
+        % Week grid and row bands.
+        \foreach \w in {1,...,17} {
+            \pgfmathsetmacro{\x}{\xzero+\w-1}
+            \draw[grid] (\x,-0.45) -- (\x,-10.35);
+            \node[font=\tiny, text=black!50] at (\x+0.5,-0.63) {\w};
+        }
+        \foreach \r in {0,...,10} {
+            \pgfmathsetmacro{\y}{\rowtop-\r*\rowgap}
+            \draw[row] (0.1,\y-0.35) rectangle (\xzero+17,\y+0.35);
+        }
+        \foreach \w in {9,16,17} {
+            \pgfmathsetmacro{\x}{\xzero+\w-0.5}
+            \draw[densely dotted, draw=black!35] (\x,-0.45) -- (\x,-10.65);
+        }
 
-        \ganttgroup{Clients}{11}{17} \\
-        \ganttbar{iOS app, SwiftUI (GTr)}{11}{17} \\
-        \ganttbar{Web client, Mantine + UX (GT, MCA)}{12}{16} \\
+        \newcommand{\timelinebar}[6]{%
+            \pgfmathsetmacro{\y}{\rowtop-(#1)*\rowgap}%
+            \node[lane] at (5.85,\y) {#2};%
+            \pgfmathsetmacro{\xs}{\xzero+(#3)-1}%
+            \pgfmathsetmacro{\xe}{\xzero+(#4)}%
+            \path[#6] (\xs,\y-\barh/2) rectangle (\xe,\y+\barh/2);%
+            \node[bartext] at ({(\xs+\xe)/2},\y) {\strut #5};%
+        }
 
-        \ganttgroup{Infrastructure}{8}{16} \\
-        \ganttbar{Docker, Keycloak, CI (CZ, GTr)}{8}{13} \\
-        \ganttbar{Deploy platform, TF/Ansible (CZ, AF)}{14}{16} \\
+        \timelinebar{0}{Data}{2}{8}{Preprocessing (CZ)}{data}
+        \timelinebar{1}{Data}{5}{13}{Qdrant corpus (GTr, CZ)}{data}
+        \timelinebar{2}{Backend / GenAI}{5}{15}{Retrieve, rank, reason (GTr)}{backend}
+        \timelinebar{3}{Backend / GenAI}{12}{14}{Vision ingest (CL)}{backend}
+        \timelinebar{4}{Clients}{11}{17}{iOS app (GTr)}{client}
+        \timelinebar{5}{Clients}{12}{16}{Web + UX (GT, MCA)}{client}
+        \timelinebar{6}{Infrastructure}{8}{13}{Docker, Keycloak, CI}{infra}
+        \timelinebar{7}{Infrastructure}{14}{16}{Deploy (CZ)}{infra}
+        \timelinebar{8}{Quality}{12}{16}{UAT (MCA, AF)}{quality}
+        \timelinebar{9}{Quality}{14}{16}{Safety (GTr)}{quality}
+        \timelinebar{10}{Submission}{15}{17}{Report (all)}{submit}
 
-        \ganttgroup{Quality}{12}{16} \\
-        \ganttbar{User acceptance testing (MCA)}{12}{16} \\
-        \ganttbar{Safety guardrails (GTr)}{14}{16} \\
-
-        \ganttgroup{Submission}{15}{17} \\
-        \ganttbar{Final report + code (all)}{15}{17} \\
-
-        % Empty labels: non-inline milestones all draw their text at x=0 on the
-        % same row, which overlaps. Diamonds stay; names are in the caption
-        % and in the intro paragraph above.
-        \ganttmilestone{}{9}
-        \ganttmilestone{}{16}
-        \ganttmilestone{}{17}
-    \end{ganttchart}%
+        % Course milestones. Labels are staggered so the July dates stay legible.
+        \foreach \w in {9,16,17} {
+            \pgfmathsetmacro{\x}{\xzero+\w-0.5}
+            \node[ms] at (\x,-10.95) {};
+        }
+        \node[font=\tiny, text=black!70, align=center, anchor=north]
+              at (\xzero+8.5,-11.2) {Midterm\\1 Jun};
+        \node[font=\tiny, text=black!70, align=center, anchor=north east]
+              at (\xzero+15.35,-11.2) {Final pres.\\20 Jul};
+        \node[font=\tiny, text=black!70, align=center, anchor=north west]
+              at (\xzero+16.65,-11.75) {Submit\\27 Jul};
+    \end{tikzpicture}%
     }
-    \caption{Dishify project timeline (Apr--Jul 2026), aligned with the commit
-    history. Owners: GTr = George Trump, CZ = Chengjie Zhou, CL = Can Lin,
-    GT = Georg Tichy, MCA = Maria Chatzipavlou Arvaniti, AF = Aymen Faouel.
-    Diamonds, left to right: midterm presentation (week of 1 June), final
-    presentation, and the Moodle/GitLab submission deadline (27 July 2026).}
+    \caption[Dishify project timeline]{\textbf{Dishify project timeline,
+    April--July 2026} (one column $\approx$ one week from 20 April). Bars show
+    each workstream with its owner; diamonds mark the three fixed course
+    milestones. \textbf{Owners:} GTr~= George Trump, CZ~= Chengjie Zhou,
+    CL~= Can Lin, GT~= Georg Tichy, MCA~= Maria Chatzipavlou Arvaniti,
+    AF~= Aymen Faouel. The critical path runs Data preprocessing $\rightarrow$
+    Qdrant indexing $\rightarrow$ backend pipeline $\rightarrow$ client
+    integration $\rightarrow$ submission.}
     \label{fig:pm-gantt}
 \end{figure}
 
@@ -157,19 +189,64 @@ components are summarised in Table~\ref{tab:pm-arch}.
     \end{tabularx}
 \end{table}
 
-The generative pipeline maps cleanly onto these services. A request begins with
-\emph{input} (a natural-language query and pantry, plus stored diets and
-allergies), which the recommendation service turns into \emph{retrieval}: the
-query and pantry are embedded with a sentence-transformer model
-(\texttt{all-MiniLM-L6-v2}) and matched against the Qdrant index, after which
-unsafe recipes are removed by a hard dietary filter. Candidates are then
-\emph{ranked} with a blended score of roughly 70\,\% semantic similarity and
-30\,\% pantry overlap, so more cookable recipes rise to the top. For the top
-results the reasoning service adds an \emph{explanation}, and the final
-\emph{output} returned to the client contains matched and missing ingredients,
-fit reasoning, an estimated time, and augmented directions. The detailed HTTP
-contract is documented separately in \texttt{docs/API.md} and is not reproduced
-here.
+The generative pipeline maps cleanly onto these services and runs in five
+stages (Figure~\ref{fig:pm-pipeline}). A request begins with \emph{input} (a
+natural-language query and pantry, plus stored diets and allergies), which the
+recommendation service turns into \emph{retrieval}: the query and pantry are
+embedded with a sentence-transformer model (\texttt{all-MiniLM-L6-v2}) and
+matched against the Qdrant index, after which unsafe recipes are removed by a
+hard dietary filter. Candidates are then \emph{ranked} with a blended score of
+roughly 70\,\% semantic similarity and 30\,\% pantry overlap, so more cookable
+recipes rise to the top. For the top results the reasoning service adds an
+\emph{explanation}, and the final \emph{output} of \texttt{/recommend} contains
+the ranked recipes with their matched and missing ingredients, the fit
+reasoning, the recipe's original directions, and a per-stage status and latency
+report. Only the fourth stage is generative, and it is optional: the pipeline
+records its outcome as \texttt{ok}, \texttt{guarded} (the model answered but
+failed validation), \texttt{error} (the provider was unreachable), or
+\texttt{skipped}, and in every case other than \texttt{ok} it substitutes a
+deterministic inventory explanation rather than failing the request. Step
+augmentation rewrites terse directions into timed, beginner-ready steps with an
+estimated total time. It is deliberately \emph{not} part of this pipeline;
+instead, it is a second endpoint, \texttt{/recipes/augment}, which the web
+client prefetches in the background once results are on screen, so the results
+page never waits on it. The detailed HTTP contract is documented in
+\texttt{docs/API.md} and is not reproduced here.
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+        font=\footnotesize,
+        stage/.style={draw=black!45, rounded corners=2pt, minimum height=9mm,
+                      text width=25mm, align=center, fill=dishifyorange!22},
+        gen/.style={stage, fill=dishifygreen!45},
+        note/.style={text width=26mm, align=center, font=\scriptsize, color=black!65},
+        arr/.style={-{Latex[length=4pt]}, draw=black!55, thick},
+    ]
+        \node[stage] (s1) {\textbf{1. Input}};
+        \node[stage, right=6mm of s1] (s2) {\textbf{2. Retrieve}};
+        \node[stage, right=6mm of s2] (s3) {\textbf{3. Rank}};
+        \node[gen,   right=6mm of s3] (s4) {\textbf{4. Explain}};
+        \node[stage, right=6mm of s4] (s5) {\textbf{5. Output}};
+        \draw[arr] (s1) -- (s2); \draw[arr] (s2) -- (s3);
+        \draw[arr] (s3) -- (s4); \draw[arr] (s4) -- (s5);
+
+        \node[note, below=2mm of s1] {query, pantry, stored restrictions};
+        \node[note, below=2mm of s2] {MiniLM embedding, Qdrant $k$-NN, hard diet filter};
+        \node[note, below=2mm of s3] {$0.7\times$ semantic $+\;0.3\times$ inventory};
+        \node[note, below=2mm of s4] {LLM ``why it fits'', validated};
+        \node[note, below=2mm of s5] {ranked list, matched / missing, stage latencies};
+
+        \node[note, below=13mm of s4, color=dishifyorange]
+             {\itshape optional; falls back to a deterministic explanation};
+    \end{tikzpicture}%
+    }
+    \caption[The five-stage recommendation pipeline]{The recommendation
+    pipeline. Stages 1--3 and 5 are deterministic; only stage~4 is generative,
+    and it degrades gracefully.}
+    \label{fig:pm-pipeline}
+\end{figure}
 
 \section{Method}
 
@@ -198,6 +275,7 @@ infrastructure and deployment steps, giving the team a repeatable path from a
 clean checkout to a running system.
 
 \subsection{Prompt Engineering}
+\label{sec:pm-prompting}
 
 Generative AI is used at three points in the product, and each one relies on a
 purpose-built prompt with a strict output contract and validation, rather than
@@ -256,8 +334,7 @@ across the team.
 
 \begin{table}[!ht]
     \centering
-    \caption{Team members, roles, and contributions. % CONFIRM per-member details.
-    }
+    \caption{Team members, roles, and contributions.}
     \label{tab:pm-team}
     \begin{tabularx}{\textwidth}{@{}p{42mm}p{32mm}X@{}}
         \toprule
@@ -267,8 +344,8 @@ across the team.
         Chengjie Zhou               & Data, infrastructure \& planning & Data cleaning and corpus preparation, Docker/CI and Keycloak, deployment tooling (Terraform/Ansible), ranking/search fixes at scale, and project planning and task coordination. \\
         Can Lin                     & Multimodal GenAI & Voice and image ingest service (Gemini) and recipe-augmentation hooks, plus ingredient-matching fixes. \\
         Georg Tichy                 & Web platform & Mantine setup and custom theme, core web pages and layout. \\
-        Maria Chatzipavlou Arvaniti & Web UX \& content & Mantine styling and product copy on the welcome, results, and recipe pages; user acceptance testing. \\
-        Aymen Faouel                & Infrastructure \& QA & Supported deployment platform work (Terraform/Ansible) and quality assurance. \\
+        Maria Chatzipavlou Arvaniti & Web UX \& content & Mantine styling and product copy on the welcome, results, and recipe pages. \\
+        Aymen Faouel                & QA \& user study & User acceptance testing and quality assurance support. \\
         \bottomrule
     \end{tabularx}
 \end{table}
@@ -276,32 +353,26 @@ across the team.
 \section{Current Progress and Future Plans}
 \label{sec:pm-progress}
 
-At the time of the final presentation the team had completed the core of the
-system: the recipe dataset had been cleaned and indexed, the end-to-end AI
-pipeline (retrieve, rank, explain) was working, the Docker/Qdrant/Keycloak
-infrastructure was in place, and the core API endpoints were implemented and
-quality-checked. A live deployment was demonstrated together with both the web and
-iOS clients.
+At submission, Dishify is an end-to-end working system. The recipe dataset has
+been cleaned and indexed, the retrieve-rank-explain pipeline is operational, the
+Docker/Qdrant/Keycloak infrastructure is in place, and both the React web client
+and SwiftUI iOS client use the same authenticated gateway API. The live
+deployment was used for the final demonstration and for the user acceptance
+study reported in Chapter~\ref{ch:uat}.
 
-Since the presentation, the remaining integration and hardening work has been
-carried out. This includes polishing the clients and connecting them fully to the
-gateway, adding the dietary-restriction safety guardrails around the reasoning
-service, completing a user acceptance study with nine participants (reported in
-Chapter~\ref{ch:uat}), and preparing the course deliverables, the combined final
-report and the GitLab LRZ code submission.
-
-Future work is driven mainly by the feedback gathered during acceptance testing.
-The highest-priority items are reducing generation latency, making ingredient
-matching less literal, improving substitution suggestions, and adding clearer
-onboarding, all of which target long-term retention. Beyond that, the most
-requested convenience features, saving and bookmarking recipes, cooking-time and
+Future work is driven by acceptance-testing evidence rather than new scope. The
+highest-priority improvements are faster generated explanations, broader
+ingredient normalisation, stronger substitution suggestions, and clearer
+first-time onboarding, all of which target repeat use. The most requested
+product extensions are saving and bookmarking recipes, cooking-time and
 difficulty filters, health-goal filters, recipe photos, and a print-friendly
-view, would be natural next additions.
+view.
 
 \section{Pitch Video}
 
-A short product pitch accompanies this report and is submitted as a separate
-attachment on Moodle. It states the problem, shows the live iOS application and
-the primary user journey (pantry from a photo, vibe, ranked recipes), and points
-out where generative AI is used (Gemini image ingredient detection and
-recipe-fit explanations on the results).
+A short (approximately 60-second) product pitch accompanies this report and is
+submitted as a separate attachment on Moodle. It states the problem, shows the
+live application and the primary user journey, and points out where generative AI
+is used (voice and image ingestion and the recipe-fit explanations). The current
+demo recording is available at
+\url{https://www.youtube.com/shorts/XWc4LrsOffw}.

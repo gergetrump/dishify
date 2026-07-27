@@ -1,98 +1,212 @@
+% !TeX root = ../CourseReport.tex
 %=============================================================================
 %  PART 1 --- USER GUIDE
 %  PAGE BUDGET: 5 pages (excluding title, ToC)          Rubric weight: 10 pts
-%
-%  Goal: after reading this, an end user knows what Dishify does and how to use
-%  every feature WITHOUT running it. Keep it visually appealing, short, and to
-%  the point -- think of it as a pitch embodied in a document.
-%  If there is a landing page: add screenshots + the link.
-%  If the app has multiple roles, give each feature its own section per role.
 %=============================================================================
 \chapter{User Guide}
 \label{ch:user-guide}
 
 \section{What is Dishify?}
-Dishify is an AI-powered cooking assistant designed to eliminate mealtime fatigue. If you're too tired or uninspired to figure out what to make, Dishify does the thinking for you. Simply input the ingredients you already have at home, and Dishify instantly generates delicious, tailored recipes – helping you save time, reduce food waste, and make the most of your pantry.
 
+\noindent
+\begin{minipage}[c]{0.16\textwidth}
+    \includegraphics[width=\linewidth]{./Ressourcen/dishify-logo.png}
+\end{minipage}%
+\begin{minipage}[c]{0.82\textwidth}
+    \setlength{\parindent}{0pt}%
+    \textbf{Your next meal is already in your kitchen.} Dishify turns the
+    ingredients you already have into recipes you can actually cook tonight.
+    You tell it what is in your pantry by typing, speaking, or photographing
+    your fridge, and it searches a corpus of roughly
+    2.2~million recipes for the dishes that best fit both your craving and your
+    shelf.
+\end{minipage}
 
+\vspace{6pt}
+\noindent
+Every suggestion arrives with a plain-language answer to two questions:
+\emph{why does this fit me}, and \emph{what am I missing}. Recipes that clash
+with a stored allergy or diet are removed before you ever see them. Dishify is
+built for everyday home cooks who own food but not a plan, and who lose more
+time to deciding than to cooking.
+
+\begin{figure}[!ht]
+    \centering
+    \screenshot[0.80\textwidth]{./Ressourcen/screenshots/welcome.png}
+    \caption[Dishify landing page]{The Dishify landing page at
+    \url{http://167.233.165.44}. The product promise, sign-up, and the three
+    core use cases are visible without scrolling.}
+    \label{fig:ug-welcome}
+\end{figure}
 
 \section{Getting Started}
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/landing-page.png}
-    \captionof{figure}{The Dishify landing page.}
-    \label{fig:ug-landing-page}
-\end{center}
 
-Dishify is available as an iOS app as well as on the web. Currently, only the web version is accessible. Find out more about Dishify here: \url{http://167.233.165.44}
+Dishify runs as a web application and as a native iOS app; both talk to the
+same backend, so a pantry and preferences set on one are the same account on
+the other.
 
+\begin{enumerate}[itemsep=1pt, topsep=3pt]
+    \item \textbf{Open the app.} Go to \url{http://167.233.165.44} in any
+          modern browser (Figure~\ref{fig:ug-welcome}). No installation is
+          needed. iOS users open the Dishify app instead.
+    \item \textbf{Create an account.} Select \emph{Sign up} and choose a
+          username, e-mail, and password. Accounts are managed by Keycloak;
+          Dishify never stores your password itself.
+    \item \textbf{Set what you must avoid} (recommended, and the one step worth
+          doing carefully) under \emph{Preferences}; see
+          Section~\ref{sec:ug-restrictions}.
+    \item \textbf{Add what you have} under \emph{Cook}, then press
+          \emph{Find my recipes}.
+\end{enumerate}
 
+\noindent
+A results page normally appears in a few seconds. For evaluation purposes, a
+reviewer account is available on the deployed instance: username
+\texttt{testuser}, password \texttt{test-secret}.
 
 \section{Features}
 
-\subsection{Sign Up and Initial Preferences}
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/signup-page.png}
-    \captionof{figure}{The sign up page.}
-    \label{fig:ug-signup}
-\end{center}
+\subsection{Pantry-based Recipe Recommendation}
 
-During the sign up process, it is possible to specify preferences. The options include the most relevant preferences only. Additional options are available on the preferences page.
+The \emph{Cook} screen (Figure~\ref{fig:ug-pantry}) is split into two
+questions: \emph{what is in your kitchen} and \emph{what are you craving}.
 
+Add ingredients one at a time with the \emph{Add ingredient} button. Quantity
+and unit are optional, but supplying them is worthwhile: a recipe needing
+$500$\,g of pasta when you have $200$\,g counts as a partial rather than a full
+match, and ranks accordingly. Items collect on \emph{Your pantry shelf}, where
+they can be edited or deleted, and they persist between visits so you do not
+retype a standing pantry.
 
+The craving field is free text and entirely optional. Examples such as ``quick
+weeknight pasta dinner'' or ``something warm and cheap'' are enough, and the
+\emph{Results} spinner sets how many suggestions to return.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \screenshot[\textwidth]{./Ressourcen/screenshots/app-pantry.png}
+        \caption{Entering the pantry and the craving.}
+        \label{fig:ug-pantry}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \screenshot[\textwidth]{./Ressourcen/screenshots/capture-modal.png}
+        \caption{Multi-modal input: camera or photo upload.}
+        \label{fig:ug-capture}
+    \end{subfigure}
+    \caption[The Cook screen and ingredient capture]{The \emph{Cook} screen.
+    Ingredients can be typed~(a) or captured by photo or voice~(b).}
+    \label{fig:ug-cook}
+\end{figure}
+
+\subsection{Voice Input and Photo Scanning}
+
+Typing five ingredients is tedious, so Dishify accepts two faster inputs from
+the same screen (Figure~\ref{fig:ug-capture}).
+
+\paragraph{Say what you have.} Press the button and speak naturally:
+\emph{``I have two tomatoes, some pasta and garlic, and I want something
+quick.''} Dishify transcribes the clip, splits it into a structured ingredient
+list \emph{and} a craving, and fills in both fields at once.
+
+\paragraph{Scan ingredients.} Point your camera at an open fridge or a
+worktop, or upload a photo. Dishify detects the edible items in the image and
+proposes them as pantry entries.
+
+\noindent
+Both paths are deliberately \emph{review-then-confirm}: detected items appear
+as a proposed list that you correct before anything is searched, so a misheard
+word or a misread jar never silently changes your results.
 
 \subsection{Dietary, Allergy, and Restriction Filtering}
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/preferences.png}
-    \captionof{figure}{The preferences page.}
+\label{sec:ug-restrictions}
+
+\emph{Preferences} (Figure~\ref{fig:ug-preferences}) is where Dishify learns
+what it must never suggest. It offers 72 tags in five groups: allergies,
+diets, religious and ethical rules, medical sensitivities, and broad ingredient
+exclusions. Together they cover everything from nut allergy and coeliac disease to
+halal, kosher, and low-FODMAP.
+
+These are \textbf{hard filters}, not hints. A recipe carrying a conflicting
+ingredient is removed during the search itself, so it cannot appear in your
+results, cannot be re-ranked back in, and is never passed to the language model
+for explanation. Set them once; they apply to every later search on every
+device, and you never need to restate them in a query.
+
+\begin{figure}[!ht]
+    \centering
+    \screenshot[0.56\textwidth]{./Ressourcen/screenshots/preferences.png}
+    \caption[Food preferences]{\emph{Preferences}: 72 allergy, diet, religious,
+    medical, and ingredient-exclusion tags, applied as hard filters to every
+    search. Here \emph{Vegetarian} and \emph{Shellfish Allergy} are active.}
     \label{fig:ug-preferences}
-\end{center}
-Dishify respects a plethora of preferences, including the categories allergies, diets, religious and ethical, medical and sensitivities, as well as ingredient exclusions.
-Preferences can be changed at any time and Dishify will exclude respective recipes from its suggestions.
+\end{figure}
 
+\subsection{Reading Your Results}
 
+Results are ranked cards (Figure~\ref{fig:ug-results}). Each one shows:
 
-\subsection{Pantry-based Recipe Recommendation}
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/ingredients.png}
-    \captionof{figure}{The ingredients page.}
-    \label{fig:ug-ingredients}
-\end{center}
-Dishify accepts ingredients as well as the eating vibe as input. Apart from the ingredient's name (e.g. eggs), the quantity (e.g. 2) as well as the unit of measure (e.g. pieces) can be specified.
-The eating vibe (e.g. fast) provides the user with additional control over the recipe suggestions.
+\begin{itemize}[itemsep=1pt, topsep=3pt]
+    \item a \textbf{match strength} score blending how well the recipe answers
+          your craving with how much of it you can already cook;
+    \item \textbf{Why it fits} and \textbf{Watch for}, a short, generated
+          justification grounded in the recipe's own ingredients;
+    \item green \textbf{HAVE} and amber \textbf{NEED} chips, plus an
+          ``\emph{n} matched $\cdot$ \emph{m} missing'' count, so the shopping
+          gap is visible at a glance.
+\end{itemize}
 
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/results.png}
-    \captionof{figure}{The results page.}
+\noindent
+A collapsible \emph{Pipeline details} panel at the foot of the page reports
+what each stage of the system did and how long it took. This is useful when
+you want to know whether an explanation came from the language model or from
+the built-in fallback.
+
+\begin{figure}[!ht]
+    \centering
+    \screenshot[0.76\textwidth]{./Ressourcen/screenshots/results-top.png}
+    \caption[Ranked recipe results]{Ranked results for the pantry
+    \emph{tomato, pasta, garlic, olive oil, onion} and the craving
+    ``quick weeknight pasta dinner''. Each card carries a match score, a
+    generated justification, and the matched/missing ingredient split.}
     \label{fig:ug-results}
-\end{center}
-The suggested recipes are ordered by a relevance score – a metric that shows how well a recipe fits the search and pantry: a mix of how closely it matches what you're looking for, and how many ingredients you already have on hand. 
-For each suggestion Dishify displays the number of missing respectively available ingredients. Some of these ingredients are visible at a glance.
+\end{figure}
 
+\subsection{Cooking a Recipe}
 
+Opening a card gives the full recipe (Figure~\ref{fig:ug-detail}): the
+ingredient match, the reasoning, and the directions.
 
-\subsection{Voice Input}
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/voice.png}
-    \captionof{figure}{Dishify understands voice input.}
-    \label{fig:ug-voice}
-\end{center}
-Apart from text input Dishify understands voice input. Say what you have and Dishify adds it to the pantry shelf. 
+Source recipes are often terse. The original of the dish shown reads, in full,
+``\emph{In a bowl, mix pasta (cooked) of your choice with mixture and serve
+immediately.}'' Dishify rewrites such directions into numbered,
+beginner-ready steps with per-step timings, an estimated total, and occasional
+technique tips, without inventing ingredients the recipe does not imply.
 
+\begin{figure}[!ht]
+    \centering
+    \screenshot[0.72\textwidth]{./Ressourcen/screenshots/recipe-detail.png}
+    \caption[Recipe detail with augmented directions]{Recipe detail. The
+    original two-line directions have been expanded into six timed steps with
+    an 18-minute estimate and a technique tip.}
+    \label{fig:ug-detail}
+\end{figure}
 
+\section{Tips and Troubleshooting}
 
-\subsection{Image-based Ingredient Detection}
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/image.png}
-    \captionof{figure}{Dishify understands image input.}
-    \label{fig:ug-image}
-\end{center}
-Dishify also allows for ingredient input via images (camera or image upload). Recognized ingredients are framed by boxes and ingredients can be deselected individually. 
-
-
-\subsection{Recipe Detail}
-\begin{center}
-    \includegraphics[width=\textwidth]{./Ressourcen/user-guide/recipe.png}
-    \captionof{figure}{The recipe page.}
-    \label{fig:ug-recipe}
-\end{center}
-The recipe page lists missing and available ingredients, an explanation why Dishify suggested the recipe, lists things to watch out for, and the steps to prepare the recipe. 
+\begin{description}[itemsep=2pt, topsep=3pt, leftmargin=*, style=nextline]
+    \item[Set your restrictions before your first search.] They are the one
+          setting that changes what Dishify is allowed to show you.
+    \item[List staples too.] Adding salt, oil, and pepper to the shelf
+          noticeably shortens the ``NEED'' list on most cards.
+    \item[Keep the craving short.] Two or three words (``quick'', ``warm'',
+          ``cheap'') steer the search well; long sentences dilute it.
+    \item[The first search of a session can be slower.] The search service
+          loads its embedding model on first use; later searches are faster.
+    \item[Explanations look plain?] If the language model is unreachable, or
+          returns something that cannot be verified against the recipe, Dishify
+          falls back to a factual matched/missing summary rather than showing
+          an unchecked explanation. Results stay usable.
+\end{description}
